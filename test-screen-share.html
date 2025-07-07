@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>主持人投屏功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .role-selector {
+            margin-bottom: 20px;
+        }
+        .role-selector label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .role-selector select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .test-area {
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            min-height: 200px;
+        }
+        .screen-share-status {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .screen-share-status.active {
+            display: block;
+        }
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #4a9eff;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #357abd;
+        }
+        .btn-danger {
+            background: #ff4757;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #ff3742;
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .log-area {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+        .log-entry.info {
+            color: #007bff;
+        }
+        .log-entry.success {
+            color: #28a745;
+        }
+        .log-entry.error {
+            color: #dc3545;
+        }
+        .log-entry.warning {
+            color: #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 主持人投屏功能测试</h1>
+        
+        <div class="role-selector">
+            <label for="userRole">选择用户角色：</label>
+            <select id="userRole" onchange="updateRole()">
+                <option value="1">普通用户 (角色1)</option>
+                <option value="2">主持人 (角色2)</option>
+                <option value="3">管理员 (角色3)</option>
+            </select>
+        </div>
+
+        <div class="test-area">
+            <h3>当前状态</h3>
+            <div id="roleStatus">当前角色：普通用户</div>
+            <div id="screenShareStatus" class="screen-share-status">
+                📺 正在共享屏幕
+            </div>
+            
+            <div class="control-buttons">
+                <button id="connectBtn" class="btn btn-primary" onclick="simulateConnect()">
+                    🔗 模拟连接房间
+                </button>
+                <button id="screenShareBtn" class="btn btn-primary" onclick="toggleScreenShare()" disabled>
+                    📺 开始屏幕共享
+                </button>
+                <button id="disconnectBtn" class="btn btn-danger" onclick="simulateDisconnect()" disabled>
+                    🚪 离开房间
+                </button>
+            </div>
+        </div>
+
+        <div class="log-area" id="logArea">
+            <div class="log-entry info">📋 测试日志将显示在这里...</div>
+        </div>
+    </div>
+
+    <script>
+        let currentRole = 1;
+        let isConnected = false;
+        let isScreenSharing = false;
+        let autoScreenShareAttempted = false;
+
+        function updateRole() {
+            currentRole = parseInt(document.getElementById('userRole').value);
+            const roleNames = {
+                1: '普通用户',
+                2: '主持人', 
+                3: '管理员'
+            };
+            
+            document.getElementById('roleStatus').textContent = `当前角色：${roleNames[currentRole]}`;
+            log(`info`, `角色切换为：${roleNames[currentRole]} (${currentRole})`);
+            
+            // 重置状态
+            if (isConnected) {
+                simulateDisconnect();
+            }
+        }
+
+        function simulateConnect() {
+            if (isConnected) return;
+            
+            isConnected = true;
+            autoScreenShareAttempted = false;
+            
+            document.getElementById('connectBtn').disabled = true;
+            document.getElementById('disconnectBtn').disabled = false;
+            document.getElementById('screenShareBtn').disabled = false;
+            
+            log('success', '✅ 已连接到会议室');
+            
+            // 模拟主持人自动屏幕共享
+            if (currentRole === 2 || currentRole === 3) {
+                log('info', '🎯 检测到主持人/管理员身份，准备自动开启屏幕共享...');
+                setTimeout(() => {
+                    startAutoScreenShare();
+                }, 1000);
+            } else {
+                log('info', '👤 普通用户身份，不会自动开启屏幕共享');
+            }
+        }
+
+        function startAutoScreenShare() {
+            if (autoScreenShareAttempted) return;
+            if (currentRole !== 2 && currentRole !== 3) return;
+            
+            autoScreenShareAttempted = true;
+            
+            log('info', '🚀 主持人自动开启屏幕共享...');
+            
+            // 模拟屏幕共享请求
+            setTimeout(() => {
+                if (Math.random() > 0.2) { // 80% 成功率
+                    isScreenSharing = true;
+                    updateScreenShareUI();
+                    log('success', '✅ 屏幕共享已开启');
+                    log('info', '📷 已关闭摄像头，专注屏幕共享');
+                } else {
+                    log('error', '❌ 屏幕共享失败：用户拒绝权限');
+                    log('warning', '⚠️ 将继续使用摄像头模式');
+                }
+            }, 500);
+        }
+
+        function toggleScreenShare() {
+            if (!isConnected) return;
+            
+            if (currentRole === 1) {
+                log('error', '❌ 普通用户无权限使用屏幕共享');
+                return;
+            }
+            
+            const newState = !isScreenSharing;
+            
+            if (newState) {
+                log('info', '🚀 手动开启屏幕共享...');
+                setTimeout(() => {
+                    isScreenSharing = true;
+                    updateScreenShareUI();
+                    log('success', '✅ 屏幕共享已开启');
+                }, 300);
+            } else {
+                log('info', '⏹️ 停止屏幕共享...');
+                isScreenSharing = false;
+                updateScreenShareUI();
+                log('success', '✅ 屏幕共享已停止');
+            }
+        }
+
+        function updateScreenShareUI() {
+            const statusDiv = document.getElementById('screenShareStatus');
+            const shareBtn = document.getElementById('screenShareBtn');
+            
+            if (isScreenSharing) {
+                statusDiv.classList.add('active');
+                shareBtn.textContent = '⏹️ 停止屏幕共享';
+                shareBtn.style.background = '#ff4757';
+            } else {
+                statusDiv.classList.remove('active');
+                shareBtn.textContent = '📺 开始屏幕共享';
+                shareBtn.style.background = '#4a9eff';
+            }
+        }
+
+        function simulateDisconnect() {
+            if (!isConnected) return;
+            
+            isConnected = false;
+            isScreenSharing = false;
+            autoScreenShareAttempted = false;
+            
+            document.getElementById('connectBtn').disabled = false;
+            document.getElementById('disconnectBtn').disabled = true;
+            document.getElementById('screenShareBtn').disabled = true;
+            
+            updateScreenShareUI();
+            log('warning', '🚪 已离开会议室');
+        }
+
+        function log(type, message) {
+            const logArea = document.getElementById('logArea');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            
+            logArea.appendChild(logEntry);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        // 初始化
+        updateRole();
+        log('info', '🎯 主持人投屏功能测试已启动');
+        log('info', '💡 请选择不同角色并点击"模拟连接房间"来测试功能');
+    </script>
+</body>
+</html> 

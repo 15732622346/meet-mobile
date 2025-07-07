@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>错误对话框测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #4a9eff;
+            color: white;
+        }
+        .btn-danger {
+            background: #ff4757;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.8;
+        }
+        .mock-video-area {
+            background: #1a1a1a;
+            height: 400px;
+            border-radius: 8px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚨 错误对话框测试</h1>
+        <p>这个页面用来测试会议系统中的错误提示框功能。</p>
+        
+        <div class="test-buttons">
+            <button class="btn btn-danger" onclick="showError1()">
+                显示设备错误
+            </button>
+            <button class="btn btn-danger" onclick="showError2()">
+                显示权限错误
+            </button>
+            <button class="btn btn-primary" onclick="clearErrors()">
+                清除所有错误
+            </button>
+        </div>
+
+        <div class="mock-video-area">
+            📹 模拟会议界面
+        </div>
+    </div>
+
+    <script>
+        let errorCount = 0;
+
+        function showError1() {
+            showErrorDialog('未找到指定的音视频设备，但仍可进入会议');
+        }
+
+        function showError2() {
+            showErrorDialog('您拒绝了摄像头和麦克风的访问权限。可以选择跳过以仅音频模式加入会议。');
+        }
+
+        function showErrorDialog(message) {
+            // 移除现有的错误对话框
+            const existing = document.querySelector('.error-dialog');
+            if (existing) {
+                existing.remove();
+            }
+
+            errorCount++;
+            
+            // 创建错误对话框
+            const errorDialog = document.createElement('div');
+            errorDialog.className = 'error-dialog';
+            errorDialog.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #ff4757;
+                color: white;
+                padding: 15px;
+                border-radius: 8px;
+                max-width: 400px;
+                z-index: 1000;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                animation: slideIn 0.3s ease-out;
+            `;
+
+            errorDialog.innerHTML = `
+                <div style="margin-bottom: 10px;">
+                    <strong>权限错误：</strong> ${message}
+                </div>
+                <div style="text-align: right;">
+                    <button 
+                        onclick="closeErrorDialog(this)"
+                        style="
+                            background: rgba(255,255,255,0.2);
+                            border: 1px solid rgba(255,255,255,0.3);
+                            color: white;
+                            padding: 6px 12px;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 12px;
+                            transition: all 0.2s;
+                        "
+                        onmouseover="this.style.background='rgba(255,255,255,0.3)'"
+                        onmouseout="this.style.background='rgba(255,255,255,0.2)'"
+                    >
+                        确定
+                    </button>
+                </div>
+            `;
+
+            document.body.appendChild(errorDialog);
+
+            // 添加动画样式
+            if (!document.querySelector('#error-dialog-styles')) {
+                const style = document.createElement('style');
+                style.id = 'error-dialog-styles';
+                style.textContent = `
+                    @keyframes slideIn {
+                        from {
+                            transform: translateX(100%);
+                            opacity: 0;
+                        }
+                        to {
+                            transform: translateX(0);
+                            opacity: 1;
+                        }
+                    }
+                    @keyframes slideOut {
+                        from {
+                            transform: translateX(0);
+                            opacity: 1;
+                        }
+                        to {
+                            transform: translateX(100%);
+                            opacity: 0;
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            console.log(`显示错误对话框 #${errorCount}: ${message}`);
+        }
+
+        function closeErrorDialog(button) {
+            const dialog = button.closest('.error-dialog');
+            if (dialog) {
+                dialog.style.animation = 'slideOut 0.3s ease-in';
+                setTimeout(() => {
+                    dialog.remove();
+                    console.log('错误对话框已关闭');
+                }, 300);
+            }
+        }
+
+        function clearErrors() {
+            const dialogs = document.querySelectorAll('.error-dialog');
+            dialogs.forEach(dialog => {
+                dialog.style.animation = 'slideOut 0.3s ease-in';
+                setTimeout(() => dialog.remove(), 300);
+            });
+            console.log('已清除所有错误对话框');
+        }
+
+        // 页面加载时的说明
+        console.log('🚨 错误对话框测试页面已加载');
+        console.log('💡 点击按钮测试不同的错误提示');
+        console.log('✅ 点击"确定"按钮可以关闭错误提示');
+    </script>
+</body>
+</html> 

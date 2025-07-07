@@ -1,0 +1,107 @@
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent; /* 移除移动端点击高亮 */
+}
+
+html {
+  color-scheme: dark;
+  background-color: #111;
+}
+
+html,
+body {
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  margin: 0px;
+  padding: 0px;
+  touch-action: manipulation; /* 优化移动端触摸体验 */
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-text-size-adjust: 100%; /* 防止iOS中文字大小自动调整 */
+}
+
+/* 防止iOS中输入框放大 */
+input, textarea, select, button {
+  font-size: 16px;
+}
+
+/* 调整移动端元素大小 */
+.lk-button {
+  min-height: 44px; /* 确保按钮有足够大的点击区域 */
+}
+
+/* 增加控制按钮的大小 */
+.lk-control-bar .lk-button {
+  width: 48px;
+  height: 48px;
+}
+
+.header {
+  max-width: 500px;
+  padding-inline: 2rem;
+}
+
+.header > img {
+  display: block;
+  margin: auto;
+  max-width: 100%;
+}
+
+.header > h2 {
+  font-family: 'TWK Everett', sans-serif;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 1.25rem;
+  line-height: 144%;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+footer {
+  width: 100%;
+  padding: 1.5rem 2rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  background-color: var(--lk-bg);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+footer a,
+h2 a {
+  color: #ff6352;
+  text-decoration-color: #a33529;
+  text-underline-offset: 0.125em;
+}
+
+footer a:hover,
+h2 a {
+  text-decoration-color: #ff6352;
+}
+
+h2 a {
+  text-decoration: none;
+}
+
+/* 修改LiveKit组件样式以适应移动屏幕 */
+.lk-video-conference {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* 隐藏桌面端不常用的控制项 */
+@media (max-width: 768px) {
+  .lk-control-bar .lk-button:not(.lk-mic-button):not(.lk-camera-button):not(.lk-leave-button) {
+    display: none !important;
+  }
+  
+  .lk-participant-tile {
+    max-width: 100% !important;
+    max-height: 30vh !important;
+  }
+}
