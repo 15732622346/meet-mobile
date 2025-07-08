@@ -129,6 +129,52 @@ export function CustomVideoConference({
 
   const layoutContext = useCreateLayoutContext();
 
+  // 🎯 新增：监听房间元数据变化，更新roomDetails
+  React.useEffect(() => {
+    if (!roomCtx) return;
+    
+    const handleMetadataChanged = () => {
+      try {
+        console.log('🔄 房间元数据更新:', roomCtx.metadata);
+        if (!roomCtx.metadata) return;
+        
+        const metadata = JSON.parse(roomCtx.metadata);
+        if (metadata && typeof metadata.maxMicSlots === 'number') {
+          console.log('✅ 从元数据更新最大麦位数:', metadata.maxMicSlots);
+          
+          // 更新roomDetails中的maxMicSlots，确保类型安全
+          setRoomDetails(prev => {
+            if (!prev) return {
+              maxMicSlots: metadata.maxMicSlots,
+              roomName: roomInfo.name || '',
+              roomState: 1 // 默认值
+            };
+            
+            return {
+              ...prev,
+              maxMicSlots: metadata.maxMicSlots
+            };
+          });
+        }
+      } catch (error) {
+        console.error('❌ 解析房间元数据失败:', error);
+      }
+    };
+    
+    // 初始化时处理当前元数据
+    handleMetadataChanged();
+    
+    // 添加元数据变化事件监听
+    // @ts-ignore - LiveKit类型定义中可能缺少'metadata_changed'事件
+    roomCtx.on('metadata_changed', handleMetadataChanged);
+    
+    // 清理函数
+    return () => {
+      // @ts-ignore - LiveKit类型定义中可能缺少'metadata_changed'事件
+      roomCtx.off('metadata_changed', handleMetadataChanged);
+    };
+  }, [roomCtx, roomInfo.name]);
+
   // 🔍 调试信息更新已禁用
   // React.useEffect(() => {
   //   const updateDebugInfo = () => {

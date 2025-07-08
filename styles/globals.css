@@ -175,3 +175,32 @@ div.lk-chat-header > *:not(button),
   opacity: 0 !important;
   font-size: 0 !important;
 }
+
+/* 更精确地定位和隐藏计数器 - 新增强力选择器 */
+.lk-chat-header span,
+.lk-participants-header span,
+.lk-participants-header > div > span,
+.lk-chat-header > div > span,
+div[class*="participants"] > div > span,
+div[class*="chat"] > div > span,
+div[class*="header"] > span:not([class]),
+div[class*="header"] > div > span:not([class]) {
+  font-size: 0 !important;
+  color: transparent !important;
+  display: inline-block !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+}
+
+/* 直接针对文本节点"0"的最强选择器 - 移动端特别优化 */
+span:empty + span:not([class]):contains('0'),
+div > span:only-child:contains('0'),
+div[class*="header"] span:contains('0'):not([class]),
+div[class*="title"] + span:contains('0'),
+.mobile-mic-section-title + span,
+.mobile-tabs-nav + span,
+.mobile-chat-messages + span {
+  display: none !important;
+}

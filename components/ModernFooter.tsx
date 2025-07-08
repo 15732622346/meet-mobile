@@ -9,6 +9,7 @@ import { shouldShowInMicList } from '@/lib/token-utils';
 const useParticipantState = (roomDetails?: { maxMicSlots: number } | null) => {
   const { localParticipant } = useLocalParticipant();
   const participants = useParticipants();
+  const roomInfo = useRoomInfo();
   
   return React.useMemo(() => {
     const attributes = localParticipant?.attributes || {};
@@ -73,8 +74,26 @@ const useParticipantState = (roomDetails?: { maxMicSlots: number } | null) => {
         parseInt(p.attributes?.role || '1') >= 2
       );
       
-      // 🎯 修复：使用真实的房间配置，而不是硬编码
-      const maxSlots = roomDetails?.maxMicSlots || 8; // 从房间配置获取，默认8
+      // 🎯 修复：优先使用LiveKit房间元数据中的maxMicSlots
+      let maxSlots = 8; // 默认值
+      
+      try {
+        // 1. 首先尝试从房间元数据中读取
+        if (roomInfo?.metadata) {
+          const metadata = JSON.parse(roomInfo.metadata);
+          if (metadata && typeof metadata.maxMicSlots === 'number') {
+            maxSlots = metadata.maxMicSlots;
+            console.log('🎯 从LiveKit房间元数据获取麦位数量:', maxSlots);
+          }
+        }
+        // 2. 其次从roomDetails中获取
+        else if (roomDetails?.maxMicSlots) {
+          maxSlots = roomDetails.maxMicSlots;
+          console.log('🎯 从roomDetails获取麦位数量:', maxSlots);
+        }
+      } catch (error) {
+        console.error('❌ 解析房间元数据失败:', error);
+      }
       
       return {
         micListCount,
@@ -84,7 +103,7 @@ const useParticipantState = (roomDetails?: { maxMicSlots: number } | null) => {
         maxSlots,
         hasAvailableSlots: micListCount < maxSlots
       };
-    }, [participants, roomDetails]);
+    }, [participants, roomDetails, roomInfo]);
     
     return {
       // 基础信息
@@ -110,7 +129,7 @@ const useParticipantState = (roomDetails?: { maxMicSlots: number } | null) => {
       attributes,
       permissions: localParticipant?.permissions
     };
-  }, [localParticipant?.attributes, localParticipant?.permissions, participants]);
+  }, [localParticipant?.attributes, localParticipant?.permissions, participants, roomDetails, roomInfo]);
 };
 
 // 🎯 简化的接口，移除不必要的 props
