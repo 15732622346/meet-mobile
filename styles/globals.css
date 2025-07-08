@@ -105,3 +105,61 @@ h2 a {
     max-height: 30vh !important;
   }
 }
+
+/* 彻底隐藏chat-header中的文本节点"0" - 多种方法结合 */
+.chat-header {
+  font-size: 0 !important;
+  line-height: 0 !important;
+  color: transparent !important;
+  position: relative;
+}
+
+/* 恢复按钮的字体大小和颜色 */
+.chat-header button {
+  font-size: 12px !important;
+  color: #4a9eff !important;
+  position: relative;
+  z-index: 1;
+}
+
+/* 恢复管理员菜单中的文本颜色和字体大小 */
+.chat-menu-container, .chat-menu-container * {
+  font-size: 12px;
+  color: initial;
+  position: relative;
+  z-index: 1;
+}
+
+/* 直接针对LiveKit聊天组件的样式覆盖 */
+.lk-chat-header,
+div.lk-chat-header,
+.lk-chat > .lk-chat-header,
+div.lk-chat > div.lk-chat-header {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  pointer-events: none !important;
+}
+
+/* 针对LiveKit聊天组件中的未读消息计数器 */
+.chat-header > *:not(button):not(.chat-menu-container),
+.lk-chat-header > *:not(button),
+div.lk-chat-header > *:not(button),
+.chat-header > span,
+.chat-header > div:not(.chat-menu-container),
+.chat-header::before,
+.chat-header::after {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  pointer-events: none !important;
+  font-size: 0 !important;
+}
