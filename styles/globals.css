@@ -163,3 +163,15 @@ div.lk-chat-header > *:not(button),
   pointer-events: none !important;
   font-size: 0 !important;
 }
+
+/* 针对麦位列表区域中的数字"0" */
+.participants-title + span,
+.participants-title ~ span:not(.participants-title),
+.participants-header > span:not(.participants-title),
+.right-header > div > span:not(.participants-title),
+.sidebar-container .right-header > div > *:not(.participants-title) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  font-size: 0 !important;
+}
