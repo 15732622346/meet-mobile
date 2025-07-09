@@ -30,8 +30,12 @@ export function MobileTabs({ tabs, defaultActiveKey }: MobileTabsProps) {
           >
             {tab.isMicInfo ? (
               <div className="mic-status-display">
-                <span className="mic-icon">🎙️</span>
-                <span className="mic-count">{tab.label}</span>
+                <span className="mic-count">
+                  {tab.label.includes('/') ? 
+                    `当前麦位 ${tab.label.split('/')[0]}, 最大麦位 ${tab.label.split('/')[1]}` : 
+                    tab.label
+                  }
+                </span>
               </div>
             ) : (
               tab.label
@@ -74,15 +78,19 @@ export function MobileTabs({ tabs, defaultActiveKey }: MobileTabsProps) {
         
         .mobile-tab-nav-item.mic-info {
           display: flex;
-          justify-content: center;
+          justify-content: flex-start;
           align-items: center;
+          padding: 8px 4px;
         }
         
         .mic-status-display {
           display: flex;
           align-items: center;
-          justify-content: center;
-          gap: 4px;
+          justify-content: flex-start;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 100%;
         }
         
         .mic-icon {
@@ -91,6 +99,8 @@ export function MobileTabs({ tabs, defaultActiveKey }: MobileTabsProps) {
         
         .mic-count {
           font-weight: 500;
+          font-size: 13px;
+          padding-left: 10px;
         }
         
         .mobile-tabs-content {
