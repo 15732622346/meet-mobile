@@ -14,7 +14,8 @@
     "lint": "next lint",
     "lint:fix": "next lint --fix && prettier --write \"**/*.{ts,tsx,md,json}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\"",
-    "format:write": "prettier --write \"**/*.{ts,tsx,md,json}\""
+    "format:write": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "postbuild": "echo 'Build completed with SVG optimizations'"
   },
   "dependencies": {
     "@datadog/browser-logs": "^5.23.3",

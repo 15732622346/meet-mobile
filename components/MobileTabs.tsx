@@ -4,6 +4,7 @@ export type TabItem = {
   key: string;
   label: string;
   content: React.ReactNode;
+  isMicInfo?: boolean; // 添加一个标识，表明这是麦位信息标签
 };
 
 interface MobileTabsProps {
@@ -24,10 +25,17 @@ export function MobileTabs({ tabs, defaultActiveKey }: MobileTabsProps) {
         {tabs.map((tab) => (
           <div
             key={tab.key}
-            className={`mobile-tab-nav-item ${activeKey === tab.key ? 'active' : ''}`}
+            className={`mobile-tab-nav-item ${activeKey === tab.key ? 'active' : ''} ${tab.isMicInfo ? 'mic-info' : ''}`}
             onClick={() => handleTabClick(tab.key)}
           >
-            {tab.label}
+            {tab.isMicInfo ? (
+              <div className="mic-status-display">
+                <span className="mic-icon">🎙️</span>
+                <span className="mic-count">{tab.label}</span>
+              </div>
+            ) : (
+              tab.label
+            )}
           </div>
         ))}
       </div>
@@ -62,6 +70,27 @@ export function MobileTabs({ tabs, defaultActiveKey }: MobileTabsProps) {
           background: #22c55e;
           color: white;
           font-weight: bold;
+        }
+        
+        .mobile-tab-nav-item.mic-info {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+        
+        .mic-status-display {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+        }
+        
+        .mic-icon {
+          font-size: 16px;
+        }
+        
+        .mic-count {
+          font-weight: 500;
         }
         
         .mobile-tabs-content {

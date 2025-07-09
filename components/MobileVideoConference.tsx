@@ -13,16 +13,21 @@ import { MobileTabs, TabItem } from './MobileTabs';
 import { MobileChat } from './MobileChat';
 import { MobileControlPanel } from './MobileControlPanel';
 import { HideLiveKitCounters } from './HideLiveKitCounters';
-import { isHostOrAdmin, isCameraEnabled } from '../lib/token-utils';
+import { isHostOrAdmin, isCameraEnabled, shouldShowInMicList } from '../lib/token-utils';
 import { getImagePath } from '../lib/image-path';
+
+// 默认最大麦位数量
+const DEFAULT_MAX_MIC_SLOTS = 5;
 
 interface MobileVideoConferenceProps {
   userRole?: number;
   userName?: string;
   userId?: number;
+  // 可以添加最大麦位数量参数
+  maxMicSlots?: number;
 }
 
-export function MobileVideoConference({ userRole, userName, userId }: MobileVideoConferenceProps) {
+export function MobileVideoConference({ userRole, userName, userId, maxMicSlots = DEFAULT_MAX_MIC_SLOTS }: MobileVideoConferenceProps) {
   const { localParticipant } = useLocalParticipant();
   const roomCtx = useRoomContext();
   const room = roomCtx as Room;
@@ -98,12 +103,31 @@ export function MobileVideoConference({ userRole, userName, userId }: MobileVide
     }
   };
   
+  // 计算麦位状态
+  const micStats = React.useMemo(() => {
+    // 麦位列表中显示的用户数量
+    const micListCount = participants.filter(p => 
+      shouldShowInMicList(p.attributes || {})
+    ).length;
+    
+    // 检查是否有可用麦位
+    const hasAvailableSlots = micListCount < maxMicSlots;
+    
+    return {
+      micListCount,
+      maxSlots: maxMicSlots,
+      hasAvailableSlots
+    };
+  }, [participants, maxMicSlots]);
+
   // 定义标签页
   const tabs: TabItem[] = [
     {
       key: 'chat',
-      label: '聊天',
-      content: <MobileChat />
+      // 将标签名改为显示麦位信息
+      label: `${micStats.micListCount}/${micStats.maxSlots}`,
+      content: <MobileChat />,
+      isMicInfo: true // 标记为麦位信息标签
     }
   ];
   
