@@ -5,31 +5,6 @@ import React, { Suspense, useState, useEffect } from 'react';
 import { encodePassphrase, generateRoomId, randomString } from '@/lib/client-utils';
 import styles from '../styles/Home.module.css';
 
-// 添加移动端标识
-const MobileIdentifier = () => {
-  useEffect(() => {
-    // 添加控制台标识
-    console.log('-------------------------------------');
-    console.log('移动端应用加载成功！首页正在初始化...');
-    console.log('版本：2025.07.06');
-    console.log('-------------------------------------');
-    
-    // 在页面上添加可见标识
-    const mobileMarker = document.createElement('div');
-    mobileMarker.style.position = 'fixed';
-    mobileMarker.style.bottom = '0';
-    mobileMarker.style.right = '0';
-    mobileMarker.style.backgroundColor = 'rgba(0,0,0,0.5)';
-    mobileMarker.style.color = 'white';
-    mobileMarker.style.padding = '5px';
-    mobileMarker.style.zIndex = '9999';
-    mobileMarker.innerText = '移动端 v2025.07.06';
-    document.body.appendChild(mobileMarker);
-  }, []);
-  
-  return null; // 这个组件不需要渲染任何内容
-};
-
 function Tabs(props: React.PropsWithChildren<{}>) {
   const searchParams = useSearchParams();
   const tabIndex = searchParams?.get('tab') === 'custom' ? 1 : 0;
@@ -188,7 +163,6 @@ function CustomConnectionTab(props: { label: string }) {
 export default function Page() {
   return (
     <>
-      <MobileIdentifier />
       <main className={styles.main} data-lk-theme="default">
         <div className="header">
           <img src="/images/livekit-meet-home.svg" alt="LiveKit Meet" width="360" height="45" />

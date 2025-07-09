@@ -19,23 +19,12 @@ if (typeof window !== 'undefined' && !window.crypto?.randomUUID) {
   };
 }
 
-// 添加明显的移动端标识，用于调试
+// 移动端控制台标识
 if (typeof window !== 'undefined') {
   console.log('-------------------------------------');
   console.log('移动端应用加载成功！房间页面正在初始化...');
   console.log('版本：2025.07.06');
   console.log('-------------------------------------');
-  // 在页面上也添加标识
-  const mobileMarker = document.createElement('div');
-  mobileMarker.style.position = 'fixed';
-  mobileMarker.style.bottom = '0';
-  mobileMarker.style.right = '0';
-  mobileMarker.style.backgroundColor = 'rgba(0,0,0,0.5)';
-  mobileMarker.style.color = 'white';
-  mobileMarker.style.padding = '5px';
-  mobileMarker.style.zIndex = '9999';
-  mobileMarker.innerText = '移动端 v2025.07.06';
-  document.body.appendChild(mobileMarker);
 }
 
 import { decodePassphrase, isLowPowerDevice } from '@/lib/client-utils';

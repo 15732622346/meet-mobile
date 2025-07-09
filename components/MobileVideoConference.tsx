@@ -15,6 +15,7 @@ import { MobileMicList } from './MobileMicList';
 import { MobileControlPanel } from './MobileControlPanel';
 import { HideLiveKitCounters } from './HideLiveKitCounters';
 import { isHostOrAdmin, isCameraEnabled } from '../lib/token-utils';
+import { getImagePath } from '../lib/image-path';
 
 interface MobileVideoConferenceProps {
   userRole?: number;
@@ -193,28 +194,99 @@ export function MobileVideoConference({ userRole, userName, userId }: MobileVide
       {/* 选项卡内容区域 */}
       <MobileTabs tabs={tabs} defaultActiveKey="chat" />
       
-      {/* 底部操作栏 */}
+      {/* 底部操作栏 - 使用SVG矢量图替换按钮 */}
       <div className="mobile-controls">
-        <button 
-          className={`mobile-control-btn ${localParticipant.isMicrophoneEnabled ? 'on' : 'off'}`}
-          onClick={() => localParticipant.setMicrophoneEnabled(!localParticipant.isMicrophoneEnabled)}
+        {/* 麦克风按钮 - 使用SVG矢量图 */}
+        <div 
+          className={`mobile-control-svg ${localParticipant.isMicrophoneEnabled ? 'on' : 'off'} ${userRole === 0 ? 'guest-disabled' : ''}`}
+          onClick={() => {
+            // 游客无法使用麦克风
+            if (userRole === 0) {
+              alert('游客需要注册为会员才能使用麦克风功能');
+              return;
+            }
+            
+            // 主持人可以直接使用麦克风
+            if (userRole && userRole >= 2) {
+              localParticipant.setMicrophoneEnabled(!localParticipant.isMicrophoneEnabled);
+              return;
+            }
+            
+            // 普通会员需要检查麦克风状态
+            const attributes = localParticipant.attributes || {};
+            const micStatus = attributes.mic_status || 'off_mic';
+            
+            if (micStatus === 'on_mic') {
+              // 已上麦可以使用
+              localParticipant.setMicrophoneEnabled(!localParticipant.isMicrophoneEnabled);
+            } else {
+              // 未上麦提示申请
+              alert('您需要先申请上麦才能使用麦克风');
+            }
+          }}
         >
-          {localParticipant.isMicrophoneEnabled ? '静音' : '解除静音'}
-        </button>
+          <img 
+            src={getImagePath('/images/mic.svg')} 
+            alt={localParticipant.isMicrophoneEnabled ? '静音' : '解除静音'} 
+            title={localParticipant.isMicrophoneEnabled ? '静音' : '解除静音'} 
+          />
+          <span className="svg-tooltip">
+            {localParticipant.isMicrophoneEnabled ? '静音' : '解除静音'}
+          </span>
+        </div>
         
-        <button 
-          className={`mobile-control-btn ${localParticipant.isCameraEnabled ? 'on' : 'off'}`}
-          onClick={() => localParticipant.setCameraEnabled(!localParticipant.isCameraEnabled)}
-        >
-          {localParticipant.isCameraEnabled ? '关闭视频' : '开启视频'}
-        </button>
-        
-        <button 
-          className="mobile-control-btn leave"
-          onClick={() => room.disconnect()}
-        >
-          离开会议
-        </button>
+        {/* 申请上麦按钮 - 使用SVG矢量图 */}
+        {userRole === 1 && (
+          <div 
+            className={`mobile-control-svg ${localParticipant.attributes?.mic_status === 'requesting' ? 'requesting' : 'request-mic'}`}
+            onClick={async () => {
+              const attributes = localParticipant.attributes || {};
+              const micStatus = attributes.mic_status || 'off_mic';
+              
+              if (micStatus === 'requesting') {
+                alert('您已经申请上麦，等待主持人批准');
+                return;
+              }
+              
+              if (micStatus === 'on_mic') {
+                alert('您已在麦位上');
+                return;
+              }
+              
+              if (!hasHost) {
+                alert('请等待主持人进入房间后再申请上麦');
+                return;
+              }
+              
+              try {
+                // 更新麦克风状态为申请中
+                await localParticipant.setAttributes({
+                  ...attributes,
+                  mic_status: 'requesting',
+                  display_status: 'visible',
+                  request_time: Date.now().toString(),
+                  last_action: 'request',
+                  user_name: localParticipant.identity
+                });
+                
+                alert('已发送申请，等待主持人批准');
+              } catch (error) {
+                console.error('申请上麦失败:', error);
+                alert('申请上麦失败，请刷新页面重试');
+              }
+            }}
+          >
+            <img 
+              src={getImagePath('/images/submic.svg')} 
+              alt={localParticipant.attributes?.mic_status === 'requesting' ? '申请中...' : '申请上麦'} 
+              title={localParticipant.attributes?.mic_status === 'requesting' ? '申请中...' : '申请上麦'} 
+              className="submic-icon"
+            />
+            <span className="svg-tooltip">
+              {localParticipant.attributes?.mic_status === 'requesting' ? '申请中...' : '申请上麦'}
+            </span>
+          </div>
+        )}
       </div>
       
       <style jsx>{`
@@ -320,27 +392,118 @@ export function MobileVideoConference({ userRole, userName, userId }: MobileVide
           border-top: 1px solid #333;
         }
         
-        .mobile-control-btn {
-          padding: 10px 15px;
-          border: none;
+        /* SVG图标按钮样式 */
+        .mobile-control-svg {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 10px;
           border-radius: 20px;
-          font-size: 14px;
-          font-weight: 500;
+          cursor: pointer;
+          position: relative;
+          width: 70px;
+          height: 70px;
+          transition: all 0.3s ease;
         }
         
-        .mobile-control-btn.on {
-          background-color: #22c55e;
+        /* SVG图片样式 */
+        .mobile-control-svg img {
+          width: 36px;
+          height: 36px;
+          transition: all 0.3s ease;
+          z-index: 5;
+        }
+        
+        /* 工具提示样式 */
+        .svg-tooltip {
+          font-size: 12px;
+          margin-top: 5px;
+          text-align: center;
           color: white;
         }
         
-        .mobile-control-btn.off {
-          background-color: #ef4444;
-          color: white;
+        /* 麦克风开启状态 */
+        .mobile-control-svg.on {
+          background-color: rgba(34, 197, 94, 0.2);
+          box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
         }
         
-        .mobile-control-btn.leave {
-          background-color: #ef4444;
-          color: white;
+        .mobile-control-svg.on img {
+          filter: invert(70%) sepia(75%) saturate(1000%) hue-rotate(100deg) brightness(90%) contrast(95%);
+        }
+        
+        /* 麦克风关闭状态 */
+        .mobile-control-svg.off {
+          background-color: rgba(239, 68, 68, 0.2);
+          box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+        
+        .mobile-control-svg.off img {
+          filter: invert(50%) sepia(75%) saturate(2000%) hue-rotate(320deg) brightness(95%) contrast(95%);
+        }
+        
+        /* 游客禁用状态 */
+        .mobile-control-svg.guest-disabled {
+          opacity: 0.7;
+          position: relative;
+          background-color: rgba(153, 153, 153, 0.2);
+        }
+        
+        .mobile-control-svg.guest-disabled::after {
+          content: "🔒";
+          position: absolute;
+          top: 5px;
+          right: 5px;
+          font-size: 10px;
+        }
+        
+        .mobile-control-svg.guest-disabled img {
+          filter: grayscale(100%);
+        }
+        
+        /* 申请上麦按钮样式 */
+        .mobile-control-svg.request-mic {
+          background-color: rgba(59, 130, 246, 0.2); /* 蓝色背景 */
+          box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+        
+        .mobile-control-svg.request-mic img {
+          width: 36px;
+          height: 36px;
+          filter: none !important; /* 确保不受过滤器影响 */
+        }
+        
+        /* 申请中状态 */
+        .mobile-control-svg.requesting {
+          background-color: rgba(234, 179, 8, 0.2); /* 黄色背景 */
+          box-shadow: 0 0 10px rgba(234, 179, 8, 0.5);
+          animation: pulse 1.5s infinite;
+        }
+        
+        .mobile-control-svg.requesting img {
+          width: 36px;
+          height: 36px;
+        }
+        
+        @keyframes pulse {
+          0% { opacity: 0.7; }
+          50% { opacity: 1; }
+          100% { opacity: 0.7; }
+        }
+        
+        /* 增强申请上麦图标显示 */
+        .submic-icon {
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+          z-index: 10 !important;
+        }
+        
+        @keyframes gentle-pulse {
+          0% { filter: invert(70%) sepia(75%) saturate(1000%) hue-rotate(25deg) brightness(85%) contrast(95%); opacity: 0.8; }
+          50% { filter: invert(70%) sepia(75%) saturate(1000%) hue-rotate(25deg) brightness(120%) contrast(95%); opacity: 1; }
+          100% { filter: invert(70%) sepia(75%) saturate(1000%) hue-rotate(25deg) brightness(85%) contrast(95%); opacity: 0.8; }
         }
       `}</style>
     </div>

@@ -37,6 +37,7 @@ const nextConfig = {
     removeConsole: process.env.NODE_ENV === 'production',
   },
   
+  // 静态资源配置
   images: {
     formats: ['image/webp'],
     // 静态导出时禁用图片优化
@@ -49,12 +50,23 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   
+  // 静态资源路径修复
+  publicRuntimeConfig: {
+    staticFolder: process.env.NEXT_PUBLIC_ENV === 'production' ? '/mobile' : '',
+  },
+  
   webpack: (config, { buildId, dev, isServer, defaultLoaders, nextRuntime, webpack }) => {
     // Important: return the modified config
     config.module.rules.push({
       test: /\.mjs$/,
       enforce: 'pre',
       use: ['source-map-loader'],
+    });
+
+    // 添加SVG处理规则，确保SVG可以被正确加载
+    config.module.rules.push({
+      test: /\.svg$/,
+      use: ['@svgr/webpack', 'url-loader'],
     });
 
     return config;
