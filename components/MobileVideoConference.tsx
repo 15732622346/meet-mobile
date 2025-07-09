@@ -11,7 +11,6 @@ import { Track, RoomEvent, Room, Participant } from 'livekit-client';
 import { MobileAvatarRow } from './MobileAvatarRow';
 import { MobileTabs, TabItem } from './MobileTabs';
 import { MobileChat } from './MobileChat';
-import { MobileMicList } from './MobileMicList';
 import { MobileControlPanel } from './MobileControlPanel';
 import { HideLiveKitCounters } from './HideLiveKitCounters';
 import { isHostOrAdmin, isCameraEnabled } from '../lib/token-utils';
@@ -105,11 +104,6 @@ export function MobileVideoConference({ userRole, userName, userId }: MobileVide
       key: 'chat',
       label: '聊天',
       content: <MobileChat />
-    },
-    {
-      key: 'mic',
-      label: '麦位',
-      content: <MobileMicList userRole={userRole} />
     }
   ];
   
@@ -464,32 +458,39 @@ export function MobileVideoConference({ userRole, userName, userId }: MobileVide
         
         /* 申请上麦按钮样式 */
         .mobile-control-svg.request-mic {
-          background-color: rgba(59, 130, 246, 0.2); /* 蓝色背景 */
-          box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+          background-color: rgba(234, 179, 8, 0.25); /* 金色背景 */
+          box-shadow: 0 0 10px rgba(234, 179, 8, 0.6);
         }
         
         .mobile-control-svg.request-mic img {
           width: 36px;
           height: 36px;
-          filter: none !important; /* 确保不受过滤器影响 */
+          filter: brightness(1) contrast(1.1) drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
         }
         
         /* 申请中状态 */
         .mobile-control-svg.requesting {
-          background-color: rgba(234, 179, 8, 0.2); /* 黄色背景 */
-          box-shadow: 0 0 10px rgba(234, 179, 8, 0.5);
+          background-color: rgba(234, 179, 8, 0.25); /* 金色背景 */
+          box-shadow: 0 0 10px rgba(234, 179, 8, 0.6);
           animation: pulse 1.5s infinite;
         }
         
         .mobile-control-svg.requesting img {
           width: 36px;
           height: 36px;
+          filter: brightness(1) contrast(1.1) drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
+          animation: glow 1.5s infinite alternate;
         }
         
         @keyframes pulse {
-          0% { opacity: 0.7; }
-          50% { opacity: 1; }
-          100% { opacity: 0.7; }
+          0% { opacity: 0.7; box-shadow: 0 0 5px rgba(234, 179, 8, 0.4); }
+          50% { opacity: 1; box-shadow: 0 0 15px rgba(234, 179, 8, 0.8); }
+          100% { opacity: 0.7; box-shadow: 0 0 5px rgba(234, 179, 8, 0.4); }
+        }
+        
+        @keyframes glow {
+          0% { filter: brightness(0.9) contrast(1.1) drop-shadow(0 0 2px rgba(255, 255, 255, 0.5)); }
+          100% { filter: brightness(1.1) contrast(1.3) drop-shadow(0 0 4px rgba(255, 255, 255, 0.8)); }
         }
         
         /* 增强申请上麦图标显示 */
@@ -497,7 +498,7 @@ export function MobileVideoConference({ userRole, userName, userId }: MobileVide
           display: block !important;
           visibility: visible !important;
           opacity: 1 !important;
-          z-index: 10 !important;
+          z-index: 5 !important;
         }
         
         @keyframes gentle-pulse {
