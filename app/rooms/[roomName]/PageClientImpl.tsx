@@ -534,7 +534,7 @@ function PageClientImplInner(props: {
       )}
       
       <ErrorToast 
-        error={permissionError}
+        message={permissionError}
         onClose={() => setPermissionError(null)}
         title="权限错误"
       />
