@@ -109,11 +109,11 @@ export function MobileAvatarRow({ onAvatarClick }: MobileAvatarRowProps) {
           width: 20px;
           height: 20px;
           border-radius: 50%;
-          background-color: #111;
+          background-color: #00CED1; /* 修改为青色背景 */
           display: flex;
           align-items: center;
           justify-content: center;
-          border: 1px solid #333;
+          border: 1px solid #00FFFF; /* 更新边框颜色，与背景色协调 */
         }
         
         .mobile-avatar-name {
