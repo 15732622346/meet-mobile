@@ -212,9 +212,9 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
       {/* 选项卡内容区域 */}
       <MobileTabs tabs={tabs} defaultActiveKey="chat" />
       
-      {/* 底部操作栏 - 使用SVG矢量图替换按钮 */}
+      {/* 底部操作栏 - 已移至MobileChat组件中，此处隐藏 
       <div className="mobile-controls">
-        {/* 麦克风按钮 - 使用SVG矢量图 */}
+        {/* 麦克风按钮 - 使用SVG矢量图 *//*}
         <div 
           className={`mobile-control-svg ${localParticipant.isMicrophoneEnabled ? 'on' : 'off'} ${userRole === 0 ? 'guest-disabled' : ''}`}
           onClick={() => {
@@ -245,15 +245,15 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
         >
           <img 
             src={getImagePath('/images/mic.svg')} 
-            alt={localParticipant.isMicrophoneEnabled ? '静音' : '解除静音'} 
-            title={localParticipant.isMicrophoneEnabled ? '静音' : '解除静音'} 
+            alt={localParticipant.isMicrophoneEnabled ? '静音' : '开麦'} 
+            title={localParticipant.isMicrophoneEnabled ? '静音' : '开麦'} 
           />
           <span className="svg-tooltip">
-            {localParticipant.isMicrophoneEnabled ? '静音' : '解除静音'}
+            {localParticipant.isMicrophoneEnabled ? '静音' : '开麦'}
           </span>
         </div>
         
-        {/* 申请上麦按钮 - 使用SVG矢量图 */}
+        {/* 申请上麦按钮 - 使用SVG矢量图 *//*}
         {userRole === 1 && (
           <div 
             className={`mobile-control-svg ${localParticipant.attributes?.mic_status === 'requesting' ? 'requesting' : 'request-mic'}`}
@@ -296,16 +296,17 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
           >
             <img 
               src={getImagePath('/images/submic.svg')} 
-              alt={localParticipant.attributes?.mic_status === 'requesting' ? '申请中...' : '申请上麦'} 
-              title={localParticipant.attributes?.mic_status === 'requesting' ? '申请中...' : '申请上麦'} 
+              alt={localParticipant.attributes?.mic_status === 'requesting' ? '申请' : '上麦'} 
+              title={localParticipant.attributes?.mic_status === 'requesting' ? '申请' : '上麦'} 
               className="submic-icon"
             />
             <span className="svg-tooltip">
-              {localParticipant.attributes?.mic_status === 'requesting' ? '申请中...' : '申请上麦'}
+              {localParticipant.attributes?.mic_status === 'requesting' ? '申请' : '上麦'}
             </span>
           </div>
         )}
       </div>
+      */}
       
       <style jsx>{`
         .mobile-video-conference {
@@ -403,69 +404,65 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
         }
         
         .mobile-controls {
-          display: flex;
-          padding: 10px;
-          background-color: #222;
-          justify-content: space-around;
-          border-top: 1px solid #333;
+          display: none; /* 完全隐藏元素，不占用空间 */
+          visibility: hidden; /* 确保元素不可见 */
+          position: absolute; /* 从正常文档流中移除 */
+          width: 0;
+          height: 0;
+          overflow: hidden; /* 隐藏所有溢出内容 */
+          padding: 0;
+          margin: 0;
+          border: 0;
         }
         
-        /* SVG图标按钮样式 */
+        /* SVG图标按钮样式 - 也隐藏 */
         .mobile-control-svg {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 10px;
-          border-radius: 20px;
-          cursor: pointer;
-          position: relative;
-          width: 70px;
-          height: 70px;
-          transition: all 0.3s ease;
+          display: none; /* 完全隐藏子元素 */
+          visibility: hidden;
         }
         
         /* SVG图片样式 */
         .mobile-control-svg img {
-          width: 36px;
-          height: 36px;
+          width: 20px;
+          height: 20px;
           transition: all 0.3s ease;
           z-index: 5;
+          margin-right: 3px;
         }
         
         /* 工具提示样式 */
         .svg-tooltip {
           font-size: 12px;
-          margin-top: 5px;
           text-align: center;
           color: white;
+          margin-left: 2px;
         }
         
         /* 麦克风开启状态 */
         .mobile-control-svg.on {
-          background-color: rgba(34, 197, 94, 0.2);
-          box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+          background-color: #22c55e;
+          box-shadow: none;
         }
         
         .mobile-control-svg.on img {
-          filter: invert(70%) sepia(75%) saturate(1000%) hue-rotate(100deg) brightness(90%) contrast(95%);
+          filter: brightness(0) invert(1);
         }
         
         /* 麦克风关闭状态 */
         .mobile-control-svg.off {
-          background-color: rgba(239, 68, 68, 0.2);
-          box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+          background-color: #ef4444;
+          box-shadow: none;
         }
         
         .mobile-control-svg.off img {
-          filter: invert(50%) sepia(75%) saturate(2000%) hue-rotate(320deg) brightness(95%) contrast(95%);
+          filter: brightness(0) invert(1);
         }
         
         /* 游客禁用状态 */
         .mobile-control-svg.guest-disabled {
           opacity: 0.7;
           position: relative;
-          background-color: rgba(153, 153, 153, 0.2);
+          background-color: #999;
         }
         
         .mobile-control-svg.guest-disabled::after {
@@ -482,21 +479,19 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
         
         /* 申请上麦按钮样式 */
         .mobile-control-svg.request-mic {
-          background-color: rgba(234, 179, 8, 0.25); /* 金色背景 */
-          box-shadow: 0 0 10px rgba(234, 179, 8, 0.6);
+          background-color: #eab308;
+          box-shadow: none;
         }
         
         .mobile-control-svg.request-mic img {
-          width: 36px;
-          height: 36px;
-          filter: brightness(1) contrast(1.1) drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
+          filter: brightness(0) invert(1);
         }
         
         /* 申请中状态 */
         .mobile-control-svg.requesting {
-          background-color: rgba(234, 179, 8, 0.25); /* 金色背景 */
-          box-shadow: 0 0 10px rgba(234, 179, 8, 0.6);
-          animation: pulse 1.5s infinite;
+          background-color: #eab308;
+          box-shadow: none;
+          animation: gentle-pulse 1.5s infinite;
         }
         
         .mobile-control-svg.requesting img {
