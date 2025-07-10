@@ -511,6 +511,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
               className={getMicButtonClass()}
               onClick={handleMicControl}
               title={!getMicAvailability.available ? getMicAvailability.reason : (localParticipant?.isMicrophoneEnabled ? '静音' : '开麦')}
+              style={{cursor: 'pointer'}} // 确保鼠标指针显示为可点击状态
             >
               <img 
                 src={getImagePath('/images/mic.svg')} 
@@ -528,6 +529,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
                 className={getRequestButtonClass()}
                 onClick={handleMicRequest}
                 title={!getMicRequestAvailability.available ? getMicRequestAvailability.reason : getMicRequestAvailability.reason}
+                style={{cursor: 'pointer'}} // 确保鼠标指针显示为可点击状态
               >
                 <img 
                   src={getImagePath('/images/submic.svg')} 
@@ -723,12 +725,13 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
           justify-content: center;
           padding: 0 8px;
           border-radius: 20px;
-          cursor: pointer;
+          cursor: pointer !important; /* 强制使用指针样式 */
           position: relative;
           height: 36px;
           min-width: 40px;
           transition: all 0.3s ease;
           box-sizing: border-box;
+          pointer-events: auto !important; /* 确保点击事件不被阻止 */
         }
         
         /* SVG图片样式 */
@@ -814,6 +817,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
           background-color: rgba(0, 0, 0, 0.4);
           border-radius: 20px;
           z-index: 10;
+          pointer-events: none; /* 不阻止底层元素的点击事件 */
         }
         
         /* 申请上麦按钮样式 */
