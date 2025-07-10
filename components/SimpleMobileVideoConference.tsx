@@ -271,37 +271,50 @@ export function SimpleMobileVideoConference({ userRole, userName, userId, maxMic
     <div className="mobile-video-conference">
       {/* 移除固定视频区域，改为使用浮动窗口 */}
       <div className="mobile-video-container">
-        {/* 屏幕共享仍然需要一个固定区域显示 */}
-        {screenTracks.length > 0 && (
-          <div className={`screen-share-wrapper ${isFullscreen ? 'fullscreen-mode' : ''}`}>
-            {/* PC端风格的屏幕共享组件 */}
-            <GridLayout tracks={screenTracks}>
-              <VideoTrack />
-            </GridLayout>
-            
-            <div className="mobile-video-name">
-              屏幕共享 ({screenTracks[0].participant?.name || screenTracks[0].participant?.identity || '未知'})
-              {pinnedParticipantId && ' (已固定)'}
+        {/* 始终渲染屏幕共享区域，而不是条件渲染 */}
+        <div className={`screen-share-wrapper ${isFullscreen ? 'fullscreen-mode' : ''}`}>
+          {screenTracks.length > 0 ? (
+            <>
+              {/* PC端风格的屏幕共享组件 */}
+              <GridLayout tracks={screenTracks}>
+                <VideoTrack />
+              </GridLayout>
+              
+              <div className="mobile-video-name">
+                屏幕共享 ({screenTracks[0].participant?.name || screenTracks[0].participant?.identity || '未知'})
+                {pinnedParticipantId && ' (已固定)'}
+              </div>
+              
+              {/* 全屏/横屏切换按钮 */}
+              <div 
+                className="fullscreen-toggle-btn"
+                onClick={toggleFullscreen}
+              >
+                <img 
+                  src={getImagePath(isFullscreen ? '/images/small.png' : '/images/big.png')}
+                  alt={isFullscreen ? '退出全屏' : '全屏'} 
+                  title={isFullscreen ? '退出全屏' : '全屏'} 
+                />
+              </div>
+            </>
+          ) : (
+            /* 没有屏幕共享时显示的占位内容 */
+            <div className="placeholder-content">
+              <p>等待屏幕分享...</p>
+              <p className="placeholder-hint">主持人开启屏幕分享后将显示在此区域</p>
+              {hasHost ? (
+                <p className="placeholder-status">主持人已在线，可以请求分享</p>
+              ) : (
+                <p className="placeholder-status waiting">等待主持人加入会议...</p>
+              )}
             </div>
-            
-            {/* 全屏/横屏切换按钮 */}
-            <div 
-              className="fullscreen-toggle-btn"
-              onClick={toggleFullscreen}
-            >
-              <img 
-                src={getImagePath(isFullscreen ? '/images/small.png' : '/images/big.png')}
-                alt={isFullscreen ? '退出全屏' : '全屏'} 
-                title={isFullscreen ? '退出全屏' : '全屏'} 
-              />
-            </div>
-            
-            {/* 添加调试信息 - 仅在开发环境显示 */}
-            {process.env.NODE_ENV === 'development' && (
-              <div className="debug-overlay">{debugInfo}</div>
-            )}
-          </div>
-        )}
+          )}
+          
+          {/* 添加调试信息 - 仅在开发环境显示 */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="debug-overlay">{debugInfo}</div>
+          )}
+        </div>
       </div>
       
       {/* 主持人视频使用浮动窗口显示 */}
@@ -450,6 +463,45 @@ export function SimpleMobileVideoConference({ userRole, userName, userId, maxMic
         .fullscreen-toggle-btn img {
           width: 20px;
           height: 20px;
+        }
+        
+        /* 添加占位内容样式 */
+        .placeholder-content {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          background-color: #222;
+          color: #aaa;
+          padding: 20px;
+          text-align: center;
+        }
+        
+        .placeholder-content p {
+          margin: 5px 0;
+        }
+        
+        .placeholder-content p:first-child {
+          font-size: 18px;
+          font-weight: bold;
+          color: #ccc;
+        }
+        
+        .placeholder-hint {
+          font-size: 14px;
+          color: #888;
+        }
+        
+        .placeholder-status {
+          margin-top: 10px;
+          font-size: 12px;
+          color: #22c55e;
+        }
+        
+        .placeholder-status.waiting {
+          color: #eab308;
         }
         
         .debug-overlay {
