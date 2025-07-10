@@ -6,6 +6,9 @@ import {
   useRoomContext,
   RoomAudioRenderer,
   usePinnedTracks,
+  GridLayout,
+  VideoTrack,
+  TrackRefContext,
 } from '@livekit/components-react';
 import { Track, RoomEvent, Room, Participant } from 'livekit-client';
 import { MobileAvatarRow } from './MobileAvatarRow';
@@ -33,6 +36,8 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
   const room = roomCtx as Room;
   const participants = useParticipants();
   const [pinnedParticipantId, setPinnedParticipantId] = React.useState<string | null>(null);
+  // 添加全屏状态
+  const [isFullscreen, setIsFullscreen] = React.useState<boolean>(false);
   
   // 获取用于视频显示的轨道
   const videoTracks = useTracks(
@@ -48,6 +53,9 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
   
   // 有屏幕共享时显示屏幕共享
   const hasScreenShare = screenTracks.length > 0;
+  
+  // 添加调试状态
+  const [debugInfo, setDebugInfo] = React.useState<string>("");
   
   // 🎯 新增：检查是否有主持人在线
   const getParticipantRole = (participant: Participant): number => {
@@ -157,52 +165,179 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
     return true;
   }, [mainVideoTrack]);
 
+  // 切换全屏/横屏模式
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+    
+    try {
+      // 获取屏幕共享容器元素
+      const screenShareContainer = document.querySelector('.screen-share-wrapper');
+      
+      if (screenShareContainer) {
+        if (!isFullscreen) {
+          // 如果当前不是全屏，则请求横屏
+          try {
+            if (screen.orientation && 'lock' in screen.orientation) {
+              (screen.orientation as any).lock('landscape').catch((err: any) => {
+                console.error('无法锁定屏幕方向:', err);
+              });
+            }
+          } catch (orientationError) {
+            console.error('屏幕方向API错误:', orientationError);
+          }
+          
+          // 如果支持全屏API，请求全屏
+          if (screenShareContainer.requestFullscreen) {
+            screenShareContainer.requestFullscreen().catch(err => {
+              console.error('无法进入全屏模式:', err);
+            });
+          } else if ((screenShareContainer as any).webkitRequestFullscreen) {
+            (screenShareContainer as any).webkitRequestFullscreen();
+          } else if ((screenShareContainer as any).msRequestFullscreen) {
+            (screenShareContainer as any).msRequestFullscreen();
+          }
+        } else {
+          // 退出全屏
+          if (document.exitFullscreen) {
+            document.exitFullscreen().catch(err => {
+              console.error('无法退出全屏模式:', err);
+            });
+          } else if ((document as any).webkitExitFullscreen) {
+            (document as any).webkitExitFullscreen();
+          } else if ((document as any).msExitFullscreen) {
+            (document as any).msExitFullscreen();
+          }
+          
+          // 恢复屏幕方向
+          try {
+            if (screen.orientation && 'unlock' in screen.orientation) {
+              (screen.orientation as any).unlock();
+            }
+          } catch (orientationError) {
+            console.error('屏幕方向API错误:', orientationError);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('切换全屏模式出错:', error);
+    }
+  };
+
+  // 监听全屏状态变化
+  React.useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isDocumentFullscreen = !!(
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement ||
+        (document as any).msFullscreenElement
+      );
+      
+      if (!isDocumentFullscreen && isFullscreen) {
+        setIsFullscreen(false);
+        // 恢复屏幕方向
+        try {
+          if (screen.orientation && 'unlock' in screen.orientation) {
+            (screen.orientation as any).unlock();
+          }
+        } catch (orientationError) {
+          console.error('屏幕方向API错误:', orientationError);
+        }
+      }
+    };
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('msfullscreenchange', handleFullscreenChange);
+    
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('msfullscreenchange', handleFullscreenChange);
+    };
+  }, [isFullscreen]);
+
+  // 添加调试日志
+  React.useEffect(() => {
+    console.log("屏幕共享轨道状态:", {
+      hasScreenShare,
+      tracksCount: screenTracks.length,
+      trackDetails: screenTracks.length > 0 ? {
+        identity: screenTracks[0].participant?.identity,
+        trackId: screenTracks[0].publication?.trackSid,
+        isSubscribed: screenTracks[0].publication?.isSubscribed,
+      } : "无轨道"
+    });
+    
+    setDebugInfo(`屏幕共享: ${hasScreenShare ? '有' : '无'}, 轨道数: ${screenTracks.length}`);
+  }, [screenTracks, hasScreenShare]);
+
+  // 在返回的JSX中，修改屏幕共享部分
   return (
     <div className="mobile-video-conference">
-      <HideLiveKitCounters />
-      <RoomAudioRenderer />
-      
-      {/* 主视频区域 */}
       <div className="mobile-main-video">
-        {!hasHost ? (
-          // 🎯 新增：主持人未进入时的等待界面
-          <div className="waiting-for-host">
-            <div className="waiting-content">
-              <div className="waiting-icon">⏳</div>
-              <h3>等待主持人进入房间</h3>
-              <p>
-                {currentUserIsHost 
-                  ? '正在检测您的主持人身份，请稍候...' 
-                  : '主持人还未进入房间，请稍后等待...'
-                }
-              </p>
-            </div>
-          </div>
-        ) : mainVideoTrack && mainVideoTrack.publication && shouldShowVideoFrame ? (
-          // 主持人已进入且有视频可显示
-          <div className="mobile-video-container">
-            <div className="video-wrapper">
-              <video
-                ref={node => {
-                  if (node && mainVideoTrack.publication?.track) {
-                    mainVideoTrack.publication?.track.attach(node);
-                    return () => {
-                      mainVideoTrack.publication?.track?.detach(node);
-                    };
-                  }
-                }}
-                autoPlay
-                playsInline
-              />
-            </div>
-            <div className="mobile-video-name">
-              {hasScreenShare ? '屏幕共享' : (mainVideoTrack.participant?.name || mainVideoTrack.participant?.identity || 'Unknown')}
-              {pinnedParticipantId && ' (已固定)'}
-            </div>
-          </div>
-        ) : (
+        {!shouldShowVideoFrame ? (
           // 主持人已进入但没有视频可显示 - 与PC端保持一致，不显示任何内容
           <div className="empty-video-area"></div>
+        ) : (
+          // 主持人已进入且有视频可显示
+          <div className="mobile-video-container">
+            {hasScreenShare && screenTracks.length > 0 ? (
+              <div className={`screen-share-wrapper ${isFullscreen ? 'fullscreen-mode' : ''}`}>
+                {/* 替换为LiveKit标准组件 */}
+                <GridLayout tracks={screenTracks}>
+                  <TrackRefContext.Provider value={screenTracks[0]}>
+                    <VideoTrack />
+                  </TrackRefContext.Provider>
+                </GridLayout>
+                
+                <div className="mobile-video-name">
+                  屏幕共享 ({screenTracks[0].participant?.name || screenTracks[0].participant?.identity || '未知'})
+                  {pinnedParticipantId && ' (已固定)'}
+                </div>
+                
+                {/* 全屏/横屏切换按钮 */}
+                <div 
+                  className="fullscreen-toggle-btn"
+                  onClick={toggleFullscreen}
+                >
+                  <img 
+                    src={getImagePath(isFullscreen ? '/images/small.png' : '/images/big.png')}
+                    alt={isFullscreen ? '退出全屏' : '全屏'} 
+                    title={isFullscreen ? '退出全屏' : '全屏'} 
+                  />
+                </div>
+                
+                {/* 添加调试信息 - 仅在开发环境显示 */}
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="debug-overlay">{debugInfo}</div>
+                )}
+              </div>
+            ) : mainVideoTrack ? (
+              <div className="video-wrapper">
+                {/* 保留原有的视频显示逻辑 */}
+                <video
+                  ref={node => {
+                    if (node && mainVideoTrack?.publication?.track) {
+                      mainVideoTrack.publication?.track.attach(node);
+                      return () => {
+                        mainVideoTrack.publication?.track?.detach(node);
+                      };
+                    }
+                  }}
+                  autoPlay
+                  playsInline
+                />
+                <div className="mobile-video-name">
+                  {mainVideoTrack.participant?.name || mainVideoTrack.participant?.identity || 'Unknown'}
+                  {pinnedParticipantId && ' (已固定)'}
+                </div>
+              </div>
+            ) : (
+              <div className="empty-video-area">
+                <p>无可用视频</p>
+              </div>
+            )}
+          </div>
         )}
       </div>
       
@@ -325,6 +460,12 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
           display: flex;
           justify-content: center;
           align-items: center;
+          transition: all 0.3s ease;
+        }
+        
+        .mobile-main-video.fullscreen {
+          height: 100vh;
+          z-index: 1000;
         }
         
         .mobile-video-container {
@@ -336,83 +477,110 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
           align-items: center;
         }
         
-        /* 新增：视频包装器，控制视频尺寸为原来的1/4 */
+        /* 新增：视频包装器，控制视频尺寸 */
         .video-wrapper {
-          width: 50%;
-          height: 50%;
+          width: 80%;
+          height: 80%;
           position: relative;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          background-color: #111;
           border-radius: 8px;
           overflow: hidden;
+          background-color: #222;
         }
         
-        .mobile-video-container video {
+        .video-wrapper video {
           width: 100%;
           height: 100%;
           object-fit: contain;
         }
         
-        .mobile-video-name {
-          position: absolute;
-          bottom: 10px;
-          left: 10px;
-          background-color: rgba(0, 0, 0, 0.5);
-          padding: 5px 10px;
-          border-radius: 4px;
-          font-size: 14px;
+        /* 屏幕共享容器样式优化 */
+        .screen-share-wrapper {
+          width: 100%;
+          height: 100%;
+          position: relative;
+          overflow: hidden;
+          display: flex;
+          justify-content: center;
+          align-items: center;
         }
         
-        /* 空视频区域 - 与PC端保持一致，不显示任何内容 */
+        /* 确保GridLayout和VideoTrack充满整个容器 */
+        .screen-share-wrapper :global(.lk-grid-layout) {
+          width: 100% !important;
+          height: 100% !important;
+        }
+        
+        .screen-share-wrapper :global(.lk-video-track) {
+          width: 100% !important;
+          height: 100% !important;
+          object-fit: contain !important;
+        }
+        
+        /* 全屏模式样式 */
+        .screen-share-wrapper.fullscreen-mode {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          z-index: 9999;
+          background-color: #000;
+        }
+        
+        .mobile-video-name {
+          position: absolute;
+          bottom: 8px;
+          left: 8px;
+          background-color: rgba(0, 0, 0, 0.6);
+          color: white;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 12px;
+          z-index: 2;
+        }
+        
+        .fullscreen-toggle-btn {
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          background-color: rgba(0, 0, 0, 0.6);
+          color: white;
+          width: 32px;
+          height: 32px;
+          border-radius: 4px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          cursor: pointer;
+          z-index: 2;
+        }
+        
+        .fullscreen-toggle-btn img {
+          width: 20px;
+          height: 20px;
+        }
+        
         .empty-video-area {
           width: 100%;
           height: 100%;
-        }
-        
-        /* 🎯 新增：等待主持人样式 */
-        .waiting-for-host {
           display: flex;
-          flex-direction: column;
           justify-content: center;
           align-items: center;
-          height: 100%;
-          width: 100%;
           background-color: #222;
-        }
-        
-        .waiting-content {
-          text-align: center;
-          padding: 20px;
-        }
-        
-        .waiting-icon {
-          font-size: 32px;
-          margin-bottom: 10px;
-        }
-        
-        .waiting-content h3 {
-          font-size: 18px;
-          margin: 0 0 10px 0;
-        }
-        
-        .waiting-content p {
+          color: #666;
           font-size: 14px;
-          color: #999;
-          margin: 0;
         }
         
-        .mobile-controls {
-          display: none; /* 完全隐藏元素，不占用空间 */
-          visibility: hidden; /* 确保元素不可见 */
-          position: absolute; /* 从正常文档流中移除 */
-          width: 0;
-          height: 0;
-          overflow: hidden; /* 隐藏所有溢出内容 */
-          padding: 0;
-          margin: 0;
-          border: 0;
+        .debug-overlay {
+          position: absolute;
+          top: 8px;
+          left: 8px;
+          background-color: rgba(0, 0, 0, 0.7);
+          color: #ff9800;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 10px;
+          z-index: 10;
         }
         
         /* SVG图标按钮样式 - 也隐藏 */
@@ -526,6 +694,9 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
           100% { filter: invert(70%) sepia(75%) saturate(1000%) hue-rotate(25deg) brightness(85%) contrast(95%); opacity: 0.8; }
         }
       `}</style>
+      
+      <RoomAudioRenderer />
+      <HideLiveKitCounters />
     </div>
   );
 } 

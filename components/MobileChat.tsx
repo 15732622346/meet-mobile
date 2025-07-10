@@ -173,7 +173,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
-  
+
   // 检查消息是否包含敏感词
   const checkBlockedWords = async (message: string): Promise<{blocked: boolean, word?: string}> => {
     try {
@@ -201,6 +201,10 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     // 被禁用的用户不能发言
     if (isDisabled) return false;
     
+    // 游客不能发言
+    const userIsGuest = userRole === 0;
+    if (userIsGuest) return false;
+    
     // 主持人可以忽略全局禁言
     if (isHost) return true;
     
@@ -212,6 +216,15 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     e.preventDefault();
     
     if (!message.trim() || isSending) return;
+    
+    // 游客特殊处理：显示注册提示
+    const userIsGuest = userRole === 0;
+    if (userIsGuest) {
+      if (confirm('游客必须注册为会员才能使用发送消息功能，是否前往注册登录？')) {
+        window.location.reload();
+      }
+      return;
+    }
     
     // 检查是否可以发言
     if (!canSendMessage()) {
@@ -231,15 +244,15 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     }
     
     // 发送消息
-    send(message);
-    setMessage('');
+      send(message);
+      setMessage('');
     
-    // 发送后让输入框失去焦点
-    const inputElement = document.querySelector('.input-field') as HTMLInputElement;
-    if (inputElement) {
-      inputElement.blur();
-      setInputFocused(false); // 手动设置状态为未聚焦
-    }
+      // 发送后让输入框失去焦点
+      const inputElement = document.querySelector('.input-field') as HTMLInputElement;
+      if (inputElement) {
+        inputElement.blur();
+        setInputFocused(false); // 手动设置状态为未聚焦
+      }
   };
 
   // 获取麦克风可用性状态 - 完全与PC端保持一致
@@ -495,7 +508,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
       if (attributes.mic_status === 'requesting') {
         alert('您已经申请上麦，等待主持人批准');
       } else if (attributes.mic_status === 'on_mic') {
-        alert('您已在麦位上');
+      alert('您已在麦位上');
       } else if (!hasHost) {
         alert('请等待主持人进入房间后再申请上麦');
       } else if (!micStats.hasAvailableSlots) {
@@ -608,6 +621,15 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
 
   // 获取聊天输入框禁用状态和提示文本
   const getChatInputStatus = () => {
+    // 游客特殊处理
+    const userIsGuest = userRole === 0;
+    if (userIsGuest) {
+      return {
+        disabled: true,
+        placeholder: "游客需注册才能发言"
+      };
+    }
+    
     if (isDisabled) {
       return {
         disabled: true,
@@ -648,13 +670,19 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
       </div>
       
       {/* 根据状态显示不同的提示信息 */}
+      {userRole === 0 && (
+        <div className="chat-disabled-notice warning">
+          游客需要注册才能发送消息
+        </div>
+      )}
+      
       {isDisabled && (
         <div className="chat-disabled-notice error">
           您的账号已被管理员禁用，无法发送消息
         </div>
       )}
       
-      {!isDisabled && chatGlobalMute && !isHost && (
+      {!isDisabled && userRole !== 0 && chatGlobalMute && !isHost && (
         <div className="chat-disabled-notice warning">
           全员禁言中，只有主持人可以发言
         </div>
@@ -732,18 +760,18 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
             {(userRole === undefined || userRole === 1) && (
               <button 
                 className={`mobile-control-btn request-mic ${localParticipant?.attributes?.mic_status === 'requesting' ? 'requesting' : ''}`}
-                onClick={handleMicRequest}
+              onClick={handleMicRequest}
                 disabled={false} // 不禁用按钮
                 title={!getMicRequestAvailability.available ? getMicRequestAvailability.reason : getMicRequestAvailability.reason}
-              >
-                <img 
-                  src={getImagePath('/images/submic.svg')} 
+            >
+              <img 
+                src={getImagePath('/images/submic.svg')} 
                   alt="申请上麦" 
                   className="btn-icon"
-                />
+              />
                 <span className="btn-label">
                   {localParticipant?.attributes?.mic_status === 'requesting' ? '申请中' : '申请'}
-                </span>
+              </span>
               </button>
             )}
           </div>
