@@ -45,10 +45,10 @@ export function SimpleMobileVideoConference({ userRole, userName, userId, maxMic
     { onlySubscribed: false },
   );
   
-  // 用于屏幕共享的轨道
+  // 用于屏幕共享的轨道 - 直接使用PC端的方式获取，确保一致性
   const screenTracks = useTracks(
     [{ source: Track.Source.ScreenShare, withPlaceholder: false }],
-    { updateOnlyOn: [RoomEvent.ActiveSpeakersChanged] },
+    { onlySubscribed: true },
   );
   
   // 有屏幕共享时显示屏幕共享
@@ -265,25 +265,31 @@ export function SimpleMobileVideoConference({ userRole, userName, userId, maxMic
         identity: screenTracks[0].participant?.identity,
         trackId: screenTracks[0].publication?.trackSid,
         isSubscribed: screenTracks[0].publication?.isSubscribed,
+        streamState: screenTracks[0].publication?.track?.streamState,
       } : "无轨道"
     });
     
+    // 打印出当前所有的轨道详情
+    console.log("所有可用轨道:", videoTracks.map(track => ({
+      type: track.source,
+      identity: track.participant?.identity,
+      isSubscribed: track.publication?.isSubscribed,
+      muted: track.publication?.isMuted,
+    })));
+    
     setDebugInfo(`屏幕共享: ${hasScreenShare ? '有' : '无'}, 轨道数: ${screenTracks.length}`);
-  }, [screenTracks, hasScreenShare]);
+  }, [screenTracks, hasScreenShare, videoTracks]);
 
   // 在返回的JSX中，修改屏幕共享部分
   return (
     <div className="mobile-video-conference">
       <div className="mobile-main-video">
-        {!shouldShowVideoFrame ? (
-          // 主持人已进入但没有视频可显示 - 与PC端保持一致，不显示任何内容
-          <div className="empty-video-area"></div>
-        ) : (
-          // 主持人已进入且有视频可显示
-          <div className="mobile-video-container">
-            {hasScreenShare && screenTracks.length > 0 ? (
+        {/* 直接显示视频内容，不使用shouldShowVideoFrame条件 */}
+        <div className="mobile-video-container">
+            {/* 屏幕共享 */}
+            {screenTracks.length > 0 ? (
               <div className={`screen-share-wrapper ${isFullscreen ? 'fullscreen-mode' : ''}`}>
-                {/* 简化的屏幕共享组件 */}
+                {/* PC端风格的屏幕共享组件 */}
                 <GridLayout tracks={screenTracks}>
                   <VideoTrack />
                 </GridLayout>
@@ -336,7 +342,6 @@ export function SimpleMobileVideoConference({ userRole, userName, userId, maxMic
               </div>
             )}
           </div>
-        )}
       </div>
       
       {/* 参与者头像列表 */}

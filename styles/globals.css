@@ -244,6 +244,18 @@ div[class*="title"] + span:contains('0'),
 /* 确保视频控件在移动端正确显示 */
 .lk-video-element {
   object-fit: contain !important;
+  width: 100% !important;
+  height: 100% !important;
+  background-color: #000;
+}
+
+/* 确保视频格子布局充满整个区域 */
+.lk-grid-layout {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
 }
 
 /* 修复移动端可能的溢出问题 */
