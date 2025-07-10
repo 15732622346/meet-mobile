@@ -87,6 +87,78 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     };
   }, [roomCtx, participants]);
   
+  // 监听本地参与者的麦克风状态和权限变化
+  React.useEffect(() => {
+    if (!localParticipant || !roomCtx) return;
+    
+    // 保存上一次的状态，用于比较变化
+    let previousState = {
+      micStatus: localParticipant.attributes?.mic_status || 'off_mic',
+      canPublish: !!localParticipant.permissions?.canPublish
+    };
+    
+    // 检查麦克风可用性的条件
+    const isMicAvailable = (status, canPublish) => {
+      return status === 'on_mic' && canPublish === true;
+    };
+    
+    const handleStateChange = () => {
+      // 获取当前状态
+      const currentMicStatus = localParticipant.attributes?.mic_status || 'off_mic';
+      const currentCanPublish = !!localParticipant.permissions?.canPublish;
+      
+      console.log('🔍 属性变化检测:', {
+        micStatus: {previous: previousState.micStatus, current: currentMicStatus},
+        canPublish: {previous: previousState.canPublish, current: currentCanPublish}
+      });
+      
+      // 检查是否从不可用变为可用
+      const wasMicAvailable = isMicAvailable(previousState.micStatus, previousState.canPublish);
+      const isMicNowAvailable = isMicAvailable(currentMicStatus, currentCanPublish);
+      
+      if (!wasMicAvailable && isMicNowAvailable) {
+        console.log('🎉 麦克风权限已满足！', {
+          micStatus: currentMicStatus,
+          canPublish: currentCanPublish
+        });
+        alert(`🎉 您的上麦申请已被批准！现在可以使用麦克风了。\n\n状态信息:\n麦克风状态: ${currentMicStatus}\n发布权限: ${currentCanPublish ? '已授权' : '未授权'}`);
+      }
+      
+      // 更新上一次状态
+      previousState = {
+        micStatus: currentMicStatus,
+        canPublish: currentCanPublish
+      };
+    };
+    
+    // 添加事件监听
+    localParticipant.on('attributesChanged', handleStateChange);
+    
+    // 监听房间级别的权限变更事件
+    roomCtx.on(RoomEvent.ParticipantPermissionsChanged, handleStateChange);
+    
+    // 初始检查
+    handleStateChange();
+    
+    // 设置定期检查，因为权限变化可能没有直接的事件通知
+    const intervalCheck = setInterval(() => {
+      const currentCanPublish = !!localParticipant.permissions?.canPublish;
+      if (previousState.canPublish !== currentCanPublish) {
+        console.log('🔄 定期检查发现权限变化:', {
+          previous: previousState.canPublish,
+          current: currentCanPublish
+        });
+        handleStateChange();
+      }
+    }, 1000); // 每秒检查一次
+    
+    return () => {
+      localParticipant.off('attributesChanged', handleStateChange);
+      roomCtx.off(RoomEvent.ParticipantPermissionsChanged, handleStateChange);
+      clearInterval(intervalCheck);
+    };
+  }, [localParticipant, roomCtx]);
+  
   // 监听用户属性变化，实时响应禁用状态
   React.useEffect(() => {
     if (isDisabled && message) {
@@ -177,6 +249,15 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     const attributes = localParticipant.attributes || {};
     const micStatus = attributes.mic_status || 'off_mic';
     const role = parseInt(attributes.role || '1');
+    const canPublish = !!localParticipant.permissions?.canPublish;
+    
+    // 调试日志
+    console.log('🔍 麦克风可用性检查:', {
+      micStatus,
+      role,
+      canPublish,
+      isDisabled
+    });
     
     // 被禁用的用户不能使用麦克风
     if (isDisabled) {
@@ -202,18 +283,47 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     // 1. 已上麦的用户可以使用
     if (micStatus === 'on_mic') {
       // 关键改进：检查是否有发布权限
-      const hasPublishPermission = localParticipant.permissions?.canPublish;
-      if (hasPublishPermission) {
+      if (canPublish) {
+        console.log('✅ 麦克风可用：已上麦且有发布权限');
         return { available: true, reason: '' };
       } else {
-        console.warn('检测到权限不一致：已上麦但无发布权限');
+        console.warn('⚠️ 检测到权限不一致：已上麦但无发布权限');
         return { available: false, reason: '权限不一致，请刷新页面' };
       }
     }
     
     // 其他情况不可用
     return { available: false, reason: '需要申请上麦' };
-  }, [localParticipant, isDisabled]);
+  }, [localParticipant, isDisabled, localParticipant?.permissions, localParticipant?.attributes]);
+
+  // 添加一个强制刷新状态的机制
+  const [forceUpdate, setForceUpdate] = React.useState(0);
+  
+  // 监听权限变化，强制更新UI
+  React.useEffect(() => {
+    if (!localParticipant) return;
+    
+    const checkPermissions = () => {
+      const canPublish = !!localParticipant.permissions?.canPublish;
+      const micStatus = localParticipant.attributes?.mic_status;
+      
+      // 当权限满足条件时，强制更新UI
+      if (canPublish && micStatus === 'on_mic') {
+        console.log('🔄 强制更新UI - 权限已满足');
+        setForceUpdate(prev => prev + 1);
+      }
+    };
+    
+    // 初始检查
+    checkPermissions();
+    
+    // 设置定期检查
+    const intervalId = setInterval(checkPermissions, 500);
+    
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [localParticipant]);
 
   // 处理麦克风控制 - 改进为与PC端一致的实现
   const handleMicControl = async () => {
@@ -278,6 +388,11 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
           if (result.success) {
             console.log('✅ 权限修复成功，等待权限更新生效...');
             alert('权限修复成功，请稍后再试');
+            
+            // 强制更新UI
+            setForceUpdate(prev => prev + 1);
+            
+            // 等待权限生效
             await new Promise(resolve => setTimeout(resolve, 2000));
             return;
           } else {
@@ -578,6 +693,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
           <div className="controls-grid">
             {/* 麦克风按钮 - 改用button元素替代div */}
             <button 
+              key={`mic-button-${forceUpdate}`}
               className={`mobile-control-btn ${localParticipant?.isMicrophoneEnabled ? 'active' : 'inactive'} ${!getMicAvailability.available ? 'no-permission' : ''}`}
               onClick={handleMicControl}
               disabled={false} // 不禁用按钮，让用户可以点击并获取提示信息
@@ -591,6 +707,25 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
               <span className="btn-label">
                 {localParticipant?.isMicrophoneEnabled ? '静音' : '开麦'}
               </span>
+              
+              {/* 添加视觉提示，当按钮处于禁用状态时显示 */}
+              {!getMicAvailability.available && (
+                <span style={{
+                  position: 'absolute',
+                  top: '-8px',
+                  right: '-8px',
+                  backgroundColor: '#f97316',
+                  color: 'white',
+                  borderRadius: '50%',
+                  width: '16px',
+                  height: '16px',
+                  fontSize: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px solid white'
+                }}>!</span>
+              )}
             </button>
             
             {/* 申请上麦按钮 - 只对普通用户显示，也改用button元素 */}
@@ -960,28 +1095,35 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
         /* 麦克风开启状态 */
         .mobile-control-btn.active {
           background-color: #22c55e;
+          box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
         }
         
         /* 麦克风关闭状态 */
         .mobile-control-btn.inactive {
           background-color: #ef4444;
+          box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
         }
         
-        /* 无权限状态 */
+        /* 无权限状态 - 修复样式，确保应用到mobile-control-btn */
         .mobile-control-btn.no-permission {
           background-color: #9ca3af;
           opacity: 0.8;
+          position: relative;
+          box-shadow: none;
+          border: 1px solid #6b7280;
         }
         
         /* 申请上麦按钮样式 */
         .mobile-control-btn.request-mic {
           background-color: #eab308;
+          box-shadow: 0 0 8px rgba(234, 179, 8, 0.5);
         }
         
         /* 申请中状态 */
         .mobile-control-btn.requesting {
           background-color: #eab308;
           animation: gentle-pulse 1.5s infinite;
+          box-shadow: 0 0 8px rgba(234, 179, 8, 0.5);
         }
       `}</style>
     </div>
