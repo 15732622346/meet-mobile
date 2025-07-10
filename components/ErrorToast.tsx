@@ -3,13 +3,13 @@
 import React from 'react';
 
 interface ErrorToastProps {
-  error: string | null;
+  message: string | null;
   onClose: () => void;
   title?: string;
 }
 
-export function ErrorToast({ error, onClose, title = "错误" }: ErrorToastProps) {
-  if (!error) return null;
+export function ErrorToast({ message, onClose, title = "错误" }: ErrorToastProps) {
+  if (!message) return null;
 
   return (
     <div style={{
@@ -26,7 +26,7 @@ export function ErrorToast({ error, onClose, title = "错误" }: ErrorToastProps
       animation: 'slideIn 0.3s ease-out'
     }}>
       <div style={{ marginBottom: '10px' }}>
-        <strong>{title}：</strong> {error}
+        <strong>{title}：</strong> {message}
       </div>
       <div style={{ textAlign: 'right' }}>
         <button 

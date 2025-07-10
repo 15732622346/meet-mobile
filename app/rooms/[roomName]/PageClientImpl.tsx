@@ -33,6 +33,7 @@ import { KeyboardShortcuts } from '@/lib/KeyboardShortcuts';
 import { RecordingIndicator } from '@/lib/RecordingIndicator';
 import { SettingsMenu } from '@/lib/SettingsMenu';
 import { ConnectionDetails } from '@/lib/types';
+import { SimpleMobileVideoConference } from '../../../components/SimpleMobileVideoConference';
 import {
   formatChatMessageLinks,
   LocalUserChoices,
@@ -728,34 +729,68 @@ function VideoConferenceComponent(props: {
     setDeviceError(`加密错误: ${error.message}，请检查控制台了解详细信息。`);
   }, []);
 
-  // 移动版使用MobileVideoConference，但需要提供Room context
+  // 移动版使用SimpleMobileVideoConference，简化屏幕共享显示逻辑
   if (IS_MOBILE_VERSION) {
     return (
       <div className="lk-room-container">
         <RoomContext.Provider value={room}>
-          <MobileVideoConference
+          <SimpleMobileVideoConference
             userRole={userRole}
             userName={userName}
             userId={userId}
+            maxMicSlots={5} // 设置默认最大麦位数
           />
+          {deviceError && <ErrorToast message={deviceError} onClose={() => setDeviceError(null)} />}
         </RoomContext.Provider>
-
-        <ErrorToast 
-          error={deviceError}
-          onClose={() => setDeviceError(null)}
-          title="设备错误"
-        />
+        
+        {/* 添加调试信息 - 仅在开发环境显示 */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mobile-debug-panel">
+            <div>用户: {userName} (ID: {userId})</div>
+            <div>角色: {userRole}</div>
+            <div>连接: {connectionDetails.serverUrl}</div>
+            <div>房间: {connectionDetails.roomName}</div>
+            <div>E2EE: {e2eeEnabled ? '开启' : '关闭'}</div>
+          </div>
+        )}
+        
+        <style jsx>{`
+          .lk-room-container {
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+          }
+          
+          .mobile-debug-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            background: rgba(0,0,0,0.7);
+            color: #00ff00;
+            font-size: 10px;
+            padding: 5px;
+            z-index: 1000;
+            max-width: 100%;
+            overflow: hidden;
+          }
+        `}</style>
       </div>
     );
   }
 
-  // 桌面版本回退到标准VideoConference，不使用不兼容的属性
+  // PC版使用标准VideoConference
   return (
-    <>
-      <VideoConference
-        chatMessageFormatter={formatChatMessageLinks}
-      />
-      <KeyboardShortcuts />
-    </>
+    <div className="lk-room-container">
+      <RoomContext.Provider value={room}>
+        <VideoConference chatMessageFormatter={formatChatMessageLinks}>
+          {SHOW_SETTINGS_MENU && <SettingsMenu />}
+          <RecordingIndicator />
+          <KeyboardShortcuts />
+          <DebugMode />
+        </VideoConference>
+        {deviceError && <ErrorToast message={deviceError} onClose={() => setDeviceError(null)} />}
+      </RoomContext.Provider>
+    </div>
   );
 }

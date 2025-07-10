@@ -204,3 +204,62 @@ div[class*="title"] + span:contains('0'),
 .mobile-chat-messages + span {
   display: none !important;
 }
+
+/* 移动端屏幕共享样式优化 */
+.screen-share-wrapper .lk-grid-layout {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+.screen-share-wrapper .lk-video-track {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
+
+/* 确保屏幕共享内容正确显示 */
+.screen-share-wrapper video,
+.screen-share-wrapper .lk-video-element {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  background-color: black;
+}
+
+.screen-share-wrapper.fullscreen-mode .lk-grid-layout,
+.screen-share-wrapper.fullscreen-mode .lk-video-track,
+.screen-share-wrapper.fullscreen-mode video,
+.screen-share-wrapper.fullscreen .lk-grid-layout,
+.screen-share-wrapper.fullscreen .lk-video-track,
+.screen-share-wrapper.fullscreen video {
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  width: 100vw !important;
+  height: 100vh !important;
+}
+
+/* 确保视频控件在移动端正确显示 */
+.lk-video-element {
+  object-fit: contain !important;
+}
+
+/* 修复移动端可能的溢出问题 */
+body, html {
+  overflow: hidden;
+  overscroll-behavior: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* 处理iOS Safari底部导航栏问题 */
+@supports (-webkit-touch-callout: none) {
+  .mobile-video-conference {
+    height: -webkit-fill-available;
+  }
+}
