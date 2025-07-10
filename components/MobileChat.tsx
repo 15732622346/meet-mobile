@@ -33,10 +33,11 @@ export function MobileChat() {
     if (message.trim() && !isSending && !isDisabled) {
       send(message);
       setMessage('');
-      // 发送后让输入框保持焦点
+      // 发送后让输入框失去焦点
       const inputElement = document.querySelector('.input-field') as HTMLInputElement;
       if (inputElement) {
-        inputElement.focus();
+        inputElement.blur();
+        setInputFocused(false); // 手动设置状态为未聚焦
       }
     }
   };
@@ -199,12 +200,12 @@ export function MobileChat() {
           margin-bottom: 10px;
           padding: 8px 12px;
           border-radius: 8px;
-          background-color: #e5e5e5;
+          background-color: #222; /* 改为黑色背景 */
           max-width: 80%;
         }
         
         .mobile-chat-message.self {
-          background-color: #dcf8c6;
+          background-color: #333; /* 自己发送的消息也使用深色背景 */
           align-self: flex-end;
           margin-left: auto;
         }
@@ -213,12 +214,13 @@ export function MobileChat() {
           font-size: 12px;
           font-weight: bold;
           margin-bottom: 2px;
-          color: #555;
+          color: #4a9eff; /* 名字改为蓝色，在黑色背景上更醒目 */
         }
         
         .mobile-chat-content {
           font-size: 14px;
           word-break: break-word;
+          color: white; /* 文字改为白色 */
         }
         
         .chat-disabled-notice {
