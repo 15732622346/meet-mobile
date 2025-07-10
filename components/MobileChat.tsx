@@ -170,7 +170,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     }
   };
 
-  // 获取麦克风可用性状态
+  // 获取麦克风可用性状态 - 完全与PC端保持一致
   const getMicAvailability = React.useMemo(() => {
     if (!localParticipant) return { available: false, reason: '加载中...' };
     
@@ -183,24 +183,32 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
       return { available: false, reason: '您已被禁用' };
     }
     
-    // 游客不能使用麦克风
-    if (role === 0) {
-      return { available: false, reason: '游客需要注册为会员' };
-    }
-    
     // 主持人和管理员总是可以使用麦克风
     if (role >= 2) {
       return { available: true, reason: '' };
     }
     
-    // 已上麦的用户可以使用麦克风
-    if (micStatus === 'on_mic') {
-      return { available: true, reason: '' };
+    // 游客不能使用麦克风
+    if (role === 0) {
+      return { available: false, reason: '游客需要注册为会员' };
     }
     
-    // 已被主持人禁麦的用户
+    // 已静音状态的用户不能使用麦克风
     if (micStatus === 'muted') {
       return { available: false, reason: '您已被主持人禁麦' };
+    }
+    
+    // 普通用户需要检查麦克风状态
+    // 1. 已上麦的用户可以使用
+    if (micStatus === 'on_mic') {
+      // 关键改进：检查是否有发布权限
+      const hasPublishPermission = localParticipant.permissions?.canPublish;
+      if (hasPublishPermission) {
+        return { available: true, reason: '' };
+      } else {
+        console.warn('检测到权限不一致：已上麦但无发布权限');
+        return { available: false, reason: '权限不一致，请刷新页面' };
+      }
     }
     
     // 其他情况不可用
@@ -219,7 +227,8 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
       participant: localParticipant.identity,
       enabled: localParticipant.isMicrophoneEnabled,
       attributes: attributes,
-      permissions: localParticipant.permissions
+      permissions: localParticipant.permissions,
+      canPublish: localParticipant.permissions?.canPublish
     });
     
     // 游客点击提示注册
@@ -236,6 +245,8 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
         alert('⏳ 您的上麦申请正在等待主持人批准');
       } else if (attributes.mic_status === 'muted') {
         alert('⚠️ 您已被主持人禁麦');
+      } else if (attributes.mic_status === 'on_mic' && !localParticipant.permissions?.canPublish) {
+        alert('⚠️ 检测到权限不一致，将尝试修复。如果问题持续，请刷新页面');
       } else {
         alert('⚠️ 您需要先申请上麦权限才能使用麦克风');
       }
@@ -266,13 +277,19 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
           const result = await response.json();
           if (result.success) {
             console.log('✅ 权限修复成功，等待权限更新生效...');
+            alert('权限修复成功，请稍后再试');
             await new Promise(resolve => setTimeout(resolve, 2000));
+            return;
           } else {
             console.warn('⚠️ 权限修复失败:', result.error);
+            alert('权限修复失败，请刷新页面重试');
+            return;
           }
         }
       } catch (error) {
         console.error('❌ 权限修复异常:', error);
+        alert('权限修复异常，请刷新页面重试');
+        return;
       }
     }
     
