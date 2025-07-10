@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParticipants } from '@livekit/components-react';
 import { Participant } from 'livekit-client';
-import { parseParticipantAttributes, isOnMic, isRequestingMic, isMuted } from '../lib/token-utils';
+import { parseParticipantAttributes, isOnMic, isRequestingMic, isMuted, shouldShowInMicList } from '../lib/token-utils';
 import Image from 'next/image';
 
 interface MobileAvatarRowProps {
@@ -25,7 +25,14 @@ const shouldShowMicIcon = (attributes: Record<string, string>): boolean => {
 };
 
 export function MobileAvatarRow({ onAvatarClick }: MobileAvatarRowProps) {
-  const participants = useParticipants();
+  const allParticipants = useParticipants();
+  
+  // 过滤出应该显示在麦位列表中的参与者（display_status为'visible'的参与者）
+  // 这与PC端麦位列表的过滤逻辑保持一致
+  const participants = React.useMemo(() => 
+    allParticipants.filter(p => shouldShowInMicList(p.attributes || {})),
+    [allParticipants]
+  );
   
   return (
     <div className="mobile-avatar-row">
