@@ -207,12 +207,20 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     return { available: false, reason: '需要申请上麦' };
   }, [localParticipant, isDisabled]);
 
-  // 处理麦克风控制
-  const handleMicControl = () => {
+  // 处理麦克风控制 - 改进为与PC端一致的实现
+  const handleMicControl = async () => {
     if (!localParticipant) return;
     
     const attributes = localParticipant.attributes || {};
     const role = parseInt(attributes.role || '1');
+    
+    // 调试日志
+    console.log('🎯 麦克风按钮点击', {
+      participant: localParticipant.identity,
+      enabled: localParticipant.isMicrophoneEnabled,
+      attributes: attributes,
+      permissions: localParticipant.permissions
+    });
     
     // 游客点击提示注册
     if (role === 0) {
@@ -234,12 +242,57 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
       return;
     }
     
+    // 添加状态一致性检查和修复 - 与PC端保持一致
+    if (attributes.mic_status === 'on_mic' && !localParticipant.permissions?.canPublish) {
+      console.warn('🔧 检测到状态不一致：已上麦但无发布权限，尝试修复');
+      
+      try {
+        const apiUrl = `${API_CONFIG.BASE_URL}/admin-control-participants.php`;
+        
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          credentials: 'include',
+          body: new URLSearchParams({
+            action: 'approve_mic',
+            room_name: roomCtx?.name || '',
+            target_identity: localParticipant.identity || ''
+          })
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            console.log('✅ 权限修复成功，等待权限更新生效...');
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          } else {
+            console.warn('⚠️ 权限修复失败:', result.error);
+          }
+        }
+      } catch (error) {
+        console.error('❌ 权限修复异常:', error);
+      }
+    }
+    
     // 执行麦克风切换
     try {
-      localParticipant.setMicrophoneEnabled(!localParticipant.isMicrophoneEnabled);
+      await localParticipant.setMicrophoneEnabled(!localParticipant.isMicrophoneEnabled);
+      console.log('✅ 麦克风状态切换成功');
     } catch (error) {
-      console.error('麦克风操作失败:', error);
-      alert('麦克风操作失败，请刷新页面重试');
+      console.error('❌ 麦克风操作失败:', error);
+      
+      if (error instanceof Error && error.message.includes('insufficient permissions')) {
+        console.error('🚨 权限不足详情:', {
+          error: error.message,
+          permissions: localParticipant.permissions,
+          attributes: localParticipant.attributes
+        });
+        alert(`⚠️ 麦克风权限不足！\n\n可能的解决方案：\n1. 联系主持人重新批准上麦\n2. 刷新页面重新登录\n3. 检查您的用户角色权限\n\n错误详情: ${error.message}`);
+      } else {
+        alert(`❌ 麦克风操作失败: ${error instanceof Error ? error.message : '未知错误'}`);
+      }
     }
   };
 
@@ -506,48 +559,40 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
         {/* 控制按钮区域 */}
         <div className="controls-wrapper">
           <div className="controls-grid">
-            {/* 麦克风按钮 */}
-            <div 
-              className={getMicButtonClass()}
+            {/* 麦克风按钮 - 改用button元素替代div */}
+            <button 
+              className={`mobile-control-btn ${localParticipant?.isMicrophoneEnabled ? 'active' : 'inactive'} ${!getMicAvailability.available ? 'no-permission' : ''}`}
               onClick={handleMicControl}
+              disabled={false} // 不禁用按钮，让用户可以点击并获取提示信息
               title={!getMicAvailability.available ? getMicAvailability.reason : (localParticipant?.isMicrophoneEnabled ? '静音' : '开麦')}
-              style={{cursor: 'pointer'}} // 确保鼠标指针显示为可点击状态
             >
               <img 
                 src={getImagePath('/images/mic.svg')} 
                 alt={localParticipant?.isMicrophoneEnabled ? '静音' : '开麦'} 
-                title={localParticipant?.isMicrophoneEnabled ? '静音' : '开麦'} 
+                className="btn-icon"
               />
-              <span className="svg-tooltip">
+              <span className="btn-label">
                 {localParticipant?.isMicrophoneEnabled ? '静音' : '开麦'}
               </span>
-            </div>
+            </button>
             
-            {/* 申请上麦按钮 - 只对普通用户显示 */}
+            {/* 申请上麦按钮 - 只对普通用户显示，也改用button元素 */}
             {(userRole === undefined || userRole === 1) && (
-              <div 
-                className={getRequestButtonClass()}
+              <button 
+                className={`mobile-control-btn request-mic ${localParticipant?.attributes?.mic_status === 'requesting' ? 'requesting' : ''}`}
                 onClick={handleMicRequest}
+                disabled={false} // 不禁用按钮
                 title={!getMicRequestAvailability.available ? getMicRequestAvailability.reason : getMicRequestAvailability.reason}
-                style={{cursor: 'pointer'}} // 确保鼠标指针显示为可点击状态
               >
                 <img 
                   src={getImagePath('/images/submic.svg')} 
-                  alt={localParticipant?.attributes?.mic_status === 'requesting' ? '申请' : '上麦'} 
-                  title={localParticipant?.attributes?.mic_status === 'requesting' ? '申请' : '上麦'} 
-                  className="submic-icon"
+                  alt="申请上麦" 
+                  className="btn-icon"
                 />
-                <span className="svg-tooltip">
+                <span className="btn-label">
                   {localParticipant?.attributes?.mic_status === 'requesting' ? '申请中' : '申请'}
                 </span>
-                
-                {/* 用户被禁用时的覆盖层 */}
-                {isDisabled && (
-                  <div className="disabled-overlay">
-                    🚫
-                  </div>
-                )}
-              </div>
+              </button>
             )}
           </div>
         </div>
@@ -860,6 +905,66 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
           0% { opacity: 0.8; }
           50% { opacity: 1; }
           100% { opacity: 0.8; }
+        }
+
+        /* 按钮样式 - 新增，参考PC端样式 */
+        .mobile-control-btn {
+          min-width: 60px;
+          height: 36px;
+          border-radius: 18px;
+          border: none;
+          color: white;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          justify-content: center;
+          padding: 0 10px;
+          font-size: 12px;
+          background-color: #444;
+          margin: 0 4px;
+        }
+        
+        .mobile-control-btn:focus {
+          outline: none;
+        }
+        
+        .mobile-control-btn .btn-icon {
+          width: 16px;
+          height: 16px;
+          margin-right: 4px;
+        }
+        
+        .mobile-control-btn .btn-label {
+          white-space: nowrap;
+        }
+        
+        /* 麦克风开启状态 */
+        .mobile-control-btn.active {
+          background-color: #22c55e;
+        }
+        
+        /* 麦克风关闭状态 */
+        .mobile-control-btn.inactive {
+          background-color: #ef4444;
+        }
+        
+        /* 无权限状态 */
+        .mobile-control-btn.no-permission {
+          background-color: #9ca3af;
+          opacity: 0.8;
+        }
+        
+        /* 申请上麦按钮样式 */
+        .mobile-control-btn.request-mic {
+          background-color: #eab308;
+        }
+        
+        /* 申请中状态 */
+        .mobile-control-btn.requesting {
+          background-color: #eab308;
+          animation: gentle-pulse 1.5s infinite;
         }
       `}</style>
     </div>
