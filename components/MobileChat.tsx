@@ -7,6 +7,7 @@ export function MobileChat() {
   const { chatMessages, send, isSending } = useChat();
   const { localParticipant } = useLocalParticipant();
   const [message, setMessage] = React.useState('');
+  const [inputFocused, setInputFocused] = React.useState(false);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
   // 检查用户是否被禁用
@@ -32,6 +33,11 @@ export function MobileChat() {
     if (message.trim() && !isSending && !isDisabled) {
       send(message);
       setMessage('');
+      // 发送后让输入框保持焦点
+      const inputElement = document.querySelector('.input-field') as HTMLInputElement;
+      if (inputElement) {
+        inputElement.focus();
+      }
     }
   };
 
@@ -77,6 +83,20 @@ export function MobileChat() {
     }
   };
 
+  // 处理输入框焦点事件
+  const handleInputFocus = () => {
+    setInputFocused(true);
+  };
+
+  // 处理输入框失去焦点事件
+  const handleInputBlur = () => {
+    // 如果输入框有内容，保持焦点状态
+    if (message.trim()) {
+      return;
+    }
+    setInputFocused(false);
+  };
+
   return (
     <div className="mobile-chat">
       <div className="mobile-chat-messages">
@@ -100,8 +120,8 @@ export function MobileChat() {
         </div>
       )}
       
-      <div className="grid-container">
-        {/* 表单占据3份网格 */}
+      <div className={`chat-input-container ${inputFocused ? 'focused' : ''}`}>
+        {/* 输入区域 */}
         <div className="form-wrapper">
           <form onSubmit={handleSendMessage} className="mobile-chat-input">
             <div className="input-grid">
@@ -109,18 +129,22 @@ export function MobileChat() {
                 type="text"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
+                onFocus={handleInputFocus}
+                onBlur={handleInputBlur}
                 placeholder={isDisabled ? "您已被禁用，无法发送消息" : "输入消息..."}
                 disabled={isSending || isDisabled}
                 className="input-field"
               />
-              <button type="submit" disabled={isSending || !message.trim() || isDisabled} className="send-button">
-                发送
-              </button>
+              {inputFocused && (
+                <button type="submit" disabled={isSending || !message.trim() || isDisabled} className="send-button">
+                  发送
+                </button>
+              )}
             </div>
           </form>
         </div>
         
-        {/* 控制按钮占据3份网格 */}
+        {/* 控制按钮区域 */}
         <div className="controls-wrapper">
           <div className="controls-grid">
             {/* 麦克风按钮 */}
@@ -206,62 +230,73 @@ export function MobileChat() {
           border-top: 1px solid #fca5a5;
         }
         
-        .mobile-chat-input {
+        /* 聊天输入容器 */
+        .chat-input-container {
           display: flex;
-          padding: 10px;
           background-color: white;
           border-top: 1px solid #ddd;
-          width: 100%;
+          padding: 10px;
           box-sizing: border-box;
+          transition: all 0.3s ease;
         }
         
-        /* 网格容器样式 */
-        .grid-container {
-          display: flex; /* 改为flex布局 */
-          align-items: center; /* 垂直居中对齐 */
+        /* 聊天输入容器在焦点状态下的样式 */
+        .chat-input-container.focused .controls-wrapper {
+          width: 0;
+          opacity: 0;
+          margin-left: 0;
+          visibility: hidden;
+        }
+        
+        .chat-input-container.focused .form-wrapper {
           width: 100%;
-          background-color: white;
-          border-top: 1px solid #ddd;
-          padding: 10px;
+        }
+        
+        .mobile-chat-input {
+          display: flex;
+          width: 100%;
           box-sizing: border-box;
         }
         
         /* 表单包装器样式 */
         .form-wrapper {
-          flex: 1; /* 占据剩余空间 */
+          flex: 1;
           box-sizing: border-box;
+          transition: width 0.3s ease;
         }
         
-        /* 新增: 控制按钮包装器样式 */
+        /* 控制按钮包装器样式 */
         .controls-wrapper {
           display: flex;
           align-items: center;
           margin-left: 10px;
+          transition: all 0.3s ease;
         }
         
-        /* 新增: 控制按钮网格布局 */
+        /* 控制按钮网格布局 */
         .controls-grid {
           display: flex;
           gap: 8px;
         }
         
-        /* 修改: 输入框网格布局 */
+        /* 输入框网格布局 */
         .input-grid {
           display: flex;
           gap: 8px;
           width: 100%;
         }
         
-        /* 修改: 输入框样式 */
+        /* 输入框样式 */
         .input-field {
           padding: 8px 12px;
           border: 1px solid #ddd;
           border-radius: 20px;
           font-size: 14px;
           outline: none;
-          flex: 1; /* 占据剩余空间 */
+          flex: 1;
           box-sizing: border-box;
           height: 36px;
+          transition: all 0.3s ease;
         }
         
         .input-field:disabled {
@@ -269,18 +304,25 @@ export function MobileChat() {
           color: #9ca3af;
         }
         
-        /* 修改: 发送按钮样式 */
+        /* 发送按钮样式 */
         .send-button {
           padding: 0 12px;
           background-color: #22c55e;
           color: white;
           border: none;
           border-radius: 20px;
-          font-size: 11px; /* 更小的字体 */
+          font-size: 11px;
           height: 36px;
           min-width: 50px;
-          white-space: nowrap; /* 防止文字换行 */
+          white-space: nowrap;
           box-sizing: border-box;
+          opacity: 0;
+          animation: fadeIn 0.2s forwards;
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
         
         .send-button:disabled {
@@ -296,7 +338,7 @@ export function MobileChat() {
           border-radius: 20px;
           cursor: pointer;
           position: relative;
-          height: 36px; /* 与发送按钮一致的高度 */
+          height: 36px;
           min-width: 40px;
           transition: all 0.3s ease;
           box-sizing: border-box;
@@ -313,11 +355,11 @@ export function MobileChat() {
         
         /* 工具提示样式 */
         .svg-tooltip {
-          font-size: 11px; /* 更小的字体 */
+          font-size: 11px;
           text-align: center;
           color: white;
           margin-left: 2px;
-          white-space: nowrap; /* 防止文字换行 */
+          white-space: nowrap;
         }
         
         /* 麦克风开启状态 */
