@@ -133,7 +133,7 @@ export function MobileFloatingWindow({
         background: 'rgb(0, 0, 0)',
         border: '2px solid rgb(68, 68, 68)',
         borderRadius: '8px',
-        zIndex: 1000,
+        zIndex: 10500, // 提高z-index，确保在全屏模式下也显示在最上层
         overflow: 'hidden',
         boxShadow: 'rgba(0, 0, 0, 0.3) 0px 4px 20px',
         cursor: isDragging ? 'grabbing' : 'auto',

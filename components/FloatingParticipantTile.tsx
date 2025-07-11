@@ -158,6 +158,13 @@ export function FloatingWrapper({
   const getStyles = React.useCallback(() => {
     const dimensions = getCurrentDimensions();
     
+    // 检查是否有全屏元素
+    const isAnyElementFullscreen = !!(
+      document.fullscreenElement ||
+      (document as any).webkitFullscreenElement ||
+      (document as any).msFullscreenElement
+    );
+    
     const baseStyles: React.CSSProperties = {
       position: 'fixed',
       left: `${dimensions.left}px`,
@@ -167,7 +174,7 @@ export function FloatingWrapper({
       background: '#000',
       border: displayState === VideoDisplayState.MAXIMIZED ? 'none' : '2px solid #444',
       borderRadius: displayState === VideoDisplayState.MAXIMIZED ? '0' : '8px',
-      zIndex: displayState === VideoDisplayState.MAXIMIZED ? 1500 : 1000, // 提高最大化时的z-index
+      zIndex: 10500, // 大幅提高z-index，确保在全屏模式下也显示在最上层
       overflow: 'hidden',
       boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
       cursor: displayState === VideoDisplayState.HIDDEN ? 'pointer' : 'auto',

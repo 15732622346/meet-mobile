@@ -639,7 +639,7 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
           left: 0;
           right: 0;
           bottom: 0;
-          z-index: 9999;
+          z-index: 9000; /* 降低z-index，确保浮动窗口可以显示在上面 */
         }
         
         .video-wrapper {
@@ -802,7 +802,7 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
           background: rgba(0, 0, 0, 0.8);
           border: 2px solid #444;
           border-radius: 8px;
-          z-index: 1000;
+          z-index: 10500;
           display: flex;
           flex-direction: column;
           box-shadow: 0 4px 20px rgba(0,0,0,0.3);

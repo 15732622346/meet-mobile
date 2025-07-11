@@ -295,7 +295,7 @@ body, html {
 
 /* 浮动窗口相关样式 */
 .floating-wrapper {
-  z-index: 1000 !important;
+  z-index: 10500 !important; /* 提高z-index，确保在全屏模式下也能显示 */
   -webkit-transform: translate3d(0,0,0);
   transform: translate3d(0,0,0);
   will-change: transform;
