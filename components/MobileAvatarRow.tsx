@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useParticipants } from '@livekit/components-react';
 import { Participant } from 'livekit-client';
 import { parseParticipantAttributes, isOnMic, isRequestingMic, isMuted, shouldShowInMicList } from '../lib/token-utils';
@@ -26,6 +26,7 @@ const shouldShowMicIcon = (attributes: Record<string, string>): boolean => {
 
 export function MobileAvatarRow({ onAvatarClick }: MobileAvatarRowProps) {
   const allParticipants = useParticipants();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   // 过滤出应该显示在麦位列表中的参与者（display_status为'visible'的参与者）
   // 这与PC端麦位列表的过滤逻辑保持一致
@@ -34,47 +35,66 @@ export function MobileAvatarRow({ onAvatarClick }: MobileAvatarRowProps) {
     [allParticipants]
   );
   
+  // 滚动到右侧查看更多头像
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollLeft += 120; // 一次滚动两个头像的宽度
+    }
+  };
+  
   return (
-    <div className="mobile-avatar-row">
-      {participants.map((participant) => {
-        const displayName = participant.name || participant.identity || 'Unknown';
-        const avatarLetter = displayName.charAt(0).toUpperCase() || '?';
-        const attributes = participant.attributes || {};
-        const showMicIcon = shouldShowMicIcon(attributes);
-        const micIconSrc = getMicStatusIcon(attributes);
-        
-        return (
-          <div 
-            key={participant.identity} 
-            className="mobile-avatar-item"
-            onClick={() => onAvatarClick?.(participant)}
-          >
-            <div className="mobile-avatar">
-              {avatarLetter}
-              {showMicIcon && (
-                <div className="mic-status-icon">
-                  <img src={micIconSrc} alt="麦位状态" width={16} height={16} />
-                </div>
-              )}
+    <div className="mobile-avatar-container">
+      <div className="mobile-avatar-row" ref={scrollContainerRef}>
+        {participants.map((participant) => {
+          const displayName = participant.name || participant.identity || 'Unknown';
+          const avatarLetter = displayName.charAt(0).toUpperCase() || '?';
+          const attributes = participant.attributes || {};
+          const showMicIcon = shouldShowMicIcon(attributes);
+          const micIconSrc = getMicStatusIcon(attributes);
+          
+          return (
+            <div 
+              key={participant.identity} 
+              className="mobile-avatar-item"
+              onClick={() => onAvatarClick?.(participant)}
+            >
+              <div className="mobile-avatar">
+                {avatarLetter}
+                {showMicIcon && (
+                  <div className="mic-status-icon">
+                    <img src={micIconSrc} alt="麦位状态" width={16} height={16} />
+                  </div>
+                )}
+              </div>
+              <div className="mobile-avatar-name">
+                {displayName.length > 4 
+                  ? `${displayName.substring(0, 4)}..` 
+                  : displayName}
+              </div>
             </div>
-            <div className="mobile-avatar-name">
-              {displayName.length > 4 
-                ? `${displayName.substring(0, 4)}..` 
-                : displayName}
-            </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
+      
+      <div className="scroll-indicator" onClick={scrollRight}>
+        <div className="triangle-right"></div>
+      </div>
       
       <style jsx>{`
+        .mobile-avatar-container {
+          display: flex;
+          align-items: center;
+          background-color: #111;
+        }
+        
         .mobile-avatar-row {
           display: flex;
           overflow-x: auto;
           padding: 10px 5px;
-          background-color: #111;
           white-space: nowrap;
           -webkit-overflow-scrolling: touch;
           scrollbar-width: none; /* Firefox */
+          flex: 1;
         }
         
         .mobile-avatar-row::-webkit-scrollbar {
@@ -122,6 +142,24 @@ export function MobileAvatarRow({ onAvatarClick }: MobileAvatarRowProps) {
           color: white;
           text-overflow: ellipsis;
           overflow: hidden;
+        }
+        
+        .scroll-indicator {
+          width: 30px;
+          height: 50px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          padding-right: 8px;
+        }
+        
+        .triangle-right {
+          width: 0;
+          height: 0;
+          border-top: 8px solid transparent;
+          border-left: 12px solid #22c55e;
+          border-bottom: 8px solid transparent;
         }
       `}</style>
     </div>
