@@ -94,6 +94,23 @@ h2 a {
   height: 100vh;
 }
 
+/* 彻底隐藏所有LiveKit默认的参与者名称标签 */
+.lk-participant-name,
+.lk-participant-metadata-item,
+.lk-participant-metadata,
+span[data-lk-participant-name],
+[data-lk-participant-name],
+.lk-participant-tile .lk-participant-metadata {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  pointer-events: none !important;
+}
+
 /* 隐藏桌面端不常用的控制项 */
 @media (max-width: 768px) {
   .lk-control-bar .lk-button:not(.lk-mic-button):not(.lk-camera-button):not(.lk-leave-button) {
@@ -273,5 +290,50 @@ body, html {
 @supports (-webkit-touch-callout: none) {
   .mobile-video-conference {
     height: -webkit-fill-available;
+  }
+}
+
+/* 浮动窗口相关样式 */
+.floating-wrapper {
+  z-index: 1000 !important;
+  -webkit-transform: translate3d(0,0,0);
+  transform: translate3d(0,0,0);
+  will-change: transform;
+  touch-action: none;
+}
+
+.floating-wrapper.minimized {
+  width: 140px !important;
+  height: 44px !important;
+  cursor: pointer !important;
+}
+
+/* 确保视频组件在移动端正确显示 */
+.floating-wrapper video,
+.floating-wrapper .lk-participant-tile,
+.floating-wrapper .lk-video-track {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+/* 重置移动端Safari特有的按钮样式 */
+.floating-wrapper button {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* 针对移动端的触摸优化 */
+@media (max-width: 768px) {
+  .floating-wrapper .minimize-btn {
+    width: 32px !important;
+    height: 32px !important;
+  }
+  
+  .floating-wrapper.minimized button {
+    font-size: 16px !important;
+    padding: 10px !important;
+    line-height: 1;
   }
 }

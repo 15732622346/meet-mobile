@@ -9,6 +9,7 @@ import {
   GridLayout,
   VideoTrack,
   TrackRefContext,
+  ParticipantTile
 } from '@livekit/components-react';
 import { Track, RoomEvent, Room, Participant } from 'livekit-client';
 import { MobileAvatarRow } from './MobileAvatarRow';
@@ -18,6 +19,12 @@ import { MobileControlPanel } from './MobileControlPanel';
 import { HideLiveKitCounters } from './HideLiveKitCounters';
 import { isHostOrAdmin, isCameraEnabled, shouldShowInMicList } from '../lib/token-utils';
 import { getImagePath } from '../lib/image-path';
+
+// 视频显示状态枚举
+enum VideoDisplayState {
+  NORMAL = 'normal',
+  MINIMIZED = 'minimized'
+}
 
 // 默认最大麦位数量
 const DEFAULT_MAX_MIC_SLOTS = 5;
@@ -40,6 +47,10 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
   const [isFullscreen, setIsFullscreen] = React.useState<boolean>(false);
   // 新增: 本地摄像头是否放大显示
   const [isLocalCameraExpanded, setIsLocalCameraExpanded] = React.useState<boolean>(false);
+  // 添加显示摄像头面板状态
+  const [showCameraPanel, setShowCameraPanel] = React.useState<boolean>(false);
+  // 添加视频显示状态
+  const [displayState, setDisplayState] = React.useState<VideoDisplayState>(VideoDisplayState.NORMAL);
   
   // 获取用于视频显示的轨道
   const videoTracks = useTracks(
@@ -59,6 +70,19 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
   // 添加调试状态
   const [debugInfo, setDebugInfo] = React.useState<string>("");
   
+  // 过滤出摄像头轨道，用于摄像头面板
+  const cameraOnlyTracks = React.useMemo(() => {
+    return videoTracks.filter(track => {
+      return (track.source === Track.Source.Camera && 
+              track.participant?.identity !== localParticipant?.identity);
+    });
+  }, [videoTracks, localParticipant]);
+  
+  // 切换摄像头面板显示
+  const toggleCameraPanel = () => {
+    setShowCameraPanel(!showCameraPanel);
+  };
+  
   // 🎯 新增：检查是否有主持人在线
   const getParticipantRole = (participant: Participant): number => {
     const attributes = participant.attributes || {};
@@ -77,6 +101,18 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
 
   // 🎯 新增：如果当前用户是主持人，或者找到了其他主持人，则认为有主持人
   const hasHost = currentUserIsHost || otherHostParticipant !== undefined;
+
+  // 处理最小化视频区域
+  const handleMinimizeVideo = React.useCallback(() => {
+    console.log('最小化视频区域');
+    setDisplayState(VideoDisplayState.MINIMIZED);
+  }, []);
+
+  // 处理恢复视频区域
+  const handleRestoreVideo = React.useCallback(() => {
+    console.log('恢复视频区域');
+    setDisplayState(VideoDisplayState.NORMAL);
+  }, []);
   
   // 获取主视频轨道
   const mainVideoTrack = React.useMemo(() => {
@@ -208,8 +244,8 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
           }
           
           // 如果支持全屏API，请求全屏
-          if (screenShareContainer.requestFullscreen) {
-            screenShareContainer.requestFullscreen().catch(err => {
+          if ((screenShareContainer as any).requestFullscreen) {
+            (screenShareContainer as any).requestFullscreen().catch((err: any) => {
               console.error('无法进入全屏模式:', err);
             });
           } else if ((screenShareContainer as any).webkitRequestFullscreen) {
@@ -220,7 +256,7 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
         } else {
           // 退出全屏
           if (document.exitFullscreen) {
-            document.exitFullscreen().catch(err => {
+            document.exitFullscreen().catch((err: any) => {
               console.error('无法退出全屏模式:', err);
             });
           } else if ((document as any).webkitExitFullscreen) {
@@ -300,7 +336,80 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
     setDebugInfo(`屏幕共享: ${hasScreenShare ? '有' : '无'}, 轨道数: ${screenTracks.length}`);
   }, [screenTracks, hasScreenShare]);
 
-  // 在返回的JSX中，修改屏幕共享部分
+  // 打印当前状态用于调试
+  React.useEffect(() => {
+    console.log("当前视频显示状态:", displayState);
+  }, [displayState]);
+
+  // 这里是重构后的渲染逻辑
+  if (displayState === VideoDisplayState.MINIMIZED) {
+    // 最小化状态 - 只显示一个恢复按钮
+    return (
+      <div className="mobile-video-conference minimized">
+        <button 
+          onClick={handleRestoreVideo} 
+          className="restore-video-button"
+          aria-label="恢复摄像头区"
+        >
+          恢复摄像头区
+        </button>
+        
+        <RoomAudioRenderer />
+        <HideLiveKitCounters />
+        
+        <style jsx>{`
+          .mobile-video-conference.minimized {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: transparent;
+            pointer-events: none;
+            z-index: 1000;
+            height: 100vh;
+            width: 100vw;
+          }
+          
+          .restore-video-button {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(74, 158, 255, 0.9);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            z-index: 2000;
+            pointer-events: auto;
+          }
+          
+          .restore-video-button:active {
+            background: rgba(50, 120, 230, 0.9);
+            transform: scale(0.98);
+          }
+        `}</style>
+        
+        <style jsx global>{`
+          /* 隐藏LiveKit默认的参与者名称标签 */
+          .lk-participant-name {
+            display: none !important;
+          }
+          
+          /* 隐藏包含麦克风状态和用户名的元数据项 */
+          .lk-participant-metadata-item {
+            display: none !important;
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  // 正常显示状态
   return (
     <div className="mobile-video-conference">
       <div className="mobile-main-video">
@@ -334,6 +443,17 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
                     alt={isFullscreen ? '退出全屏' : '全屏'} 
                     title={isFullscreen ? '退出全屏' : '全屏'} 
                   />
+                </div>
+                
+                {/* 添加最小化按钮 */}
+                <div 
+                  className="minimize-video-btn"
+                  onClick={handleMinimizeVideo}
+                  role="button"
+                  aria-label="最小化视频窗口"
+                  style={{ cursor: 'pointer' }}
+                >
+                  <span className="minimize-icon">_</span>
                 </div>
                 
                 {/* 新增: 本地摄像头视频小窗口 */}
@@ -395,6 +515,73 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
                   {mainVideoTrack.participant?.name || mainVideoTrack.participant?.identity || 'Unknown'}
                   {pinnedParticipantId && ' (已固定)'}
                 </div>
+                
+                {/* 添加最小化按钮 */}
+                <div 
+                  className="minimize-video-btn"
+                  onClick={handleMinimizeVideo}
+                  role="button"
+                  aria-label="最小化视频窗口"
+                  style={{ cursor: 'pointer' }}
+                >
+                  <span className="minimize-icon">_</span>
+                </div>
+                
+                {/* 直接嵌入式摄像头面板 - 视频轨道情况 */}
+                {cameraOnlyTracks.length > 0 && showCameraPanel && (
+                  <div className="inline-floating-video-panel">
+                    {/* 浮动窗口头部 */}
+                    <div className="floating-panel-header">
+                      <div className="floating-panel-title">
+                        摄像头 ({cameraOnlyTracks.length})
+                      </div>
+                      
+                      <div className="floating-panel-controls">
+                        {/* 关闭按钮 */}
+                        <button
+                          onClick={toggleCameraPanel}
+                          className="floating-panel-close"
+                          title="隐藏摄像头面板"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* 视频显示区域 */}
+                    <div className="floating-panel-content">
+                      <div className="floating-panel-grid">
+                        {cameraOnlyTracks.slice(0, 4).map((track, index) => (
+                          <div
+                            key={track.participant?.identity || index}
+                            className="floating-panel-item"
+                          >
+                            <ParticipantTile 
+                              {...track}
+                              style={{
+                                width: '100%',
+                                height: '100%'
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* 添加摄像头面板切换按钮 */}
+                <div 
+                  className="camera-panel-toggle-btn"
+                  onClick={toggleCameraPanel}
+                >
+                  <img 
+                    src={getImagePath('/images/camera.svg')}
+                    alt={showCameraPanel ? '隐藏摄像头' : '显示摄像头'} 
+                    title={showCameraPanel ? '隐藏摄像头' : '显示摄像头'}
+                    style={{ width: '16px', height: '16px' }}
+                  />
+                </div>
               </div>
             ) : (
               <div className="empty-video-area">
@@ -411,144 +598,58 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
       {/* 选项卡内容区域 */}
       <MobileTabs tabs={tabs} defaultActiveKey="chat" />
       
-      {/* 底部操作栏 - 已移至MobileChat组件中，此处隐藏 
-      <div className="mobile-controls">
-        {/* 麦克风按钮 - 使用SVG矢量图 *//*}
-        <div 
-          className={`mobile-control-svg ${localParticipant.isMicrophoneEnabled ? 'on' : 'off'} ${userRole === 0 ? 'guest-disabled' : ''}`}
-          onClick={() => {
-            // 游客无法使用麦克风
-            if (userRole === 0) {
-              alert('游客需要注册为会员才能使用麦克风功能');
-              return;
-            }
-            
-            // 主持人可以直接使用麦克风
-            if (userRole && userRole >= 2) {
-              localParticipant.setMicrophoneEnabled(!localParticipant.isMicrophoneEnabled);
-              return;
-            }
-            
-            // 普通会员需要检查麦克风状态
-            const attributes = localParticipant.attributes || {};
-            const micStatus = attributes.mic_status || 'off_mic';
-            
-            if (micStatus === 'on_mic') {
-              // 已上麦可以使用
-              localParticipant.setMicrophoneEnabled(!localParticipant.isMicrophoneEnabled);
-            } else {
-              // 未上麦提示申请
-              alert('您需要先申请上麦才能使用麦克风');
-            }
-          }}
-        >
-          <img 
-            src={getImagePath('/images/mic.svg')} 
-            alt={localParticipant.isMicrophoneEnabled ? '静音' : '开麦'} 
-            title={localParticipant.isMicrophoneEnabled ? '静音' : '开麦'} 
-          />
-          <span className="svg-tooltip">
-            {localParticipant.isMicrophoneEnabled ? '静音' : '开麦'}
-          </span>
-        </div>
-        
-        {/* 申请上麦按钮 - 使用SVG矢量图 *//*}
-        {userRole === 1 && (
-          <div 
-            className={`mobile-control-svg ${localParticipant.attributes?.mic_status === 'requesting' ? 'requesting' : 'request-mic'}`}
-            onClick={async () => {
-              const attributes = localParticipant.attributes || {};
-              const micStatus = attributes.mic_status || 'off_mic';
-              
-              if (micStatus === 'requesting') {
-                alert('您已经申请上麦，等待主持人批准');
-                return;
-              }
-              
-              if (micStatus === 'on_mic') {
-                alert('您已在麦位上');
-                return;
-              }
-              
-              if (!hasHost) {
-                alert('请等待主持人进入房间后再申请上麦');
-                return;
-              }
-              
-              try {
-                // 更新麦克风状态为申请中
-                await localParticipant.setAttributes({
-                  ...attributes,
-                  mic_status: 'requesting',
-                  display_status: 'visible',
-                  request_time: Date.now().toString(),
-                  last_action: 'request',
-                  user_name: localParticipant.identity
-                });
-                
-                alert('已发送申请，等待主持人批准');
-              } catch (error) {
-                console.error('申请上麦失败:', error);
-                alert('申请上麦失败，请刷新页面重试');
-              }
-            }}
-          >
-            <img 
-              src={getImagePath('/images/submic.svg')} 
-              alt={localParticipant.attributes?.mic_status === 'requesting' ? '申请' : '上麦'} 
-              title={localParticipant.attributes?.mic_status === 'requesting' ? '申请' : '上麦'} 
-              className="submic-icon"
-            />
-            <span className="svg-tooltip">
-              {localParticipant.attributes?.mic_status === 'requesting' ? '申请' : '上麦'}
-            </span>
-          </div>
-        )}
-      </div>
-      */}
+      <RoomAudioRenderer />
+      <HideLiveKitCounters />
       
+      {/* 添加自定义样式 */}
       <style jsx>{`
         .mobile-video-conference {
           display: flex;
           flex-direction: column;
           height: 100vh;
-          background-color: #111;
-          color: white;
+          width: 100vw;
+          overflow: hidden;
+          background-color: #1a1a1a;
         }
         
         .mobile-main-video {
-          height: 30vh;
-          width: 100%;
-          background-color: #000;
+          flex: 1;
           position: relative;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          transition: all 0.3s ease;
-        }
-        
-        .mobile-main-video.fullscreen {
-          height: 100vh;
-          z-index: 1000;
+          background-color: #000;
+          overflow: hidden;
+          min-height: 0;
         }
         
         .mobile-video-container {
           width: 100%;
           height: 100%;
           position: relative;
+        }
+        
+        .screen-share-wrapper {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          background-color: #000;
+        }
+        
+        .screen-share-wrapper.fullscreen-mode {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          z-index: 9999;
+        }
+        
+        .video-wrapper {
+          position: relative;
+          width: 100%;
+          height: 100%;
           display: flex;
           justify-content: center;
           align-items: center;
-        }
-        
-        /* 新增：视频包装器，控制视频尺寸 */
-        .video-wrapper {
-          width: 80%;
-          height: 80%;
-          position: relative;
-          border-radius: 8px;
           overflow: hidden;
-          background-color: #222;
         }
         
         .video-wrapper video {
@@ -557,79 +658,77 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
           object-fit: contain;
         }
         
-        /* 屏幕共享容器样式优化 */
-        .screen-share-wrapper {
-          width: 100%;
-          height: 100%;
-          position: relative;
-          overflow: hidden;
+        .mobile-video-name {
+          position: absolute;
+          bottom: 8px;
+          left: 8px;
+          background: rgba(0, 0, 0, 0.6);
+          color: white;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 12px;
+          z-index: 10;
+        }
+        
+        .fullscreen-toggle-btn {
+          position: absolute;
+          bottom: 8px;
+          right: 8px;
+          background: rgba(0, 0, 0, 0.6);
+          border-radius: 4px;
+          width: 28px;
+          height: 28px;
           display: flex;
-          justify-content: center;
           align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          z-index: 10;
         }
         
-        /* 确保GridLayout和VideoTrack充满整个容器 */
-        .screen-share-wrapper :global(.lk-grid-layout) {
-          width: 100% !important;
-          height: 100% !important;
+        .fullscreen-toggle-btn img {
+          width: 16px;
+          height: 16px;
         }
         
-        .screen-share-wrapper :global(.lk-video-track) {
-          width: 100% !important;
-          height: 100% !important;
-          object-fit: contain !important;
+        /* 最小化按钮样式 */
+        .minimize-video-btn {
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          background: rgba(0, 0, 0, 0.6);
+          border-radius: 4px;
+          width: 28px;
+          height: 28px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          z-index: 10;
         }
         
-        /* 全屏模式样式 */
-        .screen-share-wrapper.fullscreen-mode {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100vw;
-          height: 100vh;
-          z-index: 9999;
-          background-color: #000;
+        .minimize-icon {
+          color: white;
+          font-size: 14px;
+          line-height: 1;
         }
-        
-        /* 本地摄像头容器 */
+                
         .local-camera-container {
           position: absolute;
-          right: 10px;
-          bottom: 40px;
-          width: 25%;
-          height: 25%;
-          border-radius: 8px;
+          bottom: 60px;
+          right: 8px;
+          width: 80px;
+          height: 120px;
+          background: #000;
+          border: 1px solid #444;
+          border-radius: 4px;
           overflow: hidden;
-          background-color: #222;
           z-index: 10;
-          border: 2px solid rgba(255, 255, 255, 0.3);
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
           transition: all 0.3s ease;
         }
         
-        /* 本地摄像头放大状态 */
         .local-camera-container.expanded {
-          position: absolute;
-          top: 0 !important;
-          left: 0 !important;
-          right: 0 !important;
-          bottom: 0 !important;
-          width: 100% !important;
-          height: 100% !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          border: none !important;
-          border-radius: 0 !important;
-          z-index: 1000 !important;
-          background-color: black;
-          transform: none !important;
-        }
-        
-        /* 确保摄像头视频也完全覆盖 */
-        .local-camera-container.expanded video {
-          width: 100% !important;
-          height: 100% !important;
-          object-fit: contain !important;
+          width: 160px;
+          height: 240px;
         }
         
         .local-camera-container video {
@@ -642,7 +741,7 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
           position: absolute;
           bottom: 4px;
           left: 4px;
-          background-color: rgba(0, 0, 0, 0.6);
+          background: rgba(0, 0, 0, 0.6);
           color: white;
           padding: 2px 4px;
           border-radius: 4px;
@@ -650,59 +749,24 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
           z-index: 2;
         }
         
-        /* 摄像头大小切换按钮 */
         .camera-toggle-btn {
           position: absolute;
-          top: 4px;
+          bottom: 4px;
           right: 4px;
-          background-color: rgba(0, 0, 0, 0.6);
-          color: white;
-          width: 24px;
-          height: 24px;
+          background: rgba(0, 0, 0, 0.6);
           border-radius: 4px;
+          width: 20px;
+          height: 20px;
           display: flex;
-          justify-content: center;
           align-items: center;
+          justify-content: center;
           cursor: pointer;
           z-index: 2;
         }
         
         .camera-toggle-btn img {
-          width: 16px;
-          height: 16px;
-        }
-        
-        .mobile-video-name {
-          position: absolute;
-          bottom: 8px;
-          left: 8px;
-          background-color: rgba(0, 0, 0, 0.6);
-          color: white;
-          padding: 4px 8px;
-          border-radius: 4px;
-          font-size: 12px;
-          z-index: 2;
-        }
-        
-        .fullscreen-toggle-btn {
-          position: absolute;
-          top: 8px;
-          right: 8px;
-          background-color: rgba(0, 0, 0, 0.6);
-          color: white;
-          width: 32px;
-          height: 32px;
-          border-radius: 4px;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          cursor: pointer;
-          z-index: 2;
-        }
-        
-        .fullscreen-toggle-btn img {
-          width: 20px;
-          height: 20px;
+          width: 12px;
+          height: 12px;
         }
         
         .empty-video-area {
@@ -728,120 +792,114 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
           z-index: 10;
         }
         
-        /* SVG图标按钮样式 - 也隐藏 */
-        .mobile-control-svg {
-          display: none; /* 完全隐藏子元素 */
-          visibility: hidden;
-        }
-        
-        /* SVG图片样式 */
-        .mobile-control-svg img {
-          width: 20px;
-          height: 20px;
-          transition: all 0.3s ease;
-          z-index: 5;
-          margin-right: 3px;
-        }
-        
-        /* 工具提示样式 */
-        .svg-tooltip {
-          font-size: 12px;
-          text-align: center;
-          color: white;
-          margin-left: 2px;
-        }
-        
-        /* 麦克风开启状态 */
-        .mobile-control-svg.on {
-          background-color: #22c55e;
-          box-shadow: none;
-        }
-        
-        .mobile-control-svg.on img {
-          filter: brightness(0) invert(1);
-        }
-        
-        /* 麦克风关闭状态 */
-        .mobile-control-svg.off {
-          background-color: #ef4444;
-          box-shadow: none;
-        }
-        
-        .mobile-control-svg.off img {
-          filter: brightness(0) invert(1);
-        }
-        
-        /* 游客禁用状态 */
-        .mobile-control-svg.guest-disabled {
-          opacity: 0.7;
-          position: relative;
-          background-color: #999;
-        }
-        
-        .mobile-control-svg.guest-disabled::after {
-          content: "🔒";
+        /* 浮动面板样式 */
+        .inline-floating-video-panel {
           position: absolute;
-          top: 5px;
-          right: 5px;
+          left: 20px;
+          top: 60px;
+          width: 180px;
+          height: 135px;
+          background: rgba(0, 0, 0, 0.8);
+          border: 2px solid #444;
+          border-radius: 8px;
+          z-index: 1000;
+          display: flex;
+          flex-direction: column;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+          cursor: grab;
+          user-select: none;
+          overflow: hidden;
+          transition: 0.3s;
+        }
+        
+        .floating-panel-header {
+          height: 20px;
+          background: #333;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 8px;
+          border-bottom: 1px solid #444;
+          flex-shrink: 0;
+          border-radius: 6px 6px 0 0;
+        }
+        
+        .floating-panel-title {
+          color: #fff;
           font-size: 10px;
+          font-weight: bold;
         }
         
-        .mobile-control-svg.guest-disabled img {
-          filter: grayscale(100%);
+        .floating-panel-controls {
+          display: flex;
+          align-items: center;
+          gap: 4px;
         }
         
-        /* 申请上麦按钮样式 */
-        .mobile-control-svg.request-mic {
-          background-color: #eab308;
-          box-shadow: none;
+        .floating-panel-close {
+          background: transparent;
+          border: none;
+          color: #888;
+          font-size: 14px;
+          cursor: pointer;
+          padding: 2px;
+          border-radius: 2px;
+          line-height: 1;
         }
         
-        .mobile-control-svg.request-mic img {
-          filter: brightness(0) invert(1);
+        .floating-panel-content {
+          flex: 1;
+          overflow: hidden;
+          background: #000;
+          border-radius: 0 0 6px 6px;
+          position: relative;
         }
         
-        /* 申请中状态 */
-        .mobile-control-svg.requesting {
-          background-color: #eab308;
-          box-shadow: none;
-          animation: gentle-pulse 1.5s infinite;
+        .floating-panel-grid {
+          width: 100%;
+          height: 100%;
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+          gap: 2px;
         }
         
-        .mobile-control-svg.requesting img {
-          width: 36px;
-          height: 36px;
-          filter: brightness(1) contrast(1.1) drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
-          animation: glow 1.5s infinite alternate;
+        .floating-panel-item {
+          position: relative;
+          background: #2a2a2a;
+          border-radius: 4px;
+          overflow: hidden;
+          min-height: 0;
         }
         
-        @keyframes pulse {
-          0% { opacity: 0.7; box-shadow: 0 0 5px rgba(234, 179, 8, 0.4); }
-          50% { opacity: 1; box-shadow: 0 0 15px rgba(234, 179, 8, 0.8); }
-          100% { opacity: 0.7; box-shadow: 0 0 5px rgba(234, 179, 8, 0.4); }
-        }
-        
-        @keyframes glow {
-          0% { filter: brightness(0.9) contrast(1.1) drop-shadow(0 0 2px rgba(255, 255, 255, 0.5)); }
-          100% { filter: brightness(1.1) contrast(1.3) drop-shadow(0 0 4px rgba(255, 255, 255, 0.8)); }
-        }
-        
-        /* 增强申请上麦图标显示 */
-        .submic-icon {
-          display: block !important;
-          visibility: visible !important;
-          opacity: 1 !important;
-          z-index: 5 !important;
-        }
-        
-        @keyframes gentle-pulse {
-          0% { filter: invert(70%) sepia(75%) saturate(1000%) hue-rotate(25deg) brightness(85%) contrast(95%); opacity: 0.8; }
-          50% { filter: invert(70%) sepia(75%) saturate(1000%) hue-rotate(25deg) brightness(120%) contrast(95%); opacity: 1; }
-          100% { filter: invert(70%) sepia(75%) saturate(1000%) hue-rotate(25deg) brightness(85%) contrast(95%); opacity: 0.8; }
+        .camera-panel-toggle-btn {
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          background: rgba(0,0,0,0.6);
+          color: #fff;
+          padding: 4px;
+          border-radius: 4px;
+          cursor: pointer;
+          z-index: 20;
+          width: 28px;
+          height: 28px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
       `}</style>
       
-      <RoomAudioRenderer />
-      <HideLiveKitCounters />
+      <style jsx global>{`
+        /* 隐藏LiveKit默认的参与者名称标签 */
+        .lk-participant-name {
+          display: none !important;
+        }
+        
+        /* 隐藏包含麦克风状态和用户名的元数据项 */
+        .lk-participant-metadata-item {
+          display: none !important;
+        }
+      `}</style>
     </div>
   );
 } 

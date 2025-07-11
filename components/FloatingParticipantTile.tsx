@@ -112,8 +112,8 @@ export function FloatingWrapper({
         return {
           left: position.x,
           top: position.y,
-          width: 40,
-          height: 40
+          width: 140,  // 增加宽度以适应文字
+          height: 44   // 增加高度以便于点击
         };
       case VideoDisplayState.NORMAL:
       default:
@@ -128,11 +128,13 @@ export function FloatingWrapper({
 
   // 处理最小化
   const handleHide = React.useCallback(() => {
+    console.log('最小化视频窗口');
     setDisplayState(VideoDisplayState.HIDDEN);
   }, []);
 
   // 处理恢复
   const handleRestore = React.useCallback(() => {
+    console.log('恢复视频窗口');
     setDisplayState(VideoDisplayState.NORMAL);
   }, []);
 
@@ -168,9 +170,9 @@ export function FloatingWrapper({
       zIndex: displayState === VideoDisplayState.MAXIMIZED ? 1500 : 1000, // 提高最大化时的z-index
       overflow: 'hidden',
       boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
-      cursor: displayState === VideoDisplayState.HIDDEN ? 'grab' : 'auto',
+      cursor: displayState === VideoDisplayState.HIDDEN ? 'pointer' : 'auto',
       userSelect: 'none',
-      transition: '0.3s'
+      transition: '0.3s all ease-in-out'
     };
     
     return baseStyles;
@@ -182,12 +184,58 @@ export function FloatingWrapper({
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
       
+      // 移动端支持
+      document.addEventListener('touchmove', handleTouchMove);
+      document.addEventListener('touchend', handleTouchEnd);
+      
       return () => {
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('touchmove', handleTouchMove);
+        document.removeEventListener('touchend', handleTouchEnd);
       };
     }
   }, [isDragging, handleMouseMove, handleMouseUp]);
+
+  // 添加触摸事件处理
+  const handleTouchStart = React.useCallback((e: React.TouchEvent) => {
+    if (!wrapperRef.current || displayState === VideoDisplayState.MAXIMIZED) return;
+    
+    const rect = wrapperRef.current.getBoundingClientRect();
+    const touch = e.touches[0];
+    
+    setDragOffset({
+      x: touch.clientX - rect.left,
+      y: touch.clientY - rect.top
+    });
+    
+    setIsDragging(true);
+    e.preventDefault();
+  }, [displayState]);
+
+  const handleTouchMove = React.useCallback((e: TouchEvent) => {
+    if (!isDragging) return;
+    
+    const panelWidth = width;
+    const panelHeight = height;
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    
+    const touch = e.touches[0];
+    let newX = touch.clientX - dragOffset.x;
+    let newY = touch.clientY - dragOffset.y;
+    
+    // 边界检查
+    newX = Math.max(0, Math.min(newX, windowWidth - panelWidth));
+    newY = Math.max(0, Math.min(newY, windowHeight - panelHeight));
+    
+    setPosition({ x: newX, y: newY });
+    e.preventDefault();
+  }, [isDragging, dragOffset, width, height]);
+
+  const handleTouchEnd = React.useCallback(() => {
+    setIsDragging(false);
+  }, []);
 
   // 首次加载时获取屏幕共享区域位置
   React.useEffect(() => {
@@ -204,97 +252,103 @@ export function FloatingWrapper({
       ref={wrapperRef}
       className="floating-wrapper"
       style={getStyles()}
+      onMouseDown={handleMouseDown}
+      onTouchStart={handleTouchStart}
+      onClick={displayState === VideoDisplayState.HIDDEN ? handleRestore : undefined}
     >
-      {children}
-      
-      {/* 最小化/最大化按钮 */}
-      {displayState !== VideoDisplayState.HIDDEN && (
-        <div style={{
-          position: 'absolute',
-          top: '8px',
-          right: '8px',
-          zIndex: 10001
-        }}>
-          <button
-            title={displayState === VideoDisplayState.MAXIMIZED ? '还原' : '最小化'}
-            style={{
-              background: 'rgba(0, 0, 0, 0.6)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              width: '28px',
-              height: '28px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              fontSize: '14px'
-            }}
-            onClick={displayState === VideoDisplayState.MAXIMIZED ? handleRestore : handleHide}
-          >
-            {displayState === VideoDisplayState.MAXIMIZED ? '❐' : '_'}
-          </button>
-        </div>
-      )}
-      
-      {/* 最大化/恢复按钮 */}
-      {displayState !== VideoDisplayState.HIDDEN && (
-        <div style={{
-          position: 'absolute',
-          bottom: '8px',
-          right: '8px',
-          zIndex: 10001
-        }}>
-          <button
-            title={displayState === VideoDisplayState.MAXIMIZED ? '还原' : '最大化'}
-            style={{
-              background: 'rgba(0, 0, 0, 0.6)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              width: '28px',
-              height: '28px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              fontSize: '14px'
-            }}
-            onClick={handleToggleMaximize}
-          >
-            {displayState === VideoDisplayState.MAXIMIZED ? (
-              <span>❐</span>
-            ) : (
-              <img
-                alt="最大化"
-                src="/images/big.png"
-                width={16}
-                height={16}
-              />
-            )}
-          </button>
-        </div>
-      )}
-      
-      {/* 恢复按钮 (仅在最小化状态显示) */}
-      {displayState === VideoDisplayState.HIDDEN && (
+      {/* 正常/最大化状态下显示内容 */}
+      {displayState !== VideoDisplayState.HIDDEN ? (
+        <>
+          {children}
+          
+          {/* 最小化按钮 - 右上角 */}
+          <div style={{
+            position: 'absolute',
+            top: '8px',
+            right: '8px',
+            zIndex: 10001
+          }}>
+            <button
+              title={displayState === VideoDisplayState.MAXIMIZED ? '还原' : '最小化'}
+              style={{
+                background: 'rgba(0, 0, 0, 0.6)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                width: '28px',
+                height: '28px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                fontSize: '14px'
+              }}
+              onClick={displayState === VideoDisplayState.MAXIMIZED ? handleRestore : handleHide}
+            >
+              {displayState === VideoDisplayState.MAXIMIZED ? '❐' : '_'}
+            </button>
+          </div>
+          
+          {/* 最大化/恢复按钮 - 右下角 */}
+          <div style={{
+            position: 'absolute',
+            bottom: '8px',
+            right: '8px',
+            zIndex: 10001
+          }}>
+            <button
+              title={displayState === VideoDisplayState.MAXIMIZED ? '还原' : '最大化'}
+              style={{
+                background: 'rgba(0, 0, 0, 0.6)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                width: '28px',
+                height: '28px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                fontSize: '14px'
+              }}
+              onClick={handleToggleMaximize}
+            >
+              {displayState === VideoDisplayState.MAXIMIZED ? (
+                <span>❐</span>
+              ) : (
+                <img
+                  alt="最大化"
+                  src="/images/big.png"
+                  width={16}
+                  height={16}
+                />
+              )}
+            </button>
+          </div>
+        </>
+      ) : (
+        // 最小化状态下只显示恢复按钮
         <button
           style={{
             width: '100%',
             height: '100%',
-            background: 'transparent',
+            background: '#2c9631',
             border: 'none',
+            borderRadius: '6px',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             color: '#fff',
-            fontSize: '16px'
+            fontSize: '14px',
+            padding: '0 8px',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+            fontWeight: 'bold'
           }}
           onClick={handleRestore}
           title="恢复视频窗口"
         >
-          📹
+          恢复摄像头区
         </button>
       )}
     </div>

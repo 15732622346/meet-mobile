@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { ParticipantTile } from '@livekit/components-react';
 
 // 视频显示状态枚举
 enum VideoDisplayState {
@@ -9,30 +8,32 @@ enum VideoDisplayState {
   MINIMIZED = 'minimized'
 }
 
-interface DraggableVideoTileProps {
-  track: any;
+interface MobileFloatingWindowProps {
+  children: React.ReactNode;
+  title?: string;
   initialPosition?: { x: number; y: number };
   width?: number;
   height?: number;
 }
 
-export function DraggableVideoTile({ 
-  track, 
-  initialPosition = { x: 100, y: 100 },
-  width = 300,
-  height = 200
-}: DraggableVideoTileProps) {
+export function MobileFloatingWindow({
+  children,
+  title = '参与者',
+  initialPosition = { x: 20, y: 80 },
+  width = 200,
+  height = 150
+}: MobileFloatingWindowProps) {
   const [position, setPosition] = React.useState(initialPosition);
   const [isDragging, setIsDragging] = React.useState(false);
   const [dragOffset, setDragOffset] = React.useState({ x: 0, y: 0 });
-  const tileRef = React.useRef<HTMLDivElement>(null);
   const [displayState, setDisplayState] = React.useState<VideoDisplayState>(VideoDisplayState.NORMAL);
-
-  // 拖拽开始
+  const wrapperRef = React.useRef<HTMLDivElement>(null);
+  
+  // 拖拽功能
   const handleMouseDown = React.useCallback((e: React.MouseEvent) => {
-    if (!tileRef.current) return;
+    if (!wrapperRef.current) return;
     
-    const rect = tileRef.current.getBoundingClientRect();
+    const rect = wrapperRef.current.getBoundingClientRect();
     setDragOffset({
       x: e.clientX - rect.left,
       y: e.clientY - rect.top
@@ -41,7 +42,6 @@ export function DraggableVideoTile({
     e.preventDefault();
   }, []);
 
-  // 拖拽移动
   const handleMouseMove = React.useCallback((e: MouseEvent) => {
     if (!isDragging) return;
     
@@ -58,7 +58,6 @@ export function DraggableVideoTile({
     setPosition({ x: newX, y: newY });
   }, [isDragging, dragOffset, width, height]);
 
-  // 拖拽结束
   const handleMouseUp = React.useCallback(() => {
     setIsDragging(false);
   }, []);
@@ -88,21 +87,16 @@ export function DraggableVideoTile({
     }
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
-  if (!track || !track.participant) {
-    return null;
-  }
-
   // 最小化状态
   if (displayState === VideoDisplayState.MINIMIZED) {
     return (
       <div
-        ref={tileRef}
+        ref={wrapperRef}
         style={{
           position: 'fixed',
           left: position.x,
           top: position.y,
-          zIndex: 1000,
-          cursor: 'pointer'
+          zIndex: 1000
         }}
       >
         <button
@@ -124,95 +118,98 @@ export function DraggableVideoTile({
       </div>
     );
   }
-
-  // 正常显示状态
+  
+  // 正常状态
   return (
-    <div 
-      ref={tileRef}
-      className="draggable-video-tile"
-      style={{ 
+    <div
+      ref={wrapperRef}
+      className="floating-wrapper"
+      style={{
         position: 'fixed',
         left: position.x,
         top: position.y,
-        width: width,
-        height: height,
-        background: '#1a1a1a',
-        border: '2px solid #444',
+        width,
+        height,
+        background: 'rgb(0, 0, 0)',
+        border: '2px solid rgb(68, 68, 68)',
         borderRadius: '8px',
         zIndex: 1000,
         overflow: 'hidden',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-        cursor: isDragging ? 'grabbing' : 'grab',
-        userSelect: 'none'
+        boxShadow: 'rgba(0, 0, 0, 0.3) 0px 4px 20px',
+        cursor: isDragging ? 'grabbing' : 'auto',
+        userSelect: 'none',
+        transition: '0.3s'
       }}
-      onMouseDown={handleMouseDown}
     >
-      {/* 标题栏 */}
+      {/* 视频内容 */}
+      <div 
+        className="jsx-4e74496e9c95c646"
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'rgb(0, 0, 0)',
+          position: 'relative'
+        }}
+      >
+        {children}
+      </div>
+      
+      {/* 最小化按钮 */}
       <div style={{
-        height: '30px',
-        background: '#333',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderBottom: '1px solid #444',
-        flexShrink: 0,
-        borderRadius: '6px 6px 0 0',
-        cursor: 'grab'
+        position: 'absolute',
+        top: '8px',
+        right: '8px',
+        zIndex: 10001
       }}>
-        <span style={{ 
-          color: '#fff', 
-          fontSize: '12px', 
-          fontWeight: 'bold',
-          textOverflow: 'ellipsis',
-          overflow: 'hidden',
-          whiteSpace: 'nowrap',
-          maxWidth: '90%'
-        }}>
-          📹 {track.participant?.name || '参与者'}
-        </span>
-
-        {/* 最小化按钮 */}
         <button
+          title="最小化"
           style={{
-            position: 'absolute',
-            top: '5px',
-            right: '8px',
             background: 'rgba(0, 0, 0, 0.6)',
-            color: '#fff',
+            color: 'rgb(255, 255, 255)',
             border: 'none',
             borderRadius: '4px',
-            width: '20px',
-            height: '20px',
+            width: '28px',
+            height: '28px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
-            fontSize: '14px',
-            lineHeight: '1'
+            fontSize: '14px'
           }}
           onClick={handleMinimize}
-          title="最小化"
         >
           _
         </button>
       </div>
       
-      {/* 视频内容区域 */}
-      <div style={{ 
-        flex: '1',
-        overflow: 'hidden',
-        background: '#000',
-        borderRadius: '0 0 6px 6px',
-        position: 'relative',
-        height: `${height - 30}px`
+      {/* 最大化按钮 */}
+      <div style={{
+        position: 'absolute',
+        bottom: '8px',
+        right: '8px',
+        zIndex: 10001
       }}>
-        <ParticipantTile 
-          {...track}
+        <button
+          title="最大化"
           style={{
-            width: '100%',
-            height: '100%'
+            background: 'rgba(0, 0, 0, 0.6)',
+            color: 'rgb(255, 255, 255)',
+            border: 'none',
+            borderRadius: '4px',
+            width: '28px',
+            height: '28px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            fontSize: '14px'
           }}
-        />
+        >
+          <img alt="最大化" width="16" height="16" src="/images/big.png" />
+        </button>
       </div>
     </div>
   );
