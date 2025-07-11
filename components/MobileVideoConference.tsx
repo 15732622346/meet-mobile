@@ -38,6 +38,8 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
   const [pinnedParticipantId, setPinnedParticipantId] = React.useState<string | null>(null);
   // 添加全屏状态
   const [isFullscreen, setIsFullscreen] = React.useState<boolean>(false);
+  // 新增: 本地摄像头是否放大显示
+  const [isLocalCameraExpanded, setIsLocalCameraExpanded] = React.useState<boolean>(false);
   
   // 获取用于视频显示的轨道
   const videoTracks = useTracks(
@@ -101,6 +103,27 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
     // 没有人说话时，显示有视频的第一个参与者
     return videoTracks.find(track => track?.publication?.isSubscribed) || videoTracks[0];
   }, [videoTracks, screenTracks, hasScreenShare, pinnedParticipantId, hasHost]);
+  
+  // 新增: 获取本地摄像头轨道
+  const localCameraTrack = React.useMemo(() => {
+    if (!localParticipant) return null;
+    
+    const cameraPublication = localParticipant.getTrackPublication(Track.Source.Camera);
+    if (cameraPublication?.track) {
+      return cameraPublication;
+    }
+    return null;
+  }, [localParticipant]);
+  
+  // 新增: 本地摄像头是否开启
+  const isLocalCameraEnabled = React.useMemo(() => {
+    return !!(
+      localParticipant && 
+      localParticipant.isCameraEnabled && 
+      localCameraTrack && 
+      !localCameraTrack.isMuted
+    );
+  }, [localParticipant, localCameraTrack]);
   
   // 处理头像点击，设置固定显示的参与者
   const handleAvatarClick = (participant: any) => {
@@ -168,6 +191,12 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
   // 切换全屏/横屏模式
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen);
+  };
+    
+  // 新增: 切换本地摄像头显示大小
+  const toggleLocalCameraSize = () => {
+    setIsLocalCameraExpanded(!isLocalCameraExpanded);
+  };
     
     try {
       // 获取屏幕共享容器元素
@@ -306,6 +335,41 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
                     title={isFullscreen ? '退出全屏' : '全屏'} 
                   />
                 </div>
+                
+                {/* 新增: 本地摄像头视频小窗口 */}
+                {isLocalCameraEnabled && (
+                  <div 
+                    className={`local-camera-container ${isLocalCameraExpanded ? 'expanded' : ''}`}
+                    onClick={toggleLocalCameraSize}
+                  >
+                    <video
+                      ref={node => {
+                        if (node && localCameraTrack?.track) {
+                          localCameraTrack.track.attach(node);
+                          return () => {
+                            localCameraTrack.track?.detach(node);
+                          };
+                        }
+                      }}
+                      autoPlay
+                      playsInline
+                      muted
+                    />
+                    
+                    <div className="local-video-name">
+                      我的摄像头
+                    </div>
+                    
+                    {/* 摄像头大小切换按钮 */}
+                    <div className="camera-toggle-btn">
+                      <img 
+                        src={getImagePath(isLocalCameraExpanded ? '/images/small.png' : '/images/big.png')}
+                        alt={isLocalCameraExpanded ? '缩小' : '放大'} 
+                        title={isLocalCameraExpanded ? '缩小' : '放大'} 
+                      />
+                    </div>
+                  </div>
+                )}
                 
                 {/* 添加调试信息 - 仅在开发环境显示 */}
                 {process.env.NODE_ENV === 'development' && (
@@ -525,6 +589,87 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
           height: 100vh;
           z-index: 9999;
           background-color: #000;
+        }
+        
+        /* 本地摄像头容器 */
+        .local-camera-container {
+          position: absolute;
+          right: 10px;
+          bottom: 40px;
+          width: 25%;
+          height: 25%;
+          border-radius: 8px;
+          overflow: hidden;
+          background-color: #222;
+          z-index: 10;
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+          transition: all 0.3s ease;
+        }
+        
+        /* 本地摄像头放大状态 */
+        .local-camera-container.expanded {
+          position: absolute;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          bottom: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          border: none !important;
+          border-radius: 0 !important;
+          z-index: 1000 !important;
+          background-color: black;
+          transform: none !important;
+        }
+        
+        /* 确保摄像头视频也完全覆盖 */
+        .local-camera-container.expanded video {
+          width: 100% !important;
+          height: 100% !important;
+          object-fit: contain !important;
+        }
+        
+        .local-camera-container video {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        
+        .local-video-name {
+          position: absolute;
+          bottom: 4px;
+          left: 4px;
+          background-color: rgba(0, 0, 0, 0.6);
+          color: white;
+          padding: 2px 4px;
+          border-radius: 4px;
+          font-size: 10px;
+          z-index: 2;
+        }
+        
+        /* 摄像头大小切换按钮 */
+        .camera-toggle-btn {
+          position: absolute;
+          top: 4px;
+          right: 4px;
+          background-color: rgba(0, 0, 0, 0.6);
+          color: white;
+          width: 24px;
+          height: 24px;
+          border-radius: 4px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          cursor: pointer;
+          z-index: 2;
+        }
+        
+        .camera-toggle-btn img {
+          width: 16px;
+          height: 16px;
         }
         
         .mobile-video-name {
