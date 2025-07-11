@@ -190,14 +190,6 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
 
   // 切换全屏/横屏模式
   const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
-  };
-    
-  // 新增: 切换本地摄像头显示大小
-  const toggleLocalCameraSize = () => {
-    setIsLocalCameraExpanded(!isLocalCameraExpanded);
-  };
-    
     try {
       // 获取屏幕共享容器元素
       const screenShareContainer = document.querySelector('.screen-share-wrapper');
@@ -247,9 +239,17 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
           }
         }
       }
+      
+      // 更新全屏状态
+      setIsFullscreen(!isFullscreen);
     } catch (error) {
       console.error('切换全屏模式出错:', error);
     }
+  };
+    
+  // 新增: 切换本地摄像头显示大小
+  const toggleLocalCameraSize = () => {
+    setIsLocalCameraExpanded(!isLocalCameraExpanded);
   };
 
   // 监听全屏状态变化
