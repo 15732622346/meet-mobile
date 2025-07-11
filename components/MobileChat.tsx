@@ -14,6 +14,17 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
   const [inputFocused, setInputFocused] = React.useState(false);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   
+  // 添加房间数据加载状态
+  const [dataLoaded, setDataLoaded] = React.useState(false);
+  
+  // 检测数据是否加载完成
+  React.useEffect(() => {
+    // 当接收到roomCtx的metadata或者participants数量超过1时，认为数据已加载
+    if (roomCtx?.metadata || participants.length > 1) {
+      setDataLoaded(true);
+    }
+  }, [roomCtx?.metadata, participants.length]);
+  
   // 与PC端保持一致，默认启用全局禁言
   const [chatGlobalMute, setChatGlobalMute] = React.useState(true);
 
@@ -43,15 +54,25 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
       shouldShowInMicList(p.attributes || {})
     ).length;
     
-    // 检查是否有可用麦位
-    const hasAvailableSlots = micListCount < maxMicSlots;
+    // 检查是否已加载完成
+    if (!dataLoaded) {
+      console.log('🔄 数据未完全加载，等待获取麦位配置...');
+      return {
+        micListCount,
+        maxSlots: 0 // 未加载前显示0，不使用默认值
+      };
+    }
+    
+    console.log('✅ 数据加载完成，当前麦位信息:', {
+      micListCount,
+      maxSlots: maxMicSlots
+    });
     
     return {
       micListCount,
-      maxSlots: maxMicSlots,
-      hasAvailableSlots
+      maxSlots: maxMicSlots
     };
-  }, [participants, maxMicSlots]);
+  }, [participants, maxMicSlots, dataLoaded]);
   
   // 监听全局禁言状态变化
   React.useEffect(() => {
@@ -470,7 +491,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     }
     
     // 麦位已满
-    if (!micStats.hasAvailableSlots) {
+    if (micStats.micListCount >= micStats.maxSlots) {
       return { available: false, reason: `麦位已满 (${micStats.micListCount}/${micStats.maxSlots})` };
     }
     
@@ -511,7 +532,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
       alert('您已在麦位上');
       } else if (!hasHost) {
         alert('请等待主持人进入房间后再申请上麦');
-      } else if (!micStats.hasAvailableSlots) {
+      } else if (micStats.micListCount >= micStats.maxSlots) {
         alert(`麦位已满！当前麦位列表已有 ${micStats.micListCount}/${micStats.maxSlots} 人，请等待有人退出后再申请。`);
       } else if (isDisabled) {
         alert('您已被禁用，无法申请上麦');
@@ -759,19 +780,28 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
             {/* 申请上麦按钮 - 只对普通用户显示，也改用button元素 */}
             {(userRole === undefined || userRole === 1) && (
               <button 
-                className={`mobile-control-btn request-mic ${localParticipant?.attributes?.mic_status === 'requesting' ? 'requesting' : ''}`}
-              onClick={handleMicRequest}
-                disabled={false} // 不禁用按钮
-                title={!getMicRequestAvailability.available ? getMicRequestAvailability.reason : getMicRequestAvailability.reason}
-            >
-              <img 
-                src={getImagePath('/images/submic.svg')} 
+                className={`mobile-control-btn request-mic ${localParticipant?.attributes?.mic_status === 'requesting' ? 'requesting' : ''} ${!getMicRequestAvailability.available || micStats.micListCount >= micStats.maxSlots ? 'disabled' : ''}`}
+                onClick={handleMicRequest}
+                disabled={!getMicRequestAvailability.available || micStats.micListCount >= micStats.maxSlots} // 直接使用麦位数据比较进行控制
+                title={micStats.micListCount >= micStats.maxSlots ? `麦位已满 (${micStats.micListCount}/${micStats.maxSlots})` : 
+                       !getMicRequestAvailability.available ? getMicRequestAvailability.reason : 
+                       `申请上麦 (${micStats.micListCount}/${micStats.maxSlots})`}
+                style={{
+                  backgroundColor: micStats.micListCount >= micStats.maxSlots ? '#9ca3af' : (localParticipant?.attributes?.mic_status === 'requesting' ? '#f97316' : '#eab308'),
+                  opacity: micStats.micListCount >= micStats.maxSlots ? '0.7' : '1',
+                  cursor: micStats.micListCount >= micStats.maxSlots ? 'not-allowed' : 'pointer'
+                }}
+              >
+                <img 
+                  src={getImagePath('/images/submic.svg')} 
                   alt="申请上麦" 
                   className="btn-icon"
-              />
+                />
                 <span className="btn-label">
-                  {localParticipant?.attributes?.mic_status === 'requesting' ? '申请中' : '申请'}
-              </span>
+                  {localParticipant?.attributes?.mic_status === 'requesting' ? '等待' : 
+                   micStats.micListCount >= micStats.maxSlots ? '已满' : 
+                   '申请'}
+                </span>
               </button>
             )}
           </div>
@@ -1152,6 +1182,51 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
           background-color: #eab308;
           animation: gentle-pulse 1.5s infinite;
           box-shadow: 0 0 8px rgba(234, 179, 8, 0.5);
+        }
+
+        /* 移动端控制按钮样式 */
+        .mobile-control-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background-color: #22c55e;
+          border: none;
+          border-radius: 20px;
+          color: white;
+          padding: 8px 12px;
+          font-size: 14px;
+          height: 36px;
+          cursor: pointer;
+          transition: all 0.2s;
+          position: relative;
+        }
+        
+        .mobile-control-btn .btn-icon {
+          width: 16px;
+          height: 16px;
+          margin-right: 4px;
+        }
+        
+        .mobile-control-btn.request-mic.requesting {
+          background-color: #f97316;
+        }
+
+        .mobile-control-btn.request-mic.disabled {
+          background-color: #9ca3af;
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+        
+        .mobile-control-btn.inactive {
+          background-color: #d1d5db;
+        }
+        
+        .mobile-control-btn.active {
+          background-color: #ef4444;
+        }
+        
+        .mobile-control-btn.no-permission {
+          background-color: #9ca3af;
         }
       `}</style>
     </div>

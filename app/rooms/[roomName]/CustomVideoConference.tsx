@@ -30,7 +30,7 @@ import { Track, Participant, RoomEvent, RemoteParticipant, DataPacket_Kind, Audi
 import type { MessageFormatter, WidgetState as BaseWidgetState } from '@livekit/components-react';
 import { useRouter } from 'next/navigation';
 
-import { MicRequestButton } from '../../../components/MicRequestButton';
+// MicRequestButton 组件已移除
 // import { LiveKitHostControlPanel } from '../../../components/LiveKitHostControlPanel';
 import { ModernFooter } from '../../../components/ModernFooter';
 import { FloatingWrapper } from '../../../components/FloatingParticipantTile';
