@@ -4,6 +4,8 @@ import { isUserDisabled, isHostOrAdmin, shouldShowInMicList } from '../lib/token
 import { getImagePath } from '../lib/image-path';
 import { API_CONFIG } from '../lib/config';
 import { RoomEvent } from 'livekit-client';
+// 导入专用样式文件
+import '../styles/MobileChat.css';
 
 export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
   const { chatMessages, send, isSending } = useChat();
@@ -667,7 +669,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     
     return {
       disabled: false,
-      placeholder: "输入消息..."
+      placeholder: "输入消息...(最多60字)"
     };
   };
   
@@ -675,18 +677,27 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
 
   return (
     <div className="mobile-chat">
-      <div className="mobile-chat-messages">
-        {chatMessages.map((msg, idx) => (
-          <div 
-            key={idx} 
-            className={`mobile-chat-message ${msg.from?.identity === 'local' ? 'self' : ''}`}
-          >
-            <div className="mobile-chat-name">
-              {msg.from?.name || '未知用户'}:
+
+      <div 
+        className="mobile-chat-messages"
+        id="chat-messages-container"
+      >
+        {chatMessages.map((msg, idx) => {
+          // 使用CSS类而不是内联样式
+          const isSelf = msg.from?.identity === 'local';
+          const messageClassName = `mobile-chat-message ${isSelf ? 'self' : ''}`;
+
+          return (
+            <div key={idx} className={messageClassName}>
+              <div className="mobile-chat-name">
+                {msg.from?.name || '未知用户'}:
+              </div>
+              <div className="mobile-chat-content">
+                {msg.message}
+              </div>
             </div>
-            <div className="mobile-chat-content">{msg.message}</div>
-          </div>
-        ))}
+          );
+        })}
         <div ref={messagesEndRef} />
       </div>
       
@@ -720,7 +731,16 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
                 onChange={(e) => {
                   // 游客模式下不允许输入
                   if (userRole !== 0) {
-                    setMessage(e.target.value);
+                    // 限制最多输入60个字符
+                    const value = e.target.value;
+                    if (value.length <= 60) {
+                      setMessage(value);
+                    } else {
+                      // 如果超出长度，只保留前60个字符
+                      setMessage(value.substring(0, 60));
+                      // 可选：提示用户已达到最大长度
+                      console.log("已达到最大字符数限制(60)");
+                    }
                   }
                 }}
                 onFocus={(e) => {
@@ -734,6 +754,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
                 }}
                 onBlur={handleInputBlur}
                 placeholder={inputStatus.placeholder}
+                maxLength={60}
                 disabled={inputStatus.disabled || isSending}
                 readOnly={userRole === 0} // 添加readOnly属性确保在所有浏览器中都禁用输入
                 className={`input-field ${(inputStatus.disabled && !isHost) ? 'disabled' : ''} ${userRole === 0 ? 'guest-input-disabled' : ''}`}
@@ -880,7 +901,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
         
         .mobile-chat-content {
           font-size: 14px;
-          word-break: break-word;
+          wordBreak: break-word;
           color: white; /* 文字改为白色 */
         }
         

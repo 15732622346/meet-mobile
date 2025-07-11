@@ -1,0 +1,55 @@
+/* 聊天消息样式专用CSS文件 */
+
+.mobile-chat-message {
+  margin-bottom: 10px !important;
+  padding: 4px 0 !important;
+  max-width: 80% !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  overflow: hidden !important;
+  position: relative !important;
+  align-self: flex-start !important;
+  margin-left: 0px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+.mobile-chat-message.self {
+  align-self: flex-end !important;
+  margin-left: auto !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.mobile-chat-name {
+  font-size: 12px !important;
+  font-weight: bold !important;
+  margin-right: 4px !important;
+  color: #4a9eff !important;
+  display: inline !important;
+  background: transparent !important;
+}
+
+.mobile-chat-content {
+  font-size: 14px !important;
+  word-break: break-word !important;
+  color: #000 !important;
+  display: inline !important;
+  background: transparent !important;
+}
+
+.mobile-chat-messages {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  overflow-y: auto !important;
+  padding: 10px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 100% !important;
+  background: transparent !important;
+} 
