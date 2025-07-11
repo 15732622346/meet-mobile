@@ -365,7 +365,7 @@ export function MobileVideoConference({
         key: 'chat',
         // 将标签名改为带描述的麦位数量
         label: micInfoLabel,
-        content: <MobileChat maxMicSlots={roomDetails?.maxMicSlots || maxMicSlots} />,
+        content: <MobileChat userRole={userRole} maxMicSlots={roomDetails?.maxMicSlots || maxMicSlots} />,
         isMicInfo: true // 标记为麦位信息标签
       }
     ];

@@ -717,12 +717,26 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
               <input
                 type="text"
                 value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onFocus={handleInputFocus}
+                onChange={(e) => {
+                  // 游客模式下不允许输入
+                  if (userRole !== 0) {
+                    setMessage(e.target.value);
+                  }
+                }}
+                onFocus={(e) => {
+                  // 游客模式下显示提示并立即失焦，防止输入
+                  if (userRole === 0) {
+                    alert('游客需要注册为会员才能发言!');
+                    e.target.blur(); // 立即取消焦点
+                  } else {
+                    handleInputFocus();
+                  }
+                }}
                 onBlur={handleInputBlur}
                 placeholder={inputStatus.placeholder}
                 disabled={inputStatus.disabled || isSending}
-                className={`input-field ${(inputStatus.disabled && !isHost) ? 'disabled' : ''}`}
+                readOnly={userRole === 0} // 添加readOnly属性确保在所有浏览器中都禁用输入
+                className={`input-field ${(inputStatus.disabled && !isHost) ? 'disabled' : ''} ${userRole === 0 ? 'guest-input-disabled' : ''}`}
               />
               {inputFocused && (
                 <button 
@@ -802,6 +816,27 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
                    micStats.micListCount >= micStats.maxSlots ? '已满' : 
                    '申请'}
                 </span>
+              </button>
+            )}
+
+            {/* 添加游客模式下的申请按钮 */}
+            {userRole === 0 && (
+              <button 
+                className="mobile-control-btn request-mic guest-button-disabled"
+                onClick={() => {
+                  alert('游客需要注册为会员才能使用此功能！');
+                  // 可选：导航到注册页面
+                  // window.location.href = '/register.html';
+                }}
+                title="游客需要注册为会员"
+              >
+                <img 
+                  src={getImagePath('/images/submic.svg')} 
+                  alt="申请上麦" 
+                  className="btn-icon"
+                />
+                <span className="btn-label">申请</span>
+                <div className="guest-lock-icon">🔒</div>
               </button>
             )}
           </div>
@@ -1227,6 +1262,38 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
         
         .mobile-control-btn.no-permission {
           background-color: #9ca3af;
+        }
+
+        .guest-input-disabled {
+          background-color: #f1f1f1 !important;
+          color: #999 !important;
+          border: 1px solid #ccc !important;
+          cursor: not-allowed !important;
+          opacity: 0.7 !important;
+          pointer-events: none !important;
+        }
+        
+        .guest-button-disabled {
+          background-color: #777 !important;
+          opacity: 0.7 !important;
+          cursor: not-allowed !important;
+          position: relative;
+        }
+        
+        .guest-lock-icon {
+          position: absolute;
+          top: -5px;
+          right: -5px;
+          width: 18px;
+          height: 18px;
+          background-color: #ff4d4f;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 10px;
+          color: white;
+          border: 1px solid white;
         }
       `}</style>
     </div>
