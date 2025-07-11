@@ -300,6 +300,21 @@ body, html {
   transform: translate3d(0,0,0);
   will-change: transform;
   touch-action: none;
+  /* 确保在全屏模式下也能显示 */
+  position: fixed !important;
+}
+
+/* 全屏模式下的浮动窗口特殊样式 */
+:fullscreen .floating-wrapper,
+:-webkit-full-screen .floating-wrapper,
+:-moz-full-screen .floating-wrapper,
+:-ms-fullscreen .floating-wrapper {
+  z-index: 10500 !important;
+  position: absolute !important;
+  transform: translate3d(0,0,0) !important;
+  -webkit-transform: translate3d(0,0,0) !important;
+  display: block !important;
+  visibility: visible !important;
 }
 
 .floating-wrapper.minimized {

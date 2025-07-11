@@ -19,6 +19,7 @@ import { MobileControlPanel } from './MobileControlPanel';
 import { HideLiveKitCounters } from './HideLiveKitCounters';
 import { isHostOrAdmin, isCameraEnabled, shouldShowInMicList } from '../lib/token-utils';
 import { getImagePath } from '../lib/image-path';
+import { initFullscreenFloatingFix } from '../lib/fullscreen-floating-fix';
 
 // 视频显示状态枚举
 enum VideoDisplayState {
@@ -340,6 +341,22 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
   React.useEffect(() => {
     console.log("当前视频显示状态:", displayState);
   }, [displayState]);
+
+  // 添加全屏浮动窗口修复
+  React.useEffect(() => {
+    // 初始化全屏浮动窗口修复功能
+    initFullscreenFloatingFix();
+    
+    // 组件卸载时清理事件监听
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('fullscreenchange', () => {});
+        document.removeEventListener('webkitfullscreenchange', () => {});
+        document.removeEventListener('mozfullscreenchange', () => {});
+        document.removeEventListener('MSFullscreenChange', () => {});
+      }
+    };
+  }, []);
 
   // 这里是重构后的渲染逻辑
   if (displayState === VideoDisplayState.MINIMIZED) {

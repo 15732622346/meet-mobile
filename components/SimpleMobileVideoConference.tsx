@@ -20,6 +20,7 @@ import { HideLiveKitCounters } from './HideLiveKitCounters';
 import { FloatingWrapper } from './FloatingParticipantTile'; // 引入FloatingWrapper组件
 import { isHostOrAdmin, isCameraEnabled, shouldShowInMicList } from '../lib/token-utils';
 import { getImagePath } from '../lib/image-path';
+import { initFullscreenFloatingFix } from '../lib/fullscreen-floating-fix';
 
 // 默认最大麦位数量
 const DEFAULT_MAX_MIC_SLOTS = 5;
@@ -221,6 +222,9 @@ export function SimpleMobileVideoConference({ userRole, userName, userId, maxMic
         }
       }
     };
+    
+    // 初始化全屏浮动窗口修复功能
+    initFullscreenFloatingFix();
     
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
