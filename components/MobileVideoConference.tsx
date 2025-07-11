@@ -9,7 +9,8 @@ import {
   GridLayout,
   VideoTrack,
   TrackRefContext,
-  ParticipantTile
+  ParticipantTile,
+  useRoomInfo
 } from '@livekit/components-react';
 import { Track, RoomEvent, Room, Participant } from 'livekit-client';
 import { MobileAvatarRow } from './MobileAvatarRow';
@@ -20,6 +21,8 @@ import { HideLiveKitCounters } from './HideLiveKitCounters';
 import { isHostOrAdmin, isCameraEnabled, shouldShowInMicList } from '../lib/token-utils';
 import { getImagePath } from '../lib/image-path';
 import { initFullscreenFloatingFix } from '../lib/fullscreen-floating-fix';
+import { MicRequestButton } from './MicRequestButton';
+import { API_CONFIG } from '../lib/config';
 
 // 视频显示状态枚举
 enum VideoDisplayState {
@@ -36,13 +39,22 @@ interface MobileVideoConferenceProps {
   userId?: number;
   // 可以添加最大麦位数量参数
   maxMicSlots?: number;
+  // 添加userToken参数
+  userToken?: string;
 }
 
-export function MobileVideoConference({ userRole, userName, userId, maxMicSlots = DEFAULT_MAX_MIC_SLOTS }: MobileVideoConferenceProps) {
+export function MobileVideoConference({ 
+  userRole, 
+  userName, 
+  userId, 
+  maxMicSlots = DEFAULT_MAX_MIC_SLOTS,
+  userToken
+}: MobileVideoConferenceProps) {
   const { localParticipant } = useLocalParticipant();
   const roomCtx = useRoomContext();
   const room = roomCtx as Room;
   const participants = useParticipants();
+  const roomInfo = useRoomInfo();
   const [pinnedParticipantId, setPinnedParticipantId] = React.useState<string | null>(null);
   // 添加全屏状态
   const [isFullscreen, setIsFullscreen] = React.useState<boolean>(false);
@@ -52,6 +64,97 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
   const [showCameraPanel, setShowCameraPanel] = React.useState<boolean>(false);
   // 添加视频显示状态
   const [displayState, setDisplayState] = React.useState<VideoDisplayState>(VideoDisplayState.NORMAL);
+  
+  // 🎯 新增：房间详情信息管理
+  const [roomDetails, setRoomDetails] = React.useState<{
+    maxMicSlots: number;
+    roomName: string;
+    roomState: number;
+  } | null>(null);
+  
+  // 🎯 从服务器获取房间详情
+  React.useEffect(() => {
+    if (!roomInfo.name) {
+      console.log('⏭️ 跳过房间详情获取 - 没有房间ID');
+      return;
+    }
+
+    console.log('🚀 开始获取房间详情 - room_id:', roomInfo.name);
+
+    const fetchRoomDetails = async () => {
+      try {
+        const url = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ROOM_INFO}?room_id=${roomInfo.name}`;
+        console.log('🔗 请求URL:', url);
+
+        const response = await fetch(url);
+        console.log('📥 响应状态:', response.status, response.statusText);
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('📦 收到数据:', data);
+
+          if (data.success) {
+            console.log('✅ 成功！设置房间详情:', data.data);
+            setRoomDetails({
+              maxMicSlots: data.data.max_mic_slots || DEFAULT_MAX_MIC_SLOTS,
+              roomName: data.data.room_name,
+              roomState: data.data.room_state
+            });
+          }
+        }
+      } catch (error) {
+        console.error('❌ 获取房间详情失败:', error);
+      }
+    };
+
+    fetchRoomDetails();
+  }, [roomInfo.name]);
+  
+  // 🎯 新增：监听房间元数据变化，更新roomDetails
+  React.useEffect(() => {
+    if (!roomCtx) return;
+    
+    const handleMetadataChanged = () => {
+      try {
+        console.log('🔄 房间元数据更新:', roomCtx.metadata);
+        if (!roomCtx.metadata) return;
+        
+        const metadata = JSON.parse(roomCtx.metadata);
+        if (metadata && typeof metadata.maxMicSlots === 'number') {
+          console.log('✅ 从元数据更新最大麦位数:', metadata.maxMicSlots);
+          
+          // 更新roomDetails中的maxMicSlots，确保类型安全
+          setRoomDetails(prev => {
+            if (!prev) return {
+              maxMicSlots: metadata.maxMicSlots,
+              roomName: roomInfo.name || '',
+              roomState: 1 // 默认值
+            };
+            
+            return {
+              ...prev,
+              maxMicSlots: metadata.maxMicSlots
+            };
+          });
+        }
+      } catch (error) {
+        console.error('❌ 解析房间元数据失败:', error);
+      }
+    };
+    
+    // 初始化时处理当前元数据
+    handleMetadataChanged();
+    
+    // 添加元数据变化事件监听
+    // @ts-ignore - LiveKit类型定义中可能缺少'metadata_changed'事件
+    roomCtx.on('metadata_changed', handleMetadataChanged);
+    
+    // 清理函数
+    return () => {
+      // @ts-ignore - LiveKit类型定义中可能缺少'metadata_changed'事件
+      roomCtx.off('metadata_changed', handleMetadataChanged);
+    };
+  }, [roomCtx, roomInfo.name]);
   
   // 获取用于视频显示的轨道
   const videoTracks = useTracks(
@@ -178,22 +281,25 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
       shouldShowInMicList(p.attributes || {})
     ).length;
     
+    // 获取最大麦位数 - 优先使用服务器配置的值
+    const configuredMaxMicSlots = roomDetails?.maxMicSlots || maxMicSlots;
+    
     // 检查是否有可用麦位
-    const hasAvailableSlots = micListCount < maxMicSlots;
+    const hasAvailableSlots = micListCount < configuredMaxMicSlots;
     
     return {
       micListCount,
-      maxSlots: maxMicSlots,
+      maxSlots: configuredMaxMicSlots,
       hasAvailableSlots
     };
-  }, [participants, maxMicSlots]);
+  }, [participants, maxMicSlots, roomDetails]);
 
   // 定义标签页
   const tabs: TabItem[] = [
     {
       key: 'chat',
-      // 将标签名改为显示麦位信息
-      label: `${micStats.micListCount}/${micStats.maxSlots}`,
+      // 将标签名改为固定文本，不再显示麦位计数
+      label: '聊天',
       content: <MobileChat />,
       isMicInfo: true // 标记为麦位信息标签
     }
@@ -204,9 +310,42 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
     tabs.push({
       key: 'control',
       label: '管理',
-      content: <MobileControlPanel userRole={userRole} />
+      content: <MobileControlPanel 
+        userRole={userRole} 
+        userName={userName}
+        userToken={userToken}
+      />
     });
   }
+
+  // 在聊天区域外面添加申请上麦按钮
+  const renderMicRequestButton = () => {
+    // 只对普通用户显示
+    if (userRole && userRole >= 2) return null;
+    
+    // 获取服务器配置的最大麦位数
+    const configuredMaxMicSlots = roomDetails?.maxMicSlots || maxMicSlots;
+    
+    return (
+      <div className="mobile-mic-request-button-container">
+        <MicRequestButton 
+          userRole={userRole} 
+          maxMicSlots={configuredMaxMicSlots}
+          userName={userName}
+        />
+        <style jsx>{`
+          .mobile-mic-request-button-container {
+            position: fixed;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            width: auto;
+          }
+        `}</style>
+      </div>
+    );
+  };
 
   // 🎯 检查主视频轨道的摄像头是否开启
   const shouldShowVideoFrame = React.useMemo(() => {
@@ -429,6 +568,7 @@ export function MobileVideoConference({ userRole, userName, userId, maxMicSlots 
   // 正常显示状态
   return (
     <div className="mobile-video-conference">
+      {renderMicRequestButton()}
       <div className="mobile-main-video">
         {!shouldShowVideoFrame ? (
           // 主持人已进入但没有视频可显示 - 与PC端保持一致，不显示任何内容

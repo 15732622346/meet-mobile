@@ -1,39 +1,126 @@
 import React from 'react';
-import { useParticipants } from '@livekit/components-react';
+import { useParticipants, useRoomContext, useRoomInfo } from '@livekit/components-react';
 import { Participant } from 'livekit-client';
 import { isRequestingMic, isOnMic, canSpeak, parseParticipantAttributes } from '../lib/token-utils';
+import { API_CONFIG } from '../lib/config';
 
 interface MobileMicListProps {
   userRole?: number;
   maxMicSlots?: number;
+  userToken?: string;
+  userName?: string;
 }
 
-export function MobileMicList({ userRole, maxMicSlots = 8 }: MobileMicListProps) {
+export function MobileMicList({ userRole, maxMicSlots = 8, userToken, userName }: MobileMicListProps) {
   const participants = useParticipants();
+  const roomCtx = useRoomContext();
+  const roomInfo = useRoomInfo();
   const [expandedParticipant, setExpandedParticipant] = React.useState<string | null>(null);
+  const [isLoading, setIsLoading] = React.useState<Record<string, boolean>>({});
   
   const isHost = userRole ? userRole >= 2 : false;
   
   // 获取已在麦上的用户
   const activeMicParticipants = React.useMemo(() => {
-    return participants.filter(p => isOnMic(p));
+    return participants.filter(p => isOnMic(p.attributes || {}));
   }, [participants]);
   
   // 获取申请上麦的用户
   const requestingParticipants = React.useMemo(() => {
-    return participants.filter(p => isRequestingMic(p));
+    return participants.filter(p => isRequestingMic(p.attributes || {}));
   }, [participants]);
   
   // 处理申请上麦请求
-  const handleApproveMic = (participant: Participant) => {
+  const handleApproveMic = async (participant: Participant) => {
     console.log('批准上麦:', participant.identity);
-    // 这里应该调用API处理上麦请求
+    
+    setIsLoading(prev => ({ ...prev, [participant.identity]: true }));
+    
+    try {
+      // 构建请求头
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      // 如果有Token，添加Authorization头
+      if (userToken) {
+        headers['Authorization'] = `Bearer ${userToken}`;
+      }
+      
+      // 调用API处理上麦请求
+      const response = await fetch(`${API_CONFIG.BASE_URL}/admin-control-participants.php`, {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify({
+          room_name: roomInfo.name,
+          target_identity: participant.identity,
+          operator_identity: userName || 'admin',
+          action: 'approve_mic'
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log('✅ 批准上麦成功:', participant.name);
+      } else {
+        console.error('❌ 批准上麦失败:', result.error);
+        alert(`批准上麦失败: ${result.error || '未知错误'}`);
+      }
+    } catch (error) {
+      console.error('❌ 批准上麦网络错误:', error);
+      alert('网络错误，请重试');
+    } finally {
+      setIsLoading(prev => ({ ...prev, [participant.identity]: false }));
+    }
   };
   
   // 处理踢下麦请求
-  const handleRemoveFromMic = (participant: Participant) => {
+  const handleRemoveFromMic = async (participant: Participant) => {
     console.log('踢下麦:', participant.identity);
-    // 这里应该调用API处理踢下麦请求
+    
+    setIsLoading(prev => ({ ...prev, [participant.identity]: true }));
+    
+    try {
+      // 构建请求头
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      // 如果有Token，添加Authorization头
+      if (userToken) {
+        headers['Authorization'] = `Bearer ${userToken}`;
+      }
+      
+      // 调用API处理踢下麦请求
+      const response = await fetch(`${API_CONFIG.BASE_URL}/admin-control-participants.php`, {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify({
+          room_name: roomInfo.name,
+          target_identity: participant.identity,
+          operator_identity: userName || 'admin',
+          action: 'kick_from_mic'
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log('✅ 踢下麦成功:', participant.name);
+        setExpandedParticipant(null); // 关闭控制菜单
+      } else {
+        console.error('❌ 踢下麦失败:', result.error);
+        alert(`踢下麦失败: ${result.error || '未知错误'}`);
+      }
+    } catch (error) {
+      console.error('❌ 踢下麦网络错误:', error);
+      alert('网络错误，请重试');
+    } finally {
+      setIsLoading(prev => ({ ...prev, [participant.identity]: false }));
+    }
   };
   
   return (
@@ -45,6 +132,7 @@ export function MobileMicList({ userRole, maxMicSlots = 8 }: MobileMicListProps)
           {activeMicParticipants.map(participant => {
             const displayName = participant.name || participant.identity || 'Unknown';
             const avatarLetter = displayName.charAt(0).toUpperCase() || '?';
+            const isLoadingAction = isLoading[participant.identity];
             
             return (
               <div 
@@ -56,7 +144,7 @@ export function MobileMicList({ userRole, maxMicSlots = 8 }: MobileMicListProps)
               >
                 <div className="mobile-mic-avatar">
                   {avatarLetter}
-                  {canSpeak(participant) ? (
+                  {canSpeak(participant.attributes || {}) ? (
                     <div className="mobile-mic-status speaking"></div>
                   ) : (
                     <div className="mobile-mic-status muted"></div>
@@ -74,8 +162,9 @@ export function MobileMicList({ userRole, maxMicSlots = 8 }: MobileMicListProps)
                         e.stopPropagation();
                         handleRemoveFromMic(participant);
                       }}
+                      disabled={isLoadingAction}
                     >
-                      踢下麦
+                      {isLoadingAction ? '处理中...' : '踢下麦'}
                     </button>
                   </div>
                 )}
@@ -103,6 +192,7 @@ export function MobileMicList({ userRole, maxMicSlots = 8 }: MobileMicListProps)
             {requestingParticipants.map(participant => {
               const displayName = participant.name || participant.identity || 'Unknown';
               const avatarLetter = displayName.charAt(0).toUpperCase() || '?';
+              const isLoadingAction = isLoading[participant.identity];
               
               return (
                 <div key={participant.identity} className="mobile-mic-request">
@@ -117,8 +207,9 @@ export function MobileMicList({ userRole, maxMicSlots = 8 }: MobileMicListProps)
                   <button 
                     className="mobile-request-approve"
                     onClick={() => handleApproveMic(participant)}
+                    disabled={isLoadingAction}
                   >
-                    允许
+                    {isLoadingAction ? '处理中...' : '允许'}
                   </button>
                 </div>
               );

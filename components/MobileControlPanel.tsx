@@ -1,91 +1,90 @@
-import * as React from 'react';
-import { Participant } from 'livekit-client';
-import { useParticipants } from '@livekit/components-react';
-import { isHostOrAdmin, parseParticipantAttributes } from '../lib/token-utils';
+import React from 'react';
+import { useRoomContext, useLocalParticipant } from '@livekit/components-react';
+import { MobileMicList } from './MobileMicList';
+import { MobileAvatarRow } from './MobileAvatarRow';
 
 interface MobileControlPanelProps {
   userRole?: number;
+  userName?: string;
+  userToken?: string;
 }
 
-export function MobileControlPanel({ userRole }: MobileControlPanelProps) {
-  const participants = useParticipants();
-  const [chatMuted, setChatMuted] = React.useState(false);
-  const [micMuted, setMicMuted] = React.useState(false);
+export function MobileControlPanel({ userRole, userName, userToken }: MobileControlPanelProps) {
+  const { localParticipant } = useLocalParticipant();
+  const room = useRoomContext();
   
-  // 只有主持人或管理员可以使用控制面板
-  const isHost = userRole ? userRole >= 2 : false;
+  // 当前显示的面板内容
+  const [activePanel, setActivePanel] = React.useState<'mic' | 'participants'>('mic');
   
-  if (!isHost) {
-    return null;
-  }
+  // 从localParticipant获取用户名，如果没有传入
+  const effectiveUserName = userName || localParticipant?.name || localParticipant?.identity;
   
-  // 假设处理全局禁言功能
-  const handleToggleChatMute = () => {
-    setChatMuted(!chatMuted);
-    // 这里应该发送指令到LiveKit服务器
-    console.log('全局禁言状态：', !chatMuted);
-  };
-  
-  // 假设处理全局静音功能
-  const handleToggleMicMute = () => {
-    setMicMuted(!micMuted);
-    // 这里应该发送指令到LiveKit服务器
-    console.log('全局麦克风静音状态：', !micMuted);
-  };
-
   return (
-    <div className="mobile-host-panel">
-      <div className="mobile-host-panel-title">主持人控制面板</div>
+    <div className="mobile-control-panel">
+      <div className="mobile-control-tabs">
+        <div
+          className={`mobile-control-tab ${activePanel === 'mic' ? 'active' : ''}`}
+          onClick={() => setActivePanel('mic')}
+        >
+          麦位管理
+        </div>
+        <div
+          className={`mobile-control-tab ${activePanel === 'participants' ? 'active' : ''}`}
+          onClick={() => setActivePanel('participants')}
+        >
+          参会者
+        </div>
+      </div>
       
-      <div className="mobile-host-controls">
-        <button 
-          className={`mobile-host-control-btn ${chatMuted ? 'active' : ''}`} 
-          onClick={handleToggleChatMute}
-        >
-          {chatMuted ? '解除全局禁言' : '全局禁言'}
-        </button>
-        
-        <button 
-          className={`mobile-host-control-btn ${micMuted ? 'active' : ''}`} 
-          onClick={handleToggleMicMute}
-        >
-          {micMuted ? '解除全局静音' : '全局静音'}
-        </button>
+      <div className="mobile-control-content">
+        {activePanel === 'mic' ? (
+          <MobileMicList 
+            userRole={userRole} 
+            userToken={userToken}
+            userName={effectiveUserName}
+          />
+        ) : (
+          <div className="mobile-participants-list">
+            <MobileAvatarRow />
+          </div>
+        )}
       </div>
       
       <style jsx>{`
-        .mobile-host-panel {
-          padding: 15px;
-          background-color: #f8f8f8;
-        }
-        
-        .mobile-host-panel-title {
-          font-size: 16px;
-          font-weight: bold;
-          margin-bottom: 15px;
-          text-align: center;
-          color: #333;
-        }
-        
-        .mobile-host-controls {
+        .mobile-control-panel {
           display: flex;
           flex-direction: column;
-          gap: 10px;
+          height: 100%;
+          background-color: white;
         }
         
-        .mobile-host-control-btn {
-          padding: 12px;
-          border-radius: 8px;
-          border: none;
-          background-color: #eee;
-          color: #333;
-          font-weight: 500;
+        .mobile-control-tabs {
+          display: flex;
+          border-bottom: 1px solid #e5e5e5;
+        }
+        
+        .mobile-control-tab {
+          flex: 1;
+          text-align: center;
+          padding: 15px 0;
           font-size: 14px;
+          color: #666;
+          cursor: pointer;
         }
         
-        .mobile-host-control-btn.active {
-          background-color: #ff6b6b;
-          color: white;
+        .mobile-control-tab.active {
+          color: #22c55e;
+          font-weight: bold;
+          border-bottom: 2px solid #22c55e;
+        }
+        
+        .mobile-control-content {
+          flex: 1;
+          overflow-y: auto;
+        }
+        
+        .mobile-participants-list {
+          padding: 10px;
         }
       `}</style>
     </div>

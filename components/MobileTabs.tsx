@@ -31,10 +31,7 @@ export function MobileTabs({ tabs, defaultActiveKey }: MobileTabsProps) {
             {tab.isMicInfo ? (
               <div className="mic-status-display">
                 <span className="mic-count">
-                  {tab.label.includes('/') ? 
-                    `当前麦位 ${tab.label.split('/')[0]}, 最大麦位 ${tab.label.split('/')[1]}` : 
-                    tab.label
-                  }
+                  {tab.label}
                 </span>
               </div>
             ) : (

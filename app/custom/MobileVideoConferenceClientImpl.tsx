@@ -165,6 +165,7 @@ function MobileVideoConferenceClientImplInner(props: {
           userName={props.userName}
           userId={props.userId}
           maxMicSlots={5}
+          userToken={props.token}
         />
         <DebugMode logLevel={LogLevel.debug} />
       </RoomContext.Provider>
