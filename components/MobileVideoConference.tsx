@@ -298,8 +298,8 @@ export function MobileVideoConference({
   const tabs: TabItem[] = [
     {
       key: 'chat',
-      // 将标签名改为固定文本，不再显示麦位计数
-      label: '聊天',
+      // 将标签名改为带描述的麦位数量
+      label: `当前麦位数 ${micStats.micListCount} 最大麦位数 ${micStats.maxSlots}`,
       content: <MobileChat />,
       isMicInfo: true // 标记为麦位信息标签
     }
