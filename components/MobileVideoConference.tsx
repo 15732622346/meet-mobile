@@ -427,29 +427,45 @@ export function MobileVideoConference({
       
       if (screenShareContainer) {
         if (!isFullscreen) {
-          // 如果当前不是全屏，则请求横屏
-          try {
-            if (screen.orientation && 'lock' in screen.orientation) {
-              (screen.orientation as any).lock('landscape').catch((err: any) => {
-                console.error('无法锁定屏幕方向:', err);
-              });
-            }
-          } catch (orientationError) {
-            console.error('屏幕方向API错误:', orientationError);
-          }
+          // 先请求全屏，然后在成功回调中锁定横屏
+          console.log('请求进入全屏模式');
           
-          // 如果支持全屏API，请求全屏
+          // 定义成功进入全屏后的回调
+          const onFullscreenSuccess = () => {
+            // 延迟一小段时间再锁定屏幕方向，等待全屏模式完全建立
+            setTimeout(() => {
+              try {
+                // 强制锁定为横屏模式
+                if (screen.orientation && 'lock' in screen.orientation) {
+                  console.log('请求锁定横屏方向');
+                  (screen.orientation as any).lock('landscape').catch((err: any) => {
+                    console.error('无法锁定屏幕方向:', err);
+                  });
+                }
+              } catch (orientationError) {
+                console.error('屏幕方向API错误:', orientationError);
+              }
+            }, 300); // 300ms延迟，等待全屏模式稳定和提示条显示完成
+          };
+          
+          // 请求全屏并处理成功情况
           if ((screenShareContainer as any).requestFullscreen) {
-            (screenShareContainer as any).requestFullscreen().catch((err: any) => {
-              console.error('无法进入全屏模式:', err);
-            });
+            (screenShareContainer as any).requestFullscreen()
+              .then(onFullscreenSuccess)
+              .catch((err: any) => {
+                console.error('无法进入全屏模式:', err);
+              });
           } else if ((screenShareContainer as any).webkitRequestFullscreen) {
             (screenShareContainer as any).webkitRequestFullscreen();
+            // WebKit没有Promise返回，使用延时
+            setTimeout(onFullscreenSuccess, 100);
           } else if ((screenShareContainer as any).msRequestFullscreen) {
             (screenShareContainer as any).msRequestFullscreen();
+            setTimeout(onFullscreenSuccess, 100);
           }
         } else {
           // 退出全屏
+          console.log('请求退出全屏模式');
           if (document.exitFullscreen) {
             document.exitFullscreen().catch((err: any) => {
               console.error('无法退出全屏模式:', err);
@@ -463,6 +479,7 @@ export function MobileVideoConference({
           // 恢复屏幕方向
           try {
             if (screen.orientation && 'unlock' in screen.orientation) {
+              console.log('解除屏幕方向锁定');
               (screen.orientation as any).unlock();
             }
           } catch (orientationError) {
