@@ -301,28 +301,33 @@ export function UserAuthForm({ onLoginSuccess, onGuestMode, roomName }: UserAuth
 
   return (
     <div style={{ 
-      display: 'grid', 
-      placeItems: 'center', 
-      height: '100%',
+      display: 'flex', 
+      justifyContent: 'center',
+      alignItems: 'center', 
+      minHeight: '100%',
+      maxHeight: '100vh',
+      overflowY: 'auto',
       background: '#1a1a1a',
-      color: 'white'
+      color: 'white',
+      padding: '16px'
     }}>
       <div style={{ 
         display: 'flex', 
         flexDirection: 'column', 
-        gap: '20px', 
-        width: '400px',
+        gap: '16px', 
+        width: '100%',
+        maxWidth: '400px',
         background: '#2a2a2a',
-        padding: '40px',
+        padding: '24px',
         borderRadius: '12px',
         boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
       }}>
         {/* 标题和切换 */}
         <div style={{ textAlign: 'center' }}>
-          <h2 style={{ margin: '0 0 10px 0', fontSize: '24px' }}>
+          <h2 style={{ margin: '0 0 8px 0', fontSize: '22px' }}>
             {isLogin ? '登录会议' : '注册账户'}
           </h2>
-          <p style={{ color: '#888', margin: 0 }}>
+          <p style={{ color: '#888', margin: 0, fontSize: '14px' }}>
             {isLogin ? '使用账户登录，无需邀请码' : '创建新账户加入会议'}
           </p>
         </div>
@@ -332,9 +337,9 @@ export function UserAuthForm({ onLoginSuccess, onGuestMode, roomName }: UserAuth
           <div style={{
             background: '#ff4757',
             color: 'white',
-            padding: '12px',
+            padding: '10px',
             borderRadius: '6px',
-            fontSize: '14px',
+            fontSize: '13px',
             textAlign: 'center'
           }}>
             {error}
@@ -342,7 +347,7 @@ export function UserAuthForm({ onLoginSuccess, onGuestMode, roomName }: UserAuth
         )}
 
         {/* 表单字段 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <input
             type="text"
             placeholder="用户名"
@@ -354,7 +359,7 @@ export function UserAuthForm({ onLoginSuccess, onGuestMode, roomName }: UserAuth
               border: '1px solid #444',
               background: '#333',
               color: 'white',
-              fontSize: '16px'
+              fontSize: '15px'
             }}
             disabled={loading}
           />
@@ -371,7 +376,7 @@ export function UserAuthForm({ onLoginSuccess, onGuestMode, roomName }: UserAuth
                 border: '1px solid #444',
                 background: '#333',
                 color: 'white',
-                fontSize: '16px'
+                fontSize: '15px'
               }}
               disabled={loading}
             />
@@ -388,7 +393,7 @@ export function UserAuthForm({ onLoginSuccess, onGuestMode, roomName }: UserAuth
               border: '1px solid #444',
               background: '#333',
               color: 'white',
-              fontSize: '16px'
+              fontSize: '15px'
             }}
             disabled={loading}
           />
@@ -405,7 +410,7 @@ export function UserAuthForm({ onLoginSuccess, onGuestMode, roomName }: UserAuth
                 border: '1px solid #444',
                 background: '#333',
                 color: 'white',
-                fontSize: '16px'
+                fontSize: '15px'
               }}
               disabled={loading}
             />
@@ -413,17 +418,17 @@ export function UserAuthForm({ onLoginSuccess, onGuestMode, roomName }: UserAuth
         </div>
 
         {/* 操作按钮 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <button
             onClick={handleSubmit}
             disabled={loading}
             style={{
-              padding: '14px',
+              padding: '12px',
               borderRadius: '6px',
               border: 'none',
               background: loading ? '#666' : '#4ade80',
               color: 'white',
-              fontSize: '16px',
+              fontSize: '15px',
               fontWeight: '600',
               cursor: loading ? 'not-allowed' : 'pointer',
               transition: 'background 0.2s'
@@ -438,12 +443,12 @@ export function UserAuthForm({ onLoginSuccess, onGuestMode, roomName }: UserAuth
               onClick={handleForceLogin}
               disabled={loading}
               style={{
-                padding: '12px',
+                padding: '10px',
                 borderRadius: '6px',
                 border: '1px solid #f59e0b',
                 background: '#f59e0b',
                 color: 'white',
-                fontSize: '14px',
+                fontSize: '13px',
                 fontWeight: '600',
                 cursor: loading ? 'not-allowed' : 'pointer',
                 transition: 'background 0.2s'
@@ -457,12 +462,12 @@ export function UserAuthForm({ onLoginSuccess, onGuestMode, roomName }: UserAuth
             onClick={() => setIsLogin(!isLogin)}
             disabled={loading}
             style={{
-              padding: '12px',
+              padding: '10px',
               borderRadius: '6px',
               border: '1px solid #666',
               background: 'transparent',
               color: '#ccc',
-              fontSize: '14px',
+              fontSize: '13px',
               cursor: loading ? 'not-allowed' : 'pointer'
             }}
           >
@@ -472,11 +477,11 @@ export function UserAuthForm({ onLoginSuccess, onGuestMode, roomName }: UserAuth
           <div style={{ 
             display: 'flex', 
             alignItems: 'center', 
-            gap: '12px',
-            margin: '10px 0'
+            gap: '10px',
+            margin: '8px 0'
           }}>
             <div style={{ flex: 1, height: '1px', background: '#444' }}></div>
-            <span style={{ color: '#888', fontSize: '14px' }}>或</span>
+            <span style={{ color: '#888', fontSize: '13px' }}>或</span>
             <div style={{ flex: 1, height: '1px', background: '#444' }}></div>
           </div>
 
@@ -484,12 +489,12 @@ export function UserAuthForm({ onLoginSuccess, onGuestMode, roomName }: UserAuth
             onClick={onGuestMode}
             disabled={loading}
             style={{
-              padding: '12px',
+              padding: '10px',
               borderRadius: '6px',
               border: '1px solid #666',
               background: 'transparent',
               color: '#ccc',
-              fontSize: '14px',
+              fontSize: '13px',
               cursor: loading ? 'not-allowed' : 'pointer'
             }}
           >
