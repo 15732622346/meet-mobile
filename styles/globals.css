@@ -3,6 +3,11 @@
   -webkit-tap-highlight-color: transparent; /* 移除移动端点击高亮 */
 }
 
+/* 添加CSS变量 */
+:root {
+  --vh: 1vh;
+}
+
 html {
   color-scheme: dark;
   background-color: #111;
@@ -92,6 +97,8 @@ h2 a {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: calc(var(--vh, 1vh) * 100) !important;
+  position: relative;
 }
 
 /* 彻底隐藏所有LiveKit默认的参与者名称标签 */
@@ -273,6 +280,7 @@ div[class*="title"] + span:contains('0'),
   display: flex !important;
   justify-content: center !important;
   align-items: center !important;
+  max-height: calc(var(--vh, 1vh) * 100) !important;
 }
 
 /* 修复移动端可能的溢出问题 */

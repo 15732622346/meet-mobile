@@ -21,6 +21,7 @@ import { HideLiveKitCounters } from './HideLiveKitCounters';
 import { isHostOrAdmin, isCameraEnabled, shouldShowInMicList } from '../lib/token-utils';
 import { getImagePath } from '../lib/image-path';
 import { initFullscreenFloatingFix } from '../lib/fullscreen-floating-fix';
+import { setupViewportFix, ViewportDebug, enableBottomAlignment } from '../lib/viewport-debug';
 import { API_CONFIG } from '../lib/config';
 
 // 视频显示状态枚举
@@ -63,6 +64,19 @@ export function MobileVideoConference({
   const [showCameraPanel, setShowCameraPanel] = React.useState<boolean>(false);
   // 添加视频显示状态
   const [displayState, setDisplayState] = React.useState<VideoDisplayState>(VideoDisplayState.NORMAL);
+  
+  // 添加调试模式状态
+  const [debugModeEnabled, setDebugModeEnabled] = React.useState<boolean>(false);
+  
+  // 启用调试模式时显示视口信息
+  React.useEffect(() => {
+    if (debugModeEnabled) {
+      // 返回清理函数
+      return ViewportDebug();
+    }
+    // 如果不是调试模式，不需要清理
+    return undefined;
+  }, [debugModeEnabled]);
   
   // 🎯 新增：房间详情信息管理
   const [roomDetails, setRoomDetails] = React.useState<{
@@ -527,8 +541,16 @@ export function MobileVideoConference({
     // 初始化全屏浮动窗口修复功能
     initFullscreenFloatingFix();
     
+    // 初始化视口修复
+    const viewportCleanup = setupViewportFix();
+    
+    // 启用底部对齐模式
+    enableBottomAlignment();
+    
     // 组件卸载时清理事件监听
     return () => {
+      if (viewportCleanup) viewportCleanup();
+      
       if (typeof document !== 'undefined') {
         document.removeEventListener('fullscreenchange', () => {});
         document.removeEventListener('webkitfullscreenchange', () => {});
@@ -689,10 +711,8 @@ export function MobileVideoConference({
                   </div>
                 )}
                 
-                {/* 添加调试信息 - 仅在开发环境显示 */}
-                {process.env.NODE_ENV === 'development' && (
-                  <div className="debug-overlay">{debugInfo}</div>
-                )}
+                {/* 添加调试信息 - 在所有环境都显示 */}
+                <div className="debug-overlay">{debugInfo}</div>
               </div>
             ) : mainVideoTrack ? (
               <div className="video-wrapper">
@@ -796,6 +816,14 @@ export function MobileVideoConference({
       {/* 选项卡内容区域 */}
       <MobileTabs tabs={tabs} defaultActiveKey="chat" />
       
+      {/* 添加浮动调试按钮 */}
+      <div className="floating-debug-button" onClick={() => {
+        // 切换调试模式
+        setDebugModeEnabled(!debugModeEnabled);
+      }}>
+        {debugModeEnabled ? '关闭调试' : '调试'}
+      </div>
+      
       <RoomAudioRenderer />
       <HideLiveKitCounters />
       
@@ -804,10 +832,17 @@ export function MobileVideoConference({
         .mobile-video-conference {
           display: flex;
           flex-direction: column;
-          height: 100vh;
+          height: calc(var(--vh, 1vh) * 100);
           width: 100vw;
           overflow: hidden;
           background-color: #1a1a1a;
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          top: 0;
+          margin: 0;
+          padding: 0;
         }
         
         .mobile-main-video {
@@ -1084,6 +1119,27 @@ export function MobileVideoConference({
           display: flex;
           align-items: center;
           justify-content: center;
+        }
+        
+        /* 浮动调试按钮样式 */
+        .floating-debug-button {
+          position: fixed;
+          bottom: 80px;
+          right: 20px;
+          background: rgba(0, 150, 255, 0.8);
+          color: white;
+          padding: 8px 12px;
+          border-radius: 20px;
+          font-size: 14px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+          z-index: 9999;
+          cursor: pointer;
+          user-select: none;
+        }
+        
+        .floating-debug-button:active {
+          transform: scale(0.95);
+          background: rgba(0, 120, 230, 0.8);
         }
       `}</style>
       

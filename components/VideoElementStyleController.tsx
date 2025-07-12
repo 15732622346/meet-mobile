@@ -296,9 +296,10 @@ export function VideoElementDebugInfo() {
     return () => clearInterval(interval);
   }, []);
   
-  if (process.env.NODE_ENV !== 'development') {
-    return null;
-  }
+  // 在所有环境中都显示调试信息
+  // if (process.env.NODE_ENV !== 'development') {
+  //   return null;
+  // }
   
   return (
     <div style={{

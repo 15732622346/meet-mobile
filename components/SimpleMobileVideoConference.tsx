@@ -23,6 +23,7 @@ import { FloatingWrapper } from './FloatingParticipantTile'; // 引入FloatingWr
 import { isHostOrAdmin, isCameraEnabled, shouldShowInMicList } from '../lib/token-utils';
 import { getImagePath } from '../lib/image-path';
 import { initFullscreenFloatingFix } from '../lib/fullscreen-floating-fix';
+import { setupViewportFix, ViewportDebug, enableBottomAlignment } from '../lib/viewport-debug';
 import { API_CONFIG } from '../lib/config';
 
 // 默认最大麦位数量
@@ -56,6 +57,18 @@ export function SimpleMobileVideoConference({
   const [pinnedParticipantId, setPinnedParticipantId] = React.useState<string | null>(null);
   // 添加全屏状态
   const [isFullscreen, setIsFullscreen] = React.useState<boolean>(false);
+  // 添加调试模式状态
+  const [debugModeEnabled, setDebugModeEnabled] = React.useState<boolean>(false);
+  
+  // 启用调试模式时显示视口信息
+  React.useEffect(() => {
+    if (debugModeEnabled) {
+      // 返回清理函数
+      return ViewportDebug();
+    }
+    // 如果不是调试模式，不需要清理
+    return undefined;
+  }, [debugModeEnabled]);
   
   // 🎯 新增：房间详情信息管理
   const [roomDetails, setRoomDetails] = React.useState<{
@@ -405,11 +418,20 @@ export function SimpleMobileVideoConference({
     // 初始化全屏浮动窗口修复功能
     initFullscreenFloatingFix();
     
+    // 初始化视口修复
+    const viewportCleanup = setupViewportFix();
+    
+    // 启用底部对齐模式
+    enableBottomAlignment();
+    
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
     document.addEventListener('msfullscreenchange', handleFullscreenChange);
     
     return () => {
+      // 清理视口修复
+      if (viewportCleanup) viewportCleanup();
+      
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
       document.removeEventListener('msfullscreenchange', handleFullscreenChange);
@@ -496,10 +518,8 @@ export function SimpleMobileVideoConference({
             </div>
           )}
           
-          {/* 添加调试信息 - 仅在开发环境显示 */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="debug-overlay">{debugInfo}</div>
-          )}
+          {/* 添加调试信息 - 在所有环境都显示 */}
+          <div className="debug-overlay">{debugInfo}</div>
         </div>
       </div>
       
@@ -567,13 +587,30 @@ export function SimpleMobileVideoConference({
       {/* 选项卡内容区域 */}
       <MobileTabs tabs={tabs} defaultActiveKey="chat" />
       
+      {/* 添加浮动调试按钮 */}
+      <div className="floating-debug-button" onClick={() => {
+        // 切换调试模式
+        setDebugModeEnabled(!debugModeEnabled);
+      }}>
+        {debugModeEnabled ? '关闭调试' : '调试'}
+      </div>
+      
       <style jsx>{`
         .mobile-video-conference {
           display: flex;
           flex-direction: column;
-          height: 100vh;
+          height: 100vh; /* 兼容性回退 */
+          height: calc(var(--vh, 1vh) * 100);
           background-color: #111;
           color: white;
+          position: fixed;
+          top: 0;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          margin: 0;
+          padding: 0;
+          overflow: hidden;
         }
         
         .mobile-video-container {
@@ -613,7 +650,8 @@ export function SimpleMobileVideoConference({
           top: 0;
           left: 0;
           width: 100vw;
-          height: 100vh;
+          height: 100vh; /* 兼容性回退 */
+          height: calc(var(--vh, 1vh) * 100);
           z-index: 9999;
           background-color: #000;
         }
@@ -700,6 +738,27 @@ export function SimpleMobileVideoConference({
           border-radius: 4px;
           font-size: 10px;
           z-index: 10;
+        }
+        
+        /* 浮动调试按钮样式 */
+        .floating-debug-button {
+          position: fixed;
+          bottom: 80px;
+          right: 20px;
+          background: rgba(0, 150, 255, 0.8);
+          color: white;
+          padding: 8px 12px;
+          border-radius: 20px;
+          font-size: 14px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+          z-index: 9999;
+          cursor: pointer;
+          user-select: none;
+        }
+        
+        .floating-debug-button:active {
+          transform: scale(0.95);
+          background: rgba(0, 120, 230, 0.8);
         }
       `}</style>
       
