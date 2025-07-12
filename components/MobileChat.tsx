@@ -663,7 +663,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     if (chatGlobalMute && !isHost) {
       return {
         disabled: true,
-        placeholder: "全员禁言中，只有主持人可以发言"
+        placeholder: "全员禁言中"
       };
     }
     
@@ -676,7 +676,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
   const inputStatus = getChatInputStatus();
 
   return (
-    <div className="mobile-chat">
+    <div className="mobile-chat" style={{ overflow: 'hidden', width: '100%' }}>
 
       <div 
         className="mobile-chat-messages"
@@ -716,9 +716,9 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
       
       {!isDisabled && userRole !== 0 && chatGlobalMute && !isHost && (
         <div className="chat-disabled-notice warning">
-          全员禁言中，只有主持人可以发言
+          全员禁言中
         </div>
-      )}
+      )}        
       
       <div className={`chat-input-container ${inputFocused ? 'focused' : ''}`}>
         {/* 输入区域 */}
@@ -954,7 +954,8 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
         
         /* 表单包装器样式 */
         .form-wrapper {
-          flex: 1;
+          flex: 1 1 auto; /* 允许增长和收缩，但优先收缩 */
+          min-width: 50px; /* 设置最小宽度，防止过度收缩 */
           box-sizing: border-box;
           transition: width 0.3s ease;
         }
@@ -964,6 +965,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
           display: flex;
           align-items: center;
           margin-left: 10px;
+          flex: 0 0 auto; /* 不增长不收缩 */
           transition: all 0.3s ease;
         }
         
@@ -971,6 +973,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
         .controls-grid {
           display: flex;
           gap: 8px;
+          flex-shrink: 0; /* 防止控制按钮区域被压缩 */
         }
         
         /* 输入框网格布局 */
@@ -978,6 +981,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
           display: flex;
           gap: 8px;
           width: 100%;
+          overflow: hidden; /* 防止内容溢出 */
         }
         
         /* 输入框样式 */
@@ -988,9 +992,11 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
           font-size: 14px;
           outline: none;
           flex: 1;
+          min-width: 30px; /* 输入框最小宽度 */
           box-sizing: border-box;
           height: 36px;
           transition: all 0.3s ease;
+          text-overflow: ellipsis; /* 文本溢出显示省略号 */
         }
         
         .input-field.disabled {
@@ -1204,6 +1210,9 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
         
         .mobile-control-btn .btn-label {
           white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 40px; /* 限制标签宽度 */
         }
         
         /* 麦克风开启状态 */
@@ -1249,18 +1258,21 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
           border: none;
           border-radius: 20px;
           color: white;
-          padding: 8px 12px;
+          padding: 6px 8px; /* 减小内边距以适应窄屏 */
           font-size: 14px;
           height: 36px;
           cursor: pointer;
           transition: all 0.2s;
           position: relative;
+          flex-shrink: 0; /* 防止按钮被压缩 */
+          white-space: nowrap; /* 防止按钮文字换行 */
         }
         
         .mobile-control-btn .btn-icon {
           width: 16px;
           height: 16px;
           margin-right: 4px;
+          flex-shrink: 0; /* 防止图标被压缩 */
         }
         
         .mobile-control-btn.request-mic.requesting {
