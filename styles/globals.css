@@ -282,6 +282,12 @@ div[class*="title"] + span:contains('0'),
   justify-content: center !important;
   align-items: center !important;
   max-height: calc(var(--vh, 1vh) * 100) !important;
+  padding: 0 !important; /* 移除默认的8px padding */
+}
+
+/* 移除视频元素的padding */
+.lk-participant-media-video {
+  padding: 0 !important;
 }
 
 /* 修复移动端可能的溢出问题 */
