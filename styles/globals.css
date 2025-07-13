@@ -290,6 +290,12 @@ div[class*="title"] + span:contains('0'),
   padding: 0 !important;
 }
 
+/* 隐藏屏幕共享视频名称标签 */
+.mobile-video-name {
+  display: none !important;
+  visibility: hidden !important;
+}
+
 /* 修复移动端可能的溢出问题 */
 body, html {
   overflow: hidden;
