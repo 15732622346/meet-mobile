@@ -563,6 +563,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
   // 处理输入框焦点事件
   const handleInputFocus = () => {
     setInputFocused(true);
+    // 不需要特殊处理，由全局keyboard-fix.js处理
   };
 
   // 处理输入框失去焦点事件
@@ -572,6 +573,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
       return;
     }
     setInputFocused(false);
+    // 不需要特殊处理，由全局keyboard-fix.js处理
   };
 
   // 获取麦克风按钮类名
