@@ -22,8 +22,8 @@ export function FloatingWrapper({
   children,
   title = '参与者',
   initialPosition = { x: 100, y: 100 },
-  width = 300,
-  height = 200
+  width = 120,
+  height = 120
 }: FloatingWrapperProps) {
   const [position, setPosition] = React.useState(initialPosition);
   const [isDragging, setIsDragging] = React.useState(false);

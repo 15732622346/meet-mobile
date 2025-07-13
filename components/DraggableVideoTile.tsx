@@ -19,8 +19,8 @@ interface DraggableVideoTileProps {
 export function DraggableVideoTile({ 
   track, 
   initialPosition = { x: 100, y: 100 },
-  width = 300,
-  height = 200
+  width = 120,
+  height = 120
 }: DraggableVideoTileProps) {
   const [position, setPosition] = React.useState(initialPosition);
   const [isDragging, setIsDragging] = React.useState(false);

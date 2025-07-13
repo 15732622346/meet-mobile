@@ -2205,8 +2205,8 @@ function MainVideoDisplay({ roomInfo, tracks, userRole, userId, userName }: Main
                       x: 100 + (index * 50), 
                       y: 100 + (index * 50) 
                     }}
-                    width={320}
-                    height={240}
+                    width={120}
+                    height={120}
                   >
                     <TrackRefContext.Provider value={trackRef}>
                       {/* 直接渲染视频组件，移除多余的div嵌套 */}

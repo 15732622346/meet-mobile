@@ -20,8 +20,8 @@ export function MobileFloatingWindow({
   children,
   title = '参与者',
   initialPosition = { x: 20, y: 80 },
-  width = 200,
-  height = 150
+  width = 120,
+  height = 120
 }: MobileFloatingWindowProps) {
   const [position, setPosition] = React.useState(initialPosition);
   const [isDragging, setIsDragging] = React.useState(false);
