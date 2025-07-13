@@ -84,7 +84,7 @@ export function MobileAvatarRow({ onAvatarClick }: MobileAvatarRowProps) {
         .mobile-avatar-container {
           display: flex;
           align-items: center;
-          background-color: #111;
+          background-color: #333333;
         }
         
         .mobile-avatar-row {
@@ -164,4 +164,4 @@ export function MobileAvatarRow({ onAvatarClick }: MobileAvatarRowProps) {
       `}</style>
     </div>
   );
-} 
+}
