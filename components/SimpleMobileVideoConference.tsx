@@ -602,10 +602,10 @@ export function SimpleMobileVideoConference({
         }
         
         .screen-share-wrapper :global(.lk-video-track) {
-          width: 100% !important;
-          height: 100% !important;
-          object-fit: contain !important;
-        }
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
         
         /* 全屏模式样式 */
         .screen-share-wrapper.fullscreen-mode {

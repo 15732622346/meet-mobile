@@ -241,7 +241,7 @@ div[class*="title"] + span:contains('0'),
 .screen-share-wrapper .lk-video-track {
   width: 100% !important;
   height: 100% !important;
-  object-fit: contain !important;
+  object-fit: cover !important;
 }
 
 /* 确保屏幕共享内容正确显示 */
@@ -249,7 +249,7 @@ div[class*="title"] + span:contains('0'),
 .screen-share-wrapper .lk-video-element {
   width: 100% !important;
   height: 100% !important;
-  object-fit: contain !important;
+  object-fit: cover !important;
   background-color: black;
 }
 
@@ -263,6 +263,7 @@ div[class*="title"] + span:contains('0'),
   max-height: 100vh !important;
   width: 100vw !important;
   height: 100vh !important;
+  object-fit: cover !important;
 }
 
 /* 确保视频控件在移动端正确显示 */
