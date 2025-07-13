@@ -633,7 +633,7 @@ export function SimpleMobileVideoConference({
         
         .fullscreen-toggle-btn {
           position: absolute;
-          top: 8px;
+          bottom: 8px;
           right: 8px;
           background-color: rgba(0, 0, 0, 0.6);
           color: white;
