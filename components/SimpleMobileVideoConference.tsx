@@ -219,9 +219,6 @@ export function SimpleMobileVideoConference({
   // 有屏幕共享时显示屏幕共享
   const hasScreenShare = screenTracks.length > 0;
   
-  // 添加调试状态
-  const [debugInfo, setDebugInfo] = React.useState<string>("");
-  
   // 🎯 检查是否有主持人在线
   const getParticipantRole = (participant: Participant): number => {
     const attributes = participant.attributes || {};
@@ -456,41 +453,6 @@ export function SimpleMobileVideoConference({
     };
   }, [isFullscreen]);
 
-  // 添加调试日志
-  React.useEffect(() => {
-    console.log("屏幕共享轨道状态:", {
-      hasScreenShare,
-      tracksCount: screenTracks.length,
-      trackDetails: screenTracks.length > 0 ? {
-        identity: screenTracks[0].participant?.identity,
-        trackId: screenTracks[0].publication?.trackSid,
-        isSubscribed: screenTracks[0].publication?.isSubscribed,
-        streamState: screenTracks[0].publication?.track?.streamState,
-      } : "无轨道"
-    });
-    
-    // 打印出当前所有的轨道详情
-    console.log("所有可用轨道:", videoTracks.map(track => ({
-      type: track.source,
-      identity: track.participant?.identity,
-      isSubscribed: track.publication?.isSubscribed,
-      muted: track.publication?.isMuted,
-    })));
-    
-    // 主持人视频轨道信息
-    console.log("主持人视频轨道:", hostVideoTracks.map(track => ({
-      identity: track.participant?.identity,
-      name: track.participant?.name,
-      isSubscribed: track.publication?.isSubscribed,
-      muted: track.publication?.isMuted,
-      cameraEnabled: isCameraEnabled(track.participant as Participant)
-    })));
-    
-    setDebugInfo(`屏幕共享: ${hasScreenShare ? '有' : '无'}, 轨道数: ${screenTracks.length}`);
-  }, [screenTracks, hasScreenShare, videoTracks, hostVideoTracks]);
-
-  // 申请上麦按钮已移除
-
   // 在返回的JSX中，修改视频显示逻辑，使用浮动窗口
   return (
     <div className="mobile-video-conference">
@@ -535,9 +497,6 @@ export function SimpleMobileVideoConference({
               )}
             </div>
           )}
-          
-          {/* 添加调试信息 - 在所有环境都显示 */}
-          <div className="debug-overlay">{debugInfo}</div>
         </div>
       </div>
       
@@ -580,20 +539,6 @@ export function SimpleMobileVideoConference({
                   style={{ width: '100%', height: '100%' }} 
                 />
               </TrackRefContext.Provider>
-              
-              {/* 参与者名称 */}
-              <div style={{
-                position: 'absolute',
-                bottom: '5px',
-                left: '5px',
-                background: 'rgba(0,0,0,0.6)',
-                color: '#fff',
-                padding: '2px 6px',
-                borderRadius: '2px',
-                fontSize: '10px'
-              }}>
-                {participant.name || participant.identity}
-              </div>
             </div>
           </FloatingWrapper>
         );
@@ -744,18 +689,6 @@ export function SimpleMobileVideoConference({
         
         .placeholder-status.waiting {
           color: #eab308;
-        }
-        
-        .debug-overlay {
-          position: absolute;
-          top: 8px;
-          left: 8px;
-          background-color: rgba(0, 0, 0, 0.7);
-          color: #ff9800;
-          padding: 4px 8px;
-          border-radius: 4px;
-          font-size: 10px;
-          z-index: 10;
         }
         
         /* 浮动调试按钮样式 */
