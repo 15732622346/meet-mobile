@@ -112,8 +112,8 @@ export function FloatingWrapper({
         return {
           left: position.x,
           top: position.y,
-          width: 140,  // 增加宽度以适应文字
-          height: 44   // 增加高度以便于点击
+          width: 80,  // 减小宽度以适应更短的文字
+          height: 44   // 保持相同高度以便于点击
         };
       case VideoDisplayState.NORMAL:
       default:
@@ -360,7 +360,7 @@ export function FloatingWrapper({
           onClick={handleRestore}
           title="恢复视频窗口"
         >
-          恢复摄像头区
+          恢复
         </button>
       )}
     </div>
