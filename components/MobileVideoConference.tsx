@@ -20,7 +20,6 @@ import { MobileControlPanel } from './MobileControlPanel';
 import { HideLiveKitCounters } from './HideLiveKitCounters';
 import { isHostOrAdmin, isCameraEnabled, shouldShowInMicList } from '../lib/token-utils';
 import { getImagePath } from '../lib/image-path';
-import { initFullscreenFloatingFix } from '../lib/fullscreen-floating-fix';
 import { setupViewportFix, ViewportDebug, enableBottomAlignment } from '../lib/viewport-debug';
 import { API_CONFIG } from '../lib/config';
 
@@ -555,9 +554,6 @@ export function MobileVideoConference({
 
   // 添加全屏浮动窗口修复
   React.useEffect(() => {
-    // 初始化全屏浮动窗口修复功能
-    initFullscreenFloatingFix();
-    
     // 初始化视口修复
     const viewportCleanup = setupViewportFix();
     
@@ -889,7 +885,7 @@ export function MobileVideoConference({
           left: 0;
           right: 0;
           bottom: 0;
-          z-index: 9000; /* 降低z-index，确保浮动窗口可以显示在上面 */
+          z-index: 9500; /* 提高z-index，确保覆盖浮动窗口 */
         }
         
         .video-wrapper {

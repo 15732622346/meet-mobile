@@ -174,7 +174,7 @@ export function FloatingWrapper({
       background: '#000',
       border: displayState === VideoDisplayState.MAXIMIZED ? 'none' : '2px solid #444',
       borderRadius: displayState === VideoDisplayState.MAXIMIZED ? '0' : '8px',
-      zIndex: 10500, // 保持较高的z-index以确保在全屏模式下也能显示
+      zIndex: 900, // 降低z-index，确保在全屏模式下被屏幕共享区域覆盖
       overflow: 'hidden',
       boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
       cursor: displayState === VideoDisplayState.HIDDEN ? 'pointer' : 'auto',

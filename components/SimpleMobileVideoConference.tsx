@@ -22,7 +22,6 @@ import { HideLiveKitCounters } from './HideLiveKitCounters';
 import { FloatingWrapper } from './FloatingParticipantTile'; // 引入FloatingWrapper组件
 import { isHostOrAdmin, isCameraEnabled, shouldShowInMicList } from '../lib/token-utils';
 import { getImagePath } from '../lib/image-path';
-import { initFullscreenFloatingFix } from '../lib/fullscreen-floating-fix';
 import { setupViewportFix, ViewportDebug, enableBottomAlignment } from '../lib/viewport-debug';
 import { API_CONFIG } from '../lib/config';
 
@@ -429,9 +428,6 @@ export function SimpleMobileVideoConference({
         }
       }
     };
-    
-    // 初始化全屏浮动窗口修复功能
-    initFullscreenFloatingFix();
     
     // 初始化视口修复
     const viewportCleanup = setupViewportFix();
