@@ -5,6 +5,7 @@ export type TabItem = {
   label: string;
   content: React.ReactNode;
   isMicInfo?: boolean; // 添加一个标识，表明这是麦位信息标签
+  customLabel?: React.ReactNode; // 添加自定义标签内容支持
 };
 
 interface MobileTabsProps {
@@ -30,12 +31,14 @@ export function MobileTabs({ tabs, defaultActiveKey }: MobileTabsProps) {
           >
             {tab.isMicInfo ? (
               <div className="mic-status-display">
-                <span className="mic-count">
-                  {tab.label}
-                </span>
+                {tab.customLabel || (
+                  <span className="mic-count">
+                    {tab.label}
+                  </span>
+                )}
               </div>
             ) : (
-              tab.label
+              tab.customLabel || tab.label
             )}
           </div>
         ))}

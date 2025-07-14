@@ -22,7 +22,7 @@ import { HideLiveKitCounters } from './HideLiveKitCounters';
 import { FloatingWrapper } from './FloatingParticipantTile'; // 引入FloatingWrapper组件
 import { isHostOrAdmin, isCameraEnabled, shouldShowInMicList } from '../lib/token-utils';
 import { getImagePath } from '../lib/image-path';
-import { setupViewportFix, ViewportDebug, enableBottomAlignment } from '../lib/viewport-debug';
+import { setupViewportFix, enableBottomAlignment } from '../lib/viewport-debug';
 import { API_CONFIG } from '../lib/config';
 
 // 默认最大麦位数量
@@ -56,18 +56,9 @@ export function SimpleMobileVideoConference({
   const [pinnedParticipantId, setPinnedParticipantId] = React.useState<string | null>(null);
   // 添加全屏状态
   const [isFullscreen, setIsFullscreen] = React.useState<boolean>(false);
-  // 添加调试模式状态
-  const [debugModeEnabled, setDebugModeEnabled] = React.useState<boolean>(false);
+  // 删除调试模式状态
   
-  // 启用调试模式时显示视口信息
-  React.useEffect(() => {
-    if (debugModeEnabled) {
-      // 返回清理函数
-      return ViewportDebug();
-    }
-    // 如果不是调试模式，不需要清理
-    return undefined;
-  }, [debugModeEnabled]);
+  // 删除调试模式useEffect
   
   // 🎯 新增：房间详情信息管理
   const [roomDetails, setRoomDetails] = React.useState<{
@@ -295,21 +286,47 @@ export function SimpleMobileVideoConference({
     // 添加日志，帮助调试
     console.log('🔄 重新计算tabs(Simple) - micStats:', micStats, 'forceUpdateTrigger:', forceUpdateTrigger);
     
-    // 设置麦位信息标签文本
-    let micInfoLabel = '';
+    // 设置麦位信息标签文本（左侧部分）
+    let leftLabel = '';
+    // 设置房间和主持人信息（右侧部分）
+    let rightLabel = '';
+    
     if (roomDetails === null) {
       // 数据未加载时显示加载中
-      micInfoLabel = `加载麦位数据...`;
+      leftLabel = `加载麦位数据...`;
+      rightLabel = '';
     } else {
       // 数据已加载，显示详细信息
-      micInfoLabel = `当前麦位数 ${micStats.micListCount} 最大麦位数 ${roomDetails.maxMicSlots}`;
+      leftLabel = `当前麦位数 ${micStats.micListCount} 最大麦位数 ${roomDetails.maxMicSlots}`;
+      const hostName = otherHostParticipant?.name || (currentUserIsHost ? userName : '未知');
+      rightLabel = `房间:${participants.length}\n主持人:${hostName}`;
     }
     
     const tabItems: TabItem[] = [
       {
         key: 'chat',
-        // 将标签名改为带描述的麦位数量
-        label: micInfoLabel,
+        // 使用自定义渲染函数来创建左右布局
+        label: '',
+        customLabel: (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            width: '100%',
+            padding: '0 5px'
+          }}>
+            <div className="left-info">{leftLabel}</div>
+            <div className="right-info" style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-end',
+              fontSize: '11px',
+              lineHeight: '1.2'
+            }}>
+              <div>房间:{participants.length}</div>
+              <div>主持人:{otherHostParticipant?.name || (currentUserIsHost ? userName : '未知')}</div>
+            </div>
+          </div>
+        ),
         content: <MobileChat userRole={userRole} maxMicSlots={roomDetails?.maxMicSlots || maxMicSlots} />,
         isMicInfo: true // 标记为麦位信息标签
       }
@@ -546,13 +563,7 @@ export function SimpleMobileVideoConference({
       {/* 选项卡内容区域 */}
       <MobileTabs tabs={tabs} defaultActiveKey="chat" />
       
-      {/* 添加浮动调试按钮 */}
-      <div className="floating-debug-button" onClick={() => {
-        // 切换调试模式
-        setDebugModeEnabled(!debugModeEnabled);
-      }}>
-        {debugModeEnabled ? '关闭调试' : '调试'}
-      </div>
+      {/* 移除调试按钮 */}
       
       <style jsx>{`
         .mobile-video-conference {
@@ -686,28 +697,8 @@ export function SimpleMobileVideoConference({
         .placeholder-status.waiting {
           color: #eab308;
         }
-        
-        /* 浮动调试按钮样式 */
-        .floating-debug-button {
-          position: fixed;
-          bottom: 80px;
-          right: 20px;
-          background: rgba(0, 150, 255, 0.8);
-          color: white;
-          padding: 8px 12px;
-          border-radius: 20px;
-          font-size: 14px;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-          z-index: 9999;
-          cursor: pointer;
-          user-select: none;
-        }
-        
-        .floating-debug-button:active {
-          transform: scale(0.95);
-          background: rgba(0, 120, 230, 0.8);
-        }
-      `}</style>
+          
+        `}</style>
       
       <RoomAudioRenderer />
       <HideLiveKitCounters />

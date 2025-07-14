@@ -57,11 +57,14 @@ const nextConfig = {
   
   webpack: (config, { buildId, dev, isServer, defaultLoaders, nextRuntime, webpack }) => {
     // Important: return the modified config
+    // 暂时注释掉source-map-loader配置
+    /* 
     config.module.rules.push({
       test: /\.mjs$/,
       enforce: 'pre',
       use: ['source-map-loader'],
     });
+    */
 
     // 添加SVG处理规则，确保SVG可以被正确加载
     config.module.rules.push({
