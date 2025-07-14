@@ -29,6 +29,8 @@ export function FloatingWrapper({
   const [isDragging, setIsDragging] = React.useState(false);
   const [dragOffset, setDragOffset] = React.useState({ x: 0, y: 0 });
   const [displayState, setDisplayState] = React.useState<VideoDisplayState>(VideoDisplayState.NORMAL);
+  // 添加全屏状态
+  const [isFullscreen, setIsFullscreen] = React.useState<boolean>(false);
   const wrapperRef = React.useRef<HTMLDivElement>(null);
   
   // 新增: 屏幕共享区域引用
@@ -136,21 +138,110 @@ export function FloatingWrapper({
   const handleRestore = React.useCallback(() => {
     console.log('恢复视频窗口');
     setDisplayState(VideoDisplayState.NORMAL);
+    
+    // 如果是从全屏状态恢复，需要退出全屏
+    if (isFullscreen) {
+      exitFullscreen();
+    }
+  }, [isFullscreen]);
+
+  // 新增: 进入全屏模式
+  const enterFullscreen = React.useCallback(() => {
+    try {
+      if (!wrapperRef.current) return;
+      
+      console.log('请求进入全屏模式');
+      
+      // 定义成功进入全屏后的回调
+      const onFullscreenSuccess = () => {
+        // 延迟一小段时间再锁定屏幕方向，等待全屏模式完全建立
+        setTimeout(() => {
+          try {
+            // 强制锁定为横屏模式
+            if (screen.orientation && 'lock' in screen.orientation) {
+              console.log('请求锁定横屏方向');
+              (screen.orientation as any).lock('landscape').catch((err: any) => {
+                console.error('无法锁定屏幕方向:', err);
+              });
+            }
+          } catch (orientationError) {
+            console.error('屏幕方向API错误:', orientationError);
+          }
+        }, 300); // 300ms延迟，等待全屏模式稳定和提示条显示完成
+      };
+      
+      // 请求全屏并处理成功情况
+      if (wrapperRef.current.requestFullscreen) {
+        wrapperRef.current.requestFullscreen()
+          .then(onFullscreenSuccess)
+          .catch((err: any) => {
+            console.error('无法进入全屏模式:', err);
+          });
+      } else if ((wrapperRef.current as any).webkitRequestFullscreen) {
+        (wrapperRef.current as any).webkitRequestFullscreen();
+        // WebKit没有Promise返回，使用延时
+        setTimeout(onFullscreenSuccess, 100);
+      } else if ((wrapperRef.current as any).msRequestFullscreen) {
+        (wrapperRef.current as any).msRequestFullscreen();
+        setTimeout(onFullscreenSuccess, 100);
+      }
+      
+      setIsFullscreen(true);
+    } catch (error) {
+      console.error('切换全屏模式出错:', error);
+    }
+  }, []);
+  
+  // 新增: 退出全屏模式
+  const exitFullscreen = React.useCallback(() => {
+    try {
+      console.log('请求退出全屏模式');
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch((err: any) => {
+          console.error('无法退出全屏模式:', err);
+        });
+      } else if ((document as any).webkitExitFullscreen) {
+        (document as any).webkitExitFullscreen();
+      } else if ((document as any).msExitFullscreen) {
+        (document as any).msExitFullscreen();
+      }
+      
+      // 恢复屏幕方向
+      try {
+        if (screen.orientation && 'unlock' in screen.orientation) {
+          console.log('解除屏幕方向锁定');
+          (screen.orientation as any).unlock();
+        }
+      } catch (orientationError) {
+        console.error('屏幕方向API错误:', orientationError);
+      }
+      
+      setIsFullscreen(false);
+    } catch (error) {
+      console.error('退出全屏模式出错:', error);
+    }
   }, []);
 
-  // 处理最大化/还原切换
+  // 修改: 处理最大化/还原切换
   const handleToggleMaximize = React.useCallback(() => {
-    // 切换到最大化状态前，先更新屏幕共享区域的位置
-    if (displayState !== VideoDisplayState.MAXIMIZED) {
-      updateScreenShareRef();
+    // 如果当前是最大化状态，则恢复正常状态
+    if (displayState === VideoDisplayState.MAXIMIZED) {
+      setDisplayState(VideoDisplayState.NORMAL);
+      // 如果是全屏状态，退出全屏
+      if (isFullscreen) {
+        exitFullscreen();
+      }
+      return;
     }
     
-    setDisplayState(prev => 
-      prev === VideoDisplayState.MAXIMIZED 
-        ? VideoDisplayState.NORMAL 
-        : VideoDisplayState.MAXIMIZED
-    );
-  }, [displayState, updateScreenShareRef]);
+    // 如果当前是正常状态，则切换到最大化状态
+    // 切换到最大化状态前，先更新屏幕共享区域的位置
+    updateScreenShareRef();
+    setDisplayState(VideoDisplayState.MAXIMIZED);
+    
+    // 进入全屏模式
+    enterFullscreen();
+  }, [displayState, updateScreenShareRef, isFullscreen, exitFullscreen, enterFullscreen]);
 
   const currentDimensions = getCurrentDimensions();
 
@@ -259,6 +350,44 @@ export function FloatingWrapper({
     return () => clearTimeout(timer);
   }, [updateScreenShareRef]);
 
+  // 监听全屏状态变化
+  React.useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isDocumentFullscreen = !!(
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement ||
+        (document as any).msFullscreenElement
+      );
+      
+      if (!isDocumentFullscreen && isFullscreen) {
+        setIsFullscreen(false);
+        // 如果是最大化状态，恢复到正常状态
+        if (displayState === VideoDisplayState.MAXIMIZED) {
+          setDisplayState(VideoDisplayState.NORMAL);
+        }
+        
+        // 恢复屏幕方向
+        try {
+          if (screen.orientation && 'unlock' in screen.orientation) {
+            (screen.orientation as any).unlock();
+          }
+        } catch (orientationError) {
+          console.error('屏幕方向API错误:', orientationError);
+        }
+      }
+    };
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('msfullscreenchange', handleFullscreenChange);
+    
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('msfullscreenchange', handleFullscreenChange);
+    };
+  }, [isFullscreen, displayState]);
+
   return (
     <div 
       ref={wrapperRef}
@@ -309,7 +438,7 @@ export function FloatingWrapper({
             zIndex: 10001
           }}>
             <button
-              title={displayState === VideoDisplayState.MAXIMIZED ? '还原' : '最大化'}
+              title={displayState === VideoDisplayState.MAXIMIZED ? '还原' : '全屏'}
               style={{
                 background: 'rgba(0, 0, 0, 0.6)',
                 color: '#fff',
@@ -329,7 +458,7 @@ export function FloatingWrapper({
                 <span>❐</span>
               ) : (
                 <img
-                  alt="最大化"
+                  alt="全屏"
                   src="/images/big.png"
                   width={16}
                   height={16}
