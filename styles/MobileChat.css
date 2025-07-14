@@ -53,3 +53,40 @@
   height: 100% !important;
   background: transparent !important;
 } 
+
+/* 添加固定宽度样式，确保键盘弹出时表单宽度稳定 */
+.form-wrapper {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  transition: none; /* 禁用过渡效果，避免用户看到宽度变化过程 */
+}
+
+.input-grid {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  transition: none; /* 禁用过渡效果，避免用户看到宽度变化过程 */
+}
+
+.input-field {
+  width: calc(100% - 70px);
+  box-sizing: border-box;
+  transition: none; /* 禁用过渡效果，避免用户看到宽度变化过程 */
+}
+
+/* 键盘激活状态下的固定宽度 */
+.form-wrapper[style*="width: 340px"] {
+  width: 340px !important;
+  max-width: 340px !important;
+}
+
+.input-grid[style*="width: 340px"] {
+  width: 340px !important;
+  max-width: 340px !important;
+}
+
+.input-field[style*="width: 270px"] {
+  width: 270px !important;
+  max-width: 270px !important;
+} 

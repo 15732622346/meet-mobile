@@ -6,6 +6,8 @@ import { API_CONFIG } from '../lib/config';
 import { RoomEvent } from 'livekit-client';
 // 导入专用样式文件
 import '../styles/MobileChat.css';
+// 导入调试功能
+import { ViewportDebug } from '../lib/viewport-debug';
 
 export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
   const { chatMessages, send, isSending } = useChat();
@@ -18,6 +20,9 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
   
   // 添加键盘状态跟踪
   const [keyboardVisible, setKeyboardVisible] = React.useState(false);
+  
+  // 添加调试模式状态
+  const [debugMode, setDebugMode] = React.useState(false);
   
   // 添加房间数据加载状态
   const [dataLoaded, setDataLoaded] = React.useState(false);
@@ -563,11 +568,71 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     }
   };
 
+  // 添加宽度调试信息状态
+  const [widthDebugInfo, setWidthDebugInfo] = React.useState({
+    formWrapper: '未检测',
+    inputGrid: '未检测',
+    inputField: '未检测',
+    sendButton: '未检测',
+    windowWidth: window?.innerWidth || 0
+  });
+
+  // 更新宽度调试信息
+  const updateWidthDebugInfo = React.useCallback(() => {
+    if (!debugMode) return;
+    
+    const formWrapper = document.querySelector('.form-wrapper');
+    if (!formWrapper) return;
+    
+    const inputGrid = formWrapper.querySelector('.input-grid');
+    const inputField = formWrapper.querySelector('.input-field');
+    const sendButton = formWrapper.querySelector('.send-button');
+    
+    setWidthDebugInfo({
+      formWrapper: `${formWrapper.clientWidth}px`,
+      inputGrid: inputGrid ? `${inputGrid.clientWidth}px` : '未检测',
+      inputField: inputField ? `${inputField.clientWidth}px` : '未检测',
+      sendButton: sendButton ? `${sendButton.clientWidth}px` : '未检测',
+      windowWidth: window.innerWidth
+    });
+  }, [debugMode]);
+
+  // 在组件挂载、窗口大小变化、调试模式变化时更新宽度信息
+  React.useEffect(() => {
+    if (debugMode) {
+      updateWidthDebugInfo();
+      window.addEventListener('resize', updateWidthDebugInfo);
+      return () => window.removeEventListener('resize', updateWidthDebugInfo);
+    }
+  }, [debugMode, updateWidthDebugInfo]);
+
   // 处理输入框焦点事件
   const handleInputFocus = () => {
     setInputFocused(true);
     setKeyboardVisible(true); // 设置键盘为可见状态
-    // 不需要特殊处理，由全局keyboard-fix.js处理
+    
+    // 立即设置固定宽度，避免键盘弹出时宽度变化
+    const formWrapper = document.querySelector('.form-wrapper');
+    const inputGrid = document.querySelector('.input-grid');
+    const inputField = document.querySelector('.input-field');
+    
+    if (formWrapper) {
+      // 设置固定宽度，避免键盘弹出时宽度变化
+      formWrapper.setAttribute('style', 'width: 340px !important; max-width: 340px !important;');
+    }
+    
+    if (inputGrid) {
+      // 确保输入网格也有固定宽度
+      inputGrid.setAttribute('style', 'width: 340px !important; max-width: 340px !important;');
+    }
+    
+    if (inputField) {
+      // 确保输入框有固定宽度
+      inputField.setAttribute('style', 'width: 270px !important; max-width: 270px !important;');
+    }
+    
+    // 更新宽度调试信息
+    setTimeout(updateWidthDebugInfo, 300);
   };
 
   // 处理输入框失去焦点事件
@@ -578,7 +643,26 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     }
     setInputFocused(false);
     setKeyboardVisible(false); // 设置键盘为隐藏状态
-    // 不需要特殊处理，由全局keyboard-fix.js处理
+    
+    // 恢复默认样式，移除固定宽度
+    const formWrapper = document.querySelector('.form-wrapper');
+    const inputGrid = document.querySelector('.input-grid');
+    const inputField = document.querySelector('.input-field');
+    
+    if (formWrapper) {
+      formWrapper.removeAttribute('style');
+    }
+    
+    if (inputGrid) {
+      inputGrid.removeAttribute('style');
+    }
+    
+    if (inputField) {
+      inputField.removeAttribute('style');
+    }
+    
+    // 更新宽度调试信息
+    setTimeout(updateWidthDebugInfo, 300);
   };
 
   // 添加窗口大小调整监听器 - 用于处理键盘弹出
@@ -728,8 +812,111 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     return () => clearTimeout(handler);
   }, [keyboardVisible]); // 当键盘状态变化时重新应用
 
+  // 启用调试模式
+  React.useEffect(() => {
+    if (debugMode) {
+      return ViewportDebug();
+    }
+  }, [debugMode]);
+
+  // 获取输入框样式
+  const getInputFieldStyle = React.useCallback(() => {
+    const baseStyle = {
+      flex: '1 1 auto',
+      minWidth: '0',
+      boxSizing: 'border-box' as 'border-box'
+    };
+    
+    // 如果键盘可见，添加特定宽度
+    if (keyboardVisible) {
+      return {
+        ...baseStyle,
+        width: 'calc(100% - 70px)',
+      };
+    }
+    
+    return baseStyle;
+  }, [keyboardVisible]);
+  
+  // 获取发送按钮样式
+  const getSendButtonStyle = React.useCallback(() => {
+    return {
+      flex: '0 0 auto',
+      width: '60px',
+      minWidth: '60px',
+      boxSizing: 'border-box' as 'border-box'
+    };
+  }, []);
+  
+  // 获取输入网格样式
+  const getInputGridStyle = React.useCallback(() => {
+    const baseStyle = {
+      display: 'flex',
+      gap: '8px',
+      width: '100%',
+      boxSizing: 'border-box' as 'border-box'
+    };
+    
+    // 如果键盘可见，确保宽度计算正确
+    if (keyboardVisible) {
+      return {
+        ...baseStyle,
+        maxWidth: '100%',
+        paddingRight: '0'
+      };
+    }
+    
+    return baseStyle;
+  }, [keyboardVisible]);
+
   return (
     <div className="mobile-chat" style={{ overflow: 'hidden', width: '100%' }}>
+
+      {/* 调试按钮 */}
+      <div 
+        className="debug-toggle-button"
+        onClick={() => setDebugMode(!debugMode)}
+        style={{
+          position: 'absolute',
+          top: '5px',
+          right: '5px',
+          background: 'rgba(0, 100, 255, 0.7)',
+          color: 'white',
+          padding: '4px 8px',
+          borderRadius: '4px',
+          fontSize: '12px',
+          zIndex: 9999,
+          cursor: 'pointer'
+        }}
+      >
+        {debugMode ? '关闭调试' : '显示调试'}
+      </div>
+      
+      {/* 宽度调试信息 */}
+      {debugMode && (
+        <div 
+          className="width-debug-info"
+          style={{
+            position: 'absolute',
+            bottom: '120px',
+            left: '5px',
+            background: 'rgba(0, 0, 0, 0.7)',
+            color: '#00ff00',
+            padding: '8px',
+            borderRadius: '4px',
+            fontSize: '12px',
+            zIndex: 9999,
+            maxWidth: '200px'
+          }}
+        >
+          <div>窗口宽度: {widthDebugInfo.windowWidth}px</div>
+          <div>表单宽度: {widthDebugInfo.formWrapper}</div>
+          <div>网格宽度: {widthDebugInfo.inputGrid}</div>
+          <div>输入框宽度: {widthDebugInfo.inputField}</div>
+          <div>按钮宽度: {widthDebugInfo.sendButton}</div>
+          <div style={{marginTop: '5px', fontSize: '10px'}}>键盘: {keyboardVisible ? '显示' : '隐藏'}</div>
+        </div>
+      )}
 
       <div 
         className="mobile-chat-messages"
@@ -785,7 +972,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
         {/* 输入区域 */}
         <div className="form-wrapper">
           <form onSubmit={handleSendMessage} className="mobile-chat-input">
-            <div className="input-grid">
+            <div className="input-grid" style={getInputGridStyle()}>
               <input
                 type="text"
                 value={message}
@@ -819,12 +1006,14 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
                 disabled={inputStatus.disabled || isSending}
                 readOnly={userRole === 0} // 添加readOnly属性确保在所有浏览器中都禁用输入
                 className={`input-field ${(inputStatus.disabled && !isHost) ? 'disabled' : ''} ${userRole === 0 ? 'guest-input-disabled' : ''}`}
+                style={getInputFieldStyle()}
               />
               {inputFocused && (
                 <button 
                   type="submit" 
                   disabled={isSending || !message.trim() || (inputStatus.disabled && !isHost)} 
                   className="send-button"
+                  style={getSendButtonStyle()}
                 >
                   发送
                 </button>
