@@ -16,6 +16,9 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
   const [inputFocused, setInputFocused] = React.useState(false);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   
+  // 添加键盘状态跟踪
+  const [keyboardVisible, setKeyboardVisible] = React.useState(false);
+  
   // 添加房间数据加载状态
   const [dataLoaded, setDataLoaded] = React.useState(false);
   
@@ -563,6 +566,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
   // 处理输入框焦点事件
   const handleInputFocus = () => {
     setInputFocused(true);
+    setKeyboardVisible(true); // 设置键盘为可见状态
     // 不需要特殊处理，由全局keyboard-fix.js处理
   };
 
@@ -573,9 +577,29 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
       return;
     }
     setInputFocused(false);
+    setKeyboardVisible(false); // 设置键盘为隐藏状态
     // 不需要特殊处理，由全局keyboard-fix.js处理
   };
 
+  // 添加窗口大小调整监听器 - 用于处理键盘弹出
+  React.useEffect(() => {
+    const handleResize = () => {
+      // 一种检测移动端键盘弹出的简单方法
+      // 如果窗口高度明显小于之前，可能是键盘弹出了
+      if (window.innerHeight < window.outerHeight * 0.75) {
+        setKeyboardVisible(true);
+      } else {
+        // 只有在未聚焦输入框时重置键盘状态
+        if (!inputFocused) {
+          setKeyboardVisible(false);
+        }
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [inputFocused]);
+  
   // 获取麦克风按钮类名
   const getMicButtonClass = () => {
     if (!localParticipant) return 'mobile-control-svg off';
@@ -677,12 +701,47 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
   
   const inputStatus = getChatInputStatus();
 
+  // 确保滚动条正确应用的效果
+  React.useEffect(() => {
+    const applyChatContainerStyles = () => {
+      const chatContainer = document.getElementById('chat-messages-container');
+      if (chatContainer) {
+        // 强制应用关键样式
+        chatContainer.style.overflowY = 'auto';
+        chatContainer.style.maxHeight = keyboardVisible ? '40vh' : '65vh';
+        chatContainer.style.minHeight = '0';
+        // 确保flex布局正确
+        chatContainer.style.flex = '1';
+        console.log('已应用聊天容器滚动样式', {
+          overflowY: chatContainer.style.overflowY,
+          maxHeight: chatContainer.style.maxHeight
+        });
+      }
+    };
+    
+    // 初始应用
+    applyChatContainerStyles();
+    
+    // 监听键盘状态变化时重新应用
+    const handler = setTimeout(applyChatContainerStyles, 100);
+    
+    return () => clearTimeout(handler);
+  }, [keyboardVisible]); // 当键盘状态变化时重新应用
+
   return (
     <div className="mobile-chat" style={{ overflow: 'hidden', width: '100%' }}>
 
       <div 
         className="mobile-chat-messages"
         id="chat-messages-container"
+        style={{
+          maxHeight: keyboardVisible ? '40vh' : '65vh', 
+          height: 'auto', // 改为auto，让内容决定高度
+          minHeight: 0,
+          overflowY: 'auto', // 移除!important，React内联样式不支持
+          flex: '1 1 auto',
+          display: 'block' // 确保正确的显示模式
+        }}
       >
         {chatMessages.map((msg, idx) => {
           // 使用CSS类而不是内联样式
@@ -875,9 +934,13 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
         }
         
         .mobile-chat-messages {
-          flex: 1;
-          overflow-y: auto;
+          flex: 1 1 auto !important;
+          overflow-y: auto !important;
           padding: 10px;
+          min-height: 0 !important; /* 关键: 允许弹性元素收缩 */
+          max-height: 65vh !important; /* 默认最大高度 */
+          transition: max-height 0.3s ease; /* 平滑过渡 */
+          display: block !important;
         }
         
         .mobile-chat-message {
