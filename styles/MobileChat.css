@@ -76,17 +76,17 @@
 }
 
 /* 键盘激活状态下的固定宽度 */
-.form-wrapper[style*="width: 340px"] {
-  width: 340px !important;
-  max-width: 340px !important;
+.form-wrapper[style*="width: 230px"] {
+  width: 230px !important;
+  max-width: 230px !important;
 }
 
-.input-grid[style*="width: 340px"] {
-  width: 340px !important;
-  max-width: 340px !important;
+.input-grid[style*="width: 230px"] {
+  width: 230px !important;
+  max-width: 230px !important;
 }
 
-.input-field[style*="width: 270px"] {
-  width: 270px !important;
-  max-width: 270px !important;
+.input-field[style*="width: 230px"] {
+  width: 230px !important;
+  max-width: 230px !important;
 } 
