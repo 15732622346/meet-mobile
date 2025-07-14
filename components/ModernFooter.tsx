@@ -4,6 +4,31 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useLocalParticipant, useParticipants, useRoomInfo } from '@livekit/components-react';
 import { API_CONFIG } from '@/lib/config';
 import { shouldShowInMicList } from '@/lib/token-utils';
+import toast, { Toaster } from 'react-hot-toast';
+
+// 创建统一的toast通知函数
+const showToast = (message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => {
+  const options = {
+    duration: 3000,
+    position: 'top-center' as const,
+    style: {
+      padding: '12px 16px',
+      borderRadius: '8px',
+      background: type === 'success' ? '#10b981' : 
+                 type === 'error' ? '#ef4444' : 
+                 type === 'warning' ? '#f59e0b' : '#3b82f6',
+      color: 'white',
+      fontWeight: '500',
+      maxWidth: '90%',
+      wordBreak: 'break-word' as const
+    },
+    icon: type === 'success' ? '✅' : 
+          type === 'error' ? '❌' : 
+          type === 'warning' ? '⚠️' : 'ℹ️',
+  };
+  
+  toast(message, options);
+};
 
 // 🎯 纯 Participant 状态管理的 Hook
 const useParticipantState = (roomDetails?: { maxMicSlots: number } | null) => {
@@ -212,24 +237,24 @@ export function ModernFooter({
     
     // 基础检查
     if (!participantState.micStats.hasHost) {
-      alert('请等待主持人进入房间后再申请上麦');
+      showToast('请等待主持人进入房间后再申请上麦', 'info');
       return;
     }
     
     // 🎯 麦位数量限制检查
     if (!participantState.micStats.hasAvailableSlots) {
-      alert(`麦位已满！当前麦位列表已有 ${participantState.micStats.micListCount}/${participantState.micStats.maxSlots} 人，请等待有人退出后再申请。`);
+      showToast(`麦位已满！当前麦位列表已有 ${participantState.micStats.micListCount}/${participantState.micStats.maxSlots} 人，请等待有人退出后再申请。`, 'warning');
       return;
     }
     
     // 🎯 检查用户当前状态
     if (participantState.micStatus === 'requesting') {
-      alert('您已经在申请中，请等待主持人批准');
+      showToast('您已经在申请中，请等待主持人批准', 'info');
       return;
     }
     
     if (participantState.micStatus === 'on_mic') {
-      alert('您已经在麦位上了');
+      showToast('您已经在麦位上了', 'info');
       return;
     }
     
@@ -256,7 +281,7 @@ export function ModernFooter({
 
     } catch (error) {
       console.error('❌ 申请上麦失败:', error);
-      alert('申请上麦失败，请刷新页面重新登录');
+      showToast('申请上麦失败，请刷新页面重新登录', 'error');
     }
   };
 
@@ -282,13 +307,13 @@ export function ModernFooter({
       console.log('🎯 麦克风不可用，显示提示信息');
       
       if (participantState.micStatus === 'requesting') {
-        alert('⏳ 您的上麦申请正在等待主持人批准');
+        showToast('⏳ 您的上麦申请正在等待主持人批准', 'info');
       } else if (participantState.micStatus === 'off_mic' && participantState.role === 1) {
-        alert('⚠️ 您需要先申请上麦权限才能使用麦克风');
+        showToast('⚠️ 您需要先申请上麦权限才能使用麦克风', 'warning');
       } else if (micGlobalMute && !participantState.canManageRoom) {
-        alert('⚠️ 主持人已启用全员禁麦');
+        showToast('⚠️ 主持人已启用全员禁麦', 'warning');
       } else {
-        alert('⚠️ 麦克风当前不可用，请联系主持人');
+        showToast('⚠️ 麦克风当前不可用，请联系主持人', 'warning');
       }
       return;
     }
@@ -340,15 +365,17 @@ export function ModernFooter({
           permissions: localParticipant?.permissions,
           attributes: localParticipant?.attributes
         });
-        alert(`⚠️ 麦克风权限不足！\n\n可能的解决方案：\n1. 联系主持人重新批准上麦\n2. 刷新页面重新登录\n3. 检查您的用户角色权限\n\n错误详情: ${error.message}`);
+        showToast(`⚠️ 麦克风权限不足！\n\n可能的解决方案：\n1. 联系主持人重新批准上麦\n2. 刷新页面重新登录\n3. 检查您的用户角色权限\n\n错误详情: ${error.message}`, 'warning');
       } else {
-        alert(`❌ 麦克风操作失败: ${error instanceof Error ? error.message : '未知错误'}`);
+        showToast(`❌ 麦克风操作失败: ${error instanceof Error ? error.message : '未知错误'}`, 'error');
       }
     }
   }, [localParticipant, participantState, isMicAvailable, micGlobalMute, room, handleGuestRestriction]);
 
   return (
     <div className="modern-footer">
+      {/* Toast通知组件 */}
+      <Toaster />
       <div className="control-buttons">
         {/* 麦克风按钮 - 🎯 基于 participant 状态显示 */}
         <button 

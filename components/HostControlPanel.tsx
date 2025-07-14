@@ -2,6 +2,31 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { API_CONFIG } from '@/lib/config';
+import toast, { Toaster } from 'react-hot-toast';
+
+// 创建统一的toast通知函数
+const showToast = (message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => {
+  const options = {
+    duration: 3000,
+    position: 'top-center' as const,
+    style: {
+      padding: '12px 16px',
+      borderRadius: '8px',
+      background: type === 'success' ? '#10b981' : 
+                 type === 'error' ? '#ef4444' : 
+                 type === 'warning' ? '#f59e0b' : '#3b82f6',
+      color: 'white',
+      fontWeight: '500',
+      maxWidth: '90%',
+      wordBreak: 'break-word' as const
+    },
+    icon: type === 'success' ? '✅' : 
+          type === 'error' ? '❌' : 
+          type === 'warning' ? '⚠️' : 'ℹ️',
+  };
+  
+  toast(message, options);
+};
 
 interface MicRequest {
   id: number;
@@ -116,11 +141,11 @@ export function HostControlPanel({
         
       } else {
         console.error('❌ 处理申请失败:', data.error);
-        alert(`处理申请失败: ${data.error}`);
+        showToast(`处理申请失败: ${data.error}`, 'error');
       }
     } catch (error) {
       console.error('❌ 处理申请时发生错误:', error);
-      alert('网络错误，请稍后重试');
+      showToast('网络错误，请稍后重试', 'error');
     } finally {
       setProcessingIds(prev => {
         const newSet = new Set(prev);
@@ -288,6 +313,8 @@ export function HostControlPanel({
           )}
         </div>
       </div>
+
+      <Toaster />
 
       <style jsx>{`
         .host-control-overlay {

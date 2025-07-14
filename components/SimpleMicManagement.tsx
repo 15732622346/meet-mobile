@@ -3,6 +3,31 @@
 import React, { useState, useEffect } from 'react';
 import { useRoomContext, useParticipants, useLocalParticipant } from '@livekit/components-react';
 import { shouldShowInMicList, isUserDisabled } from '@/lib/token-utils';
+import toast, { Toaster } from 'react-hot-toast';
+
+// 创建统一的toast通知函数
+const showToast = (message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => {
+  const options = {
+    duration: 3000,
+    position: 'top-center' as const,
+    style: {
+      padding: '12px 16px',
+      borderRadius: '8px',
+      background: type === 'success' ? '#10b981' : 
+                 type === 'error' ? '#ef4444' : 
+                 type === 'warning' ? '#f59e0b' : '#3b82f6',
+      color: 'white',
+      fontWeight: '500',
+      maxWidth: '90%',
+      wordBreak: 'break-word' as const
+    },
+    icon: type === 'success' ? '✅' : 
+          type === 'error' ? '❌' : 
+          type === 'warning' ? '⚠️' : 'ℹ️',
+  };
+  
+  toast(message, options);
+};
 
 interface SimpleMicManagementProps {
   userRole?: number;
@@ -64,25 +89,25 @@ export function SimpleMicManagement({
     
     // 如果用户被禁用，不允许申请上麦
     if (isDisabled) {
-      alert('您的账号已被管理员禁用，无法申请上麦');
+      showToast('您的账号已被管理员禁用，无法申请上麦', 'error');
       return;
     }
     
     // 🎯 修改：麦位数量限制检查 - 基于麦位列表人数
     if (micListCount >= maxMicSlots) {
-      alert(`麦位已满！当前麦位列表已有 ${micListCount}/${maxMicSlots} 人，请等待有人退出后再申请。`);
+      showToast(`麦位已满！当前麦位列表已有 ${micListCount}/${maxMicSlots} 人，请等待有人退出后再申请。`, 'warning');
       return;
     }
     
     // 🎯 检查用户当前状态
     const currentUserMicStatus = localParticipant?.attributes?.mic_status;
     if (currentUserMicStatus === 'requesting') {
-      alert('您已经在申请中，请等待主持人批准');
+      showToast('您已经在申请中，请等待主持人批准', 'info');
       return;
     }
     
     if (currentUserMicStatus === 'on_mic') {
-      alert('您已经在麦位上了');
+      showToast('您已经在麦位上了', 'info');
       return;
     }
     
@@ -101,7 +126,7 @@ export function SimpleMicManagement({
       console.log('✅ 申请上麦成功 - 使用LiveKit原生API');
     } catch (error) {
       console.error('❌ 申请上麦失败:', error);
-      alert('申请上麦失败，请重试');
+      showToast('申请上麦失败，请重试', 'error');
     }
   };
   
@@ -252,6 +277,7 @@ export function SimpleMicManagement({
           color: white;
         }
       `}</style>
+      <Toaster />
     </div>
   );
 }

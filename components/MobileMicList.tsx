@@ -3,6 +3,31 @@ import { useParticipants, useRoomContext, useRoomInfo } from '@livekit/component
 import { Participant } from 'livekit-client';
 import { isRequestingMic, isOnMic, canSpeak, parseParticipantAttributes } from '../lib/token-utils';
 import { API_CONFIG } from '../lib/config';
+import toast, { Toaster } from 'react-hot-toast';
+
+// 创建统一的toast通知函数
+const showToast = (message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => {
+  const options = {
+    duration: 3000,
+    position: 'top-center' as const,
+    style: {
+      padding: '12px 16px',
+      borderRadius: '8px',
+      background: type === 'success' ? '#10b981' : 
+                 type === 'error' ? '#ef4444' : 
+                 type === 'warning' ? '#f59e0b' : '#3b82f6',
+      color: 'white',
+      fontWeight: '500',
+      maxWidth: '90%',
+      wordBreak: 'break-word' as const
+    },
+    icon: type === 'success' ? '✅' : 
+          type === 'error' ? '❌' : 
+          type === 'warning' ? '⚠️' : 'ℹ️',
+  };
+  
+  toast(message, options);
+};
 
 interface MobileMicListProps {
   userRole?: number;
@@ -64,13 +89,14 @@ export function MobileMicList({ userRole, maxMicSlots = 8, userToken, userName }
       
       if (result.success) {
         console.log('✅ 批准上麦成功:', participant.name);
+        showToast('批准上麦成功', 'success');
       } else {
         console.error('❌ 批准上麦失败:', result.error);
-        alert(`批准上麦失败: ${result.error || '未知错误'}`);
+        showToast(`批准上麦失败: ${result.error || '未知错误'}`, 'error');
       }
     } catch (error) {
       console.error('❌ 批准上麦网络错误:', error);
-      alert('网络错误，请重试');
+      showToast('网络错误，请重试', 'error');
     } finally {
       setIsLoading(prev => ({ ...prev, [participant.identity]: false }));
     }
@@ -111,13 +137,14 @@ export function MobileMicList({ userRole, maxMicSlots = 8, userToken, userName }
       if (result.success) {
         console.log('✅ 踢下麦成功:', participant.name);
         setExpandedParticipant(null); // 关闭控制菜单
+        showToast('踢下麦成功', 'success');
       } else {
         console.error('❌ 踢下麦失败:', result.error);
-        alert(`踢下麦失败: ${result.error || '未知错误'}`);
+        showToast(`踢下麦失败: ${result.error || '未知错误'}`, 'error');
       }
     } catch (error) {
       console.error('❌ 踢下麦网络错误:', error);
-      alert('网络错误，请重试');
+      showToast('网络错误，请重试', 'error');
     } finally {
       setIsLoading(prev => ({ ...prev, [participant.identity]: false }));
     }
@@ -372,6 +399,7 @@ export function MobileMicList({ userRole, maxMicSlots = 8, userToken, userName }
           font-size: 14px;
         }
       `}</style>
+      <Toaster />
     </div>
   );
 } 

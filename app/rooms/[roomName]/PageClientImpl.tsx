@@ -61,6 +61,31 @@ import { PermissionHelper } from './PermissionHelper';
 import { UserAuthForm } from './UserAuthForm';
 import { ErrorToast } from '../../../components/ErrorToast';
 import { API_CONFIG } from '@/lib/config';
+import toast, { Toaster } from 'react-hot-toast';
+
+// 创建统一的toast通知函数
+const showToast = (message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => {
+  const options = {
+    duration: 3000,
+    position: 'top-center' as const,
+    style: {
+      padding: '12px 16px',
+      borderRadius: '8px',
+      background: type === 'success' ? '#10b981' : 
+                 type === 'error' ? '#ef4444' : 
+                 type === 'warning' ? '#f59e0b' : '#3b82f6',
+      color: 'white',
+      fontWeight: '500',
+      maxWidth: '90%',
+      wordBreak: 'break-word' as const
+    },
+    icon: type === 'success' ? '✅' : 
+          type === 'error' ? '❌' : 
+          type === 'warning' ? '⚠️' : 'ℹ️',
+  };
+  
+  toast(message, options);
+};
 
 // const SHOW_SETTINGS_MENU = process.env.NEXT_PUBLIC_SHOW_SETTINGS_MENU == 'true';
 const SHOW_SETTINGS_MENU = true; // 强制启用设置菜单功能
@@ -238,11 +263,11 @@ function PageClientImplInner(props: {
     
     const handleSubmit = async () => {
       if (!inviteCode.trim()) {
-        alert('请输入邀请码');
+        showToast('请输入邀请码', 'warning');
         return;
       }
       if (!preJoinChoices) {
-        alert('缺少用户信息');
+        showToast('缺少用户信息', 'warning');
         return;
       }
       
@@ -327,7 +352,7 @@ function PageClientImplInner(props: {
          setShowPermissionHelper(true);
       } catch (err) {
         const errorMessage = (err as Error).message;
-        alert('邀请码验证失败: ' + errorMessage);
+        showToast('邀请码验证失败: ' + errorMessage, 'error');
         console.error('连接错误:', err);
       } finally {
         setLoading(false);
@@ -378,7 +403,7 @@ function PageClientImplInner(props: {
 
     const handleJoin = async () => {
       if (!username || !invite) {
-        alert('请输入昵称和邀请码');
+        showToast('请输入昵称和邀请码', 'warning');
         return;
       }
       
@@ -445,7 +470,7 @@ function PageClientImplInner(props: {
         // 显示权限检查界面
         setShowPermissionHelper(true);
       } catch (err) {
-        alert('加入房间失败: ' + (err as Error).message);
+        showToast('加入房间失败: ' + (err as Error).message, 'error');
         console.error('连接错误:', err);
       } finally {
         setLoading(false);
@@ -538,6 +563,7 @@ function PageClientImplInner(props: {
         onClose={() => setPermissionError(null)}
         title="权限错误"
       />
+      <Toaster />
     </main>
   );
 }

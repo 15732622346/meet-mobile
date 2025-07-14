@@ -6,8 +6,34 @@ import { API_CONFIG } from '../lib/config';
 import { RoomEvent } from 'livekit-client';
 // 导入专用样式文件
 import '../styles/MobileChat.css';
+// 导入toast通知
+import toast, { Toaster } from 'react-hot-toast';
 // 移除调试功能导入
 // import { ViewportDebug } from '../lib/viewport-debug';
+
+// 创建统一的toast通知函数
+const showToast = (message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => {
+  const options = {
+    duration: 3000,
+    position: 'top-center' as const,
+    style: {
+      padding: '12px 16px',
+      borderRadius: '8px',
+      background: type === 'success' ? '#10b981' : 
+                 type === 'error' ? '#ef4444' : 
+                 type === 'warning' ? '#f59e0b' : '#3b82f6',
+      color: 'white',
+      fontWeight: '500',
+      maxWidth: '90%',
+      wordBreak: 'break-word' as const
+    },
+    icon: type === 'success' ? '✅' : 
+          type === 'error' ? '❌' : 
+          type === 'warning' ? '⚠️' : 'ℹ️',
+  };
+  
+  toast(message, options);
+};
 
 export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
   const { chatMessages, send, isSending } = useChat();
@@ -152,7 +178,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
           micStatus: currentMicStatus,
           canPublish: currentCanPublish
         });
-        alert(`🎉 您的上麦申请已被批准！现在可以使用麦克风了。\n\n状态信息:\n麦克风状态: ${currentMicStatus}\n发布权限: ${currentCanPublish ? '已授权' : '未授权'}`);
+        showToast('您的上麦申请已被批准！现在可以使用麦克风了。', 'success');
       }
       
       // 更新上一次状态
@@ -251,18 +277,16 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     // 游客特殊处理：显示注册提示
     const userIsGuest = userRole === 0;
     if (userIsGuest) {
-      if (confirm('游客必须注册为会员才能使用发送消息功能，是否前往注册登录？')) {
-        window.location.reload();
-      }
+      showToast('游客需要注册为会员才能发言!', 'warning');
       return;
     }
     
     // 检查是否可以发言
     if (!canSendMessage()) {
       if (isDisabled) {
-        alert('您已被禁用，无法发送消息');
+        showToast('您已被禁用，无法发送消息', 'error');
       } else if (chatGlobalMute) {
-        alert('全员禁言中，只有主持人可以发言');
+        showToast('全员禁言中，只有主持人可以发言', 'info');
       }
       return;
     }
@@ -270,7 +294,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     // 敏感词检查
     const blockedResult = await checkBlockedWords(message);
     if (blockedResult.blocked) {
-      alert(`消息包含敏感词"${blockedResult.word}"，已被屏蔽`);
+      showToast(`消息包含敏感词"${blockedResult.word}"，已被屏蔽`, 'error');
       return;
     }
     
@@ -396,13 +420,13 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     // 检查麦克风可用性
     if (!getMicAvailability.available) {
       if (attributes.mic_status === 'requesting') {
-        alert('⏳ 您的上麦申请正在等待主持人批准');
+        showToast('您的上麦申请正在等待主持人批准', 'info');
       } else if (attributes.mic_status === 'muted') {
-        alert('⚠️ 您已被主持人禁麦');
+        showToast('您已被主持人禁麦', 'error');
       } else if (attributes.mic_status === 'on_mic' && !localParticipant.permissions?.canPublish) {
-        alert('⚠️ 检测到权限不一致，将尝试修复。如果问题持续，请刷新页面');
+        showToast('检测到权限不一致，将尝试修复。如果问题持续，请刷新页面', 'warning');
       } else {
-        alert('⚠️ 您需要先申请上麦权限才能使用麦克风');
+        showToast('您需要先申请上麦权限才能使用麦克风', 'info');
       }
       return;
     }
@@ -431,7 +455,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
           const result = await response.json();
           if (result.success) {
             console.log('✅ 权限修复成功，等待权限更新生效...');
-            alert('权限修复成功，请稍后再试');
+            showToast('权限修复成功，请稍后再试', 'success');
             
             // 强制更新UI
             setForceUpdate(prev => prev + 1);
@@ -441,13 +465,13 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
             return;
           } else {
             console.warn('⚠️ 权限修复失败:', result.error);
-            alert('权限修复失败，请刷新页面重试');
+            showToast('权限修复失败，请刷新页面重试', 'error');
             return;
           }
         }
       } catch (error) {
         console.error('❌ 权限修复异常:', error);
-        alert('权限修复异常，请刷新页面重试');
+        showToast('权限修复异常，请刷新页面重试', 'error');
         return;
       }
     }
@@ -465,9 +489,9 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
           permissions: localParticipant.permissions,
           attributes: localParticipant.attributes
         });
-        alert(`⚠️ 麦克风权限不足！\n\n可能的解决方案：\n1. 联系主持人重新批准上麦\n2. 刷新页面重新登录\n3. 检查您的用户角色权限\n\n错误详情: ${error.message}`);
+        showToast(`⚠️ 麦克风权限不足！\n\n可能的解决方案：\n1. 联系主持人重新批准上麦\n2. 刷新页面重新登录\n3. 检查您的用户角色权限\n\n错误详情: ${error.message}`, 'warning');
       } else {
-        alert(`❌ 麦克风操作失败: ${error instanceof Error ? error.message : '未知错误'}`);
+        showToast(`❌ 麦克风操作失败: ${error instanceof Error ? error.message : '未知错误'}`, 'error');
       }
     }
   };
@@ -537,15 +561,15 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     // 检查申请可用性
     if (!getMicRequestAvailability.available) {
       if (attributes.mic_status === 'requesting') {
-        alert('您已经申请上麦，等待主持人批准');
+        showToast('您已经申请上麦，等待主持人批准', 'info');
       } else if (attributes.mic_status === 'on_mic') {
-      alert('您已在麦位上');
+      showToast('您已在麦位上', 'info');
       } else if (!hasHost) {
-        alert('请等待主持人进入房间后再申请上麦');
+        showToast('请等待主持人进入房间后再申请上麦', 'info');
       } else if (micStats.micListCount >= micStats.maxSlots) {
-        alert(`麦位已满！当前麦位列表已有 ${micStats.micListCount}/${micStats.maxSlots} 人，请等待有人退出后再申请。`);
+        showToast(`麦位已满！当前麦位列表已有 ${micStats.micListCount}/${micStats.maxSlots} 人，请等待有人退出后再申请。`, 'warning');
       } else if (isDisabled) {
-        alert('您已被禁用，无法申请上麦');
+        showToast('您已被禁用，无法申请上麦', 'error');
       }
       return;
     }
@@ -561,10 +585,10 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
         user_name: localParticipant.identity
       });
       
-      alert('已发送申请，等待主持人批准');
+      showToast('已发送申请，等待主持人批准', 'info');
     } catch (error) {
       console.error('申请上麦失败:', error);
-      alert('申请上麦失败，请刷新页面重试');
+      showToast('申请上麦失败，请刷新页面重试', 'error');
     }
   };
 
@@ -865,6 +889,8 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
 
   return (
     <div className="mobile-chat" style={{ overflow: 'hidden', width: '100%' }}>
+      {/* Toast通知组件 */}
+      <Toaster />
       {/* 移除调试相关代码 */}
 
       <div 
@@ -943,7 +969,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
                 onFocus={(e) => {
                   // 游客模式下显示提示并立即失焦，防止输入
                   if (userRole === 0) {
-                    alert('游客需要注册为会员才能发言!');
+                    showToast('游客需要注册为会员才能发言!', 'warning');
                     e.target.blur(); // 立即取消焦点
                   } else {
                     handleInputFocus();
@@ -1014,16 +1040,17 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
             {/* 申请上麦按钮 - 只对普通用户显示，也改用button元素 */}
             {(userRole === undefined || userRole === 1) && (
               <button 
-                className={`mobile-control-btn request-mic ${localParticipant?.attributes?.mic_status === 'requesting' ? 'requesting' : ''} ${!getMicRequestAvailability.available || micStats.micListCount >= micStats.maxSlots ? 'disabled' : ''}`}
+                className={`mobile-control-btn request-mic ${localParticipant?.attributes?.mic_status === 'requesting' ? 'requesting' : ''} ${!getMicRequestAvailability.available || !hasHost || micStats.micListCount >= micStats.maxSlots ? 'disabled' : ''}`}
                 onClick={handleMicRequest}
-                disabled={!getMicRequestAvailability.available || micStats.micListCount >= micStats.maxSlots} // 直接使用麦位数据比较进行控制
-                title={micStats.micListCount >= micStats.maxSlots ? `麦位已满 (${micStats.micListCount}/${micStats.maxSlots})` : 
+                disabled={!getMicRequestAvailability.available || !hasHost || micStats.micListCount >= micStats.maxSlots} // 考虑主持人状态和麦位数据
+                title={!hasHost ? '等待主持人进入' : 
+                       micStats.micListCount >= micStats.maxSlots ? `麦位已满 (${micStats.micListCount}/${micStats.maxSlots})` : 
                        !getMicRequestAvailability.available ? getMicRequestAvailability.reason : 
                        `申请上麦 (${micStats.micListCount}/${micStats.maxSlots})`}
                 style={{
-                  backgroundColor: micStats.micListCount >= micStats.maxSlots ? '#9ca3af' : (localParticipant?.attributes?.mic_status === 'requesting' ? '#f97316' : '#eab308'),
-                  opacity: micStats.micListCount >= micStats.maxSlots ? '0.7' : '1',
-                  cursor: micStats.micListCount >= micStats.maxSlots ? 'not-allowed' : 'pointer'
+                  backgroundColor: !hasHost || micStats.micListCount >= micStats.maxSlots ? '#9ca3af' : (localParticipant?.attributes?.mic_status === 'requesting' ? '#f97316' : '#eab308'),
+                  opacity: !hasHost || micStats.micListCount >= micStats.maxSlots ? '0.7' : '1',
+                  cursor: !hasHost || micStats.micListCount >= micStats.maxSlots ? 'not-allowed' : 'pointer'
                 }}
               >
                 <img 
@@ -1033,6 +1060,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
                 />
                 <span className="btn-label">
                   {localParticipant?.attributes?.mic_status === 'requesting' ? '等待' : 
+                   !hasHost ? '等待' :
                    micStats.micListCount >= micStats.maxSlots ? '已满' : 
                    '申请'}
                 </span>
@@ -1044,7 +1072,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
               <button 
                 className="mobile-control-btn request-mic guest-button-disabled"
                 onClick={() => {
-                  alert('游客需要注册为会员才能使用此功能！');
+                  showToast('游客需要注册为会员才能使用此功能！', 'warning');
                   // 可选：导航到注册页面
                   // window.location.href = '/register.html';
                 }}

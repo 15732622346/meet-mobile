@@ -29,6 +29,7 @@ import {
 import { Track, Participant, RoomEvent, RemoteParticipant, DataPacket_Kind, AudioPresets } from 'livekit-client';
 import type { MessageFormatter, WidgetState as BaseWidgetState } from '@livekit/components-react';
 import { useRouter } from 'next/navigation';
+import toast, { Toaster } from 'react-hot-toast';
 
 // MicRequestButton 组件已移除
 // import { LiveKitHostControlPanel } from '../../../components/LiveKitHostControlPanel';
@@ -622,9 +623,9 @@ export function CustomVideoConference({
         
         // 显示操作结果
         if (result.affected_count > 0) {
-          alert(`✅ ${result.message}\n影响用户数: ${result.affected_count}`);
+          showToast(`${result.message}\n影响用户数: ${result.affected_count}`, 'success');
         } else {
-          alert(`ℹ️ ${result.message}`);
+          showToast(`${result.message}`, 'info');
         }
       } else {
         throw new Error(result.message);
@@ -632,7 +633,7 @@ export function CustomVideoConference({
     } catch (error) {
       console.error('❌ 批量麦克风控制失败:', error);
       const errorMessage = error instanceof Error ? error.message : '网络错误';
-      alert(`❌ 操作失败: ${errorMessage}`);
+      showToast(`操作失败: ${errorMessage}`, 'error');
     }
   }, [roomCtx, userRole, roomInfo?.name, userToken, micGlobalMute]);
 
@@ -939,7 +940,7 @@ export function CustomVideoConference({
             // 确保输入框的状态更新
             chatInput.dispatchEvent(new Event('input', { bubbles: true }));
             // 再显示提示
-            alert(`消息包含屏蔽词"${checkResult.word}"，无法发送`);
+            showToast(`消息包含屏蔽词"${checkResult.word}"，无法发送`, 'error');
             return false;
           }
         }
@@ -960,14 +961,14 @@ export function CustomVideoConference({
     
     // 检查浏览器是否支持屏幕共享
     if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-      alert('❌ 您的浏览器不支持屏幕共享功能\n\n建议使用：\n• Chrome 72+\n• Firefox 66+\n• Edge 79+\n• Safari 13+');
+      showToast('您的浏览器不支持屏幕共享功能\n\n建议使用：\n• Chrome 72+\n• Firefox 66+\n• Edge 79+\n• Safari 13+', 'error');
       return;
     }
 
     // 检查是否为安全上下文
     if (!window.isSecureContext && !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1')) {
       const currentPort = window.location.port || '3000';
-      alert(`❌ 屏幕共享需要安全连接\n\n解决方案：\n1. 使用 localhost 访问：http://localhost:${currentPort}\n2. 或在Chrome中启用不安全源：\n   chrome://flags/#unsafely-treat-insecure-origin-as-secure\n   添加：${window.location.origin}`);
+      showToast(`屏幕共享需要安全连接\n\n解决方案：\n1. 使用 localhost 访问：http://localhost:${currentPort}\n2. 或在Chrome中启用不安全源：\n   chrome://flags/#unsafely-treat-insecure-origin-as-secure\n   添加：${window.location.origin}`, 'error');
       return;
     }
 
@@ -1063,7 +1064,7 @@ export function CustomVideoConference({
         }
         
         setIsScreenSharing(false);
-        alert('✅ 屏幕分享已停止');
+        showToast('屏幕分享已停止', 'success');
       }
       
     } catch (error) {
@@ -1083,7 +1084,7 @@ export function CustomVideoConference({
         }
       }
       
-      alert(errorMessage);
+      showToast(errorMessage, 'error');
     }
   }, [localParticipant, isScreenSharing]);
 
@@ -1136,7 +1137,7 @@ export function CustomVideoConference({
               if (!hasHost) {
                 e.preventDefault();
                 e.stopPropagation();
-                alert('请等待主持人进入房间后再申请上麦');
+                showToast('请等待主持人进入房间后再申请上麦', 'info');
                 return false;
               }
               
@@ -1146,7 +1147,7 @@ export function CustomVideoConference({
                 
                 if (!localParticipant) {
                   console.error('❌ localParticipant 不存在');
-                  alert('❌ 申请失败：用户信息不存在');
+                  showToast('申请失败：用户信息不存在', 'error');
                   return;
                 }
 
@@ -1169,11 +1170,11 @@ export function CustomVideoConference({
                 
                 // 🎯 LiveKit会自动同步attributes到所有客户端
                 // 主持人会通过attributesChanged事件收到通知
-                alert('✅ 申请成功！等待主持人批准');
+                showToast('申请成功！等待主持人批准', 'success');
                 
               } catch (error) {
                 console.error('❌ 申请上麦失败:', error);
-                alert('❌ 申请失败: ' + (error as Error).message);
+                showToast('申请失败: ' + (error as Error).message, 'error');
               }
             }}
             style={{
@@ -1342,7 +1343,7 @@ export function CustomVideoConference({
       setDebugInfo(prev => prev + `  ✅ 批准上麦成功 (LiveKit原生机制)\n  新attributes: ${JSON.stringify(participant.attributes)}\n\n`);
       
       // 🎯 添加成功提示
-      alert(`✅ 操作成功：${participant.name} 已批准上麦`);
+      showToast(`操作成功：${participant.name} 已批准上麦`, 'success');
       
       // 关闭菜单
       closeMenu();
@@ -1401,7 +1402,7 @@ export function CustomVideoConference({
         
         // 🔍 特别处理401错误，显示详细调试信息
         if (response.status === 401) {
-          alert(`❌ 踢下麦位失败: 权限不足 (401)\n\n调试信息:\n- Token状态: ${userToken ? '存在' : '不存在'}\n- 认证方式: ${userToken ? 'JWT Token' : 'Session Cookie'}\n- 错误详情: ${result.error || '未知错误'}\n\n请检查调试面板查看详细日志`);
+          showToast(`踢下麦位失败: 权限不足 (401)\n\n调试信息:\n- Token状态: ${userToken ? '存在' : '不存在'}\n- 认证方式: ${userToken ? 'JWT Token' : 'Session Cookie'}\n- 错误详情: ${result.error || '未知错误'}\n\n请检查调试面板查看详细日志`, 'error');
         }
       }
       
@@ -1462,7 +1463,7 @@ export function CustomVideoConference({
         
         // 🔍 特别处理401错误，显示详细调试信息
         if (response.status === 401) {
-          alert(`❌ 禁麦失败: 权限不足 (401)\n\n调试信息:\n- Token状态: ${userToken ? '存在' : '不存在'}\n- 认证方式: ${userToken ? 'JWT Token' : 'Session Cookie'}\n- 错误详情: ${result.error || '未知错误'}\n\n请检查调试面板查看详细日志`);
+          showToast(`禁麦失败: 权限不足 (401)\n\n调试信息:\n- Token状态: ${userToken ? '存在' : '不存在'}\n- 认证方式: ${userToken ? 'JWT Token' : 'Session Cookie'}\n- 错误详情: ${result.error || '未知错误'}\n\n请检查调试面板查看详细日志`, 'error');
         }
       }
       
@@ -1523,7 +1524,7 @@ export function CustomVideoConference({
         
         // 🔍 特别处理401错误，显示详细调试信息
         if (response.status === 401) {
-          alert(`❌ 恢复说话失败: 权限不足 (401)\n\n调试信息:\n- Token状态: ${userToken ? '存在' : '不存在'}\n- 认证方式: ${userToken ? 'JWT Token' : 'Session Cookie'}\n- 错误详情: ${result.error || '未知错误'}\n\n请检查调试面板查看详细日志`);
+          showToast(`恢复说话失败: 权限不足 (401)\n\n调试信息:\n- Token状态: ${userToken ? '存在' : '不存在'}\n- 认证方式: ${userToken ? 'JWT Token' : 'Session Cookie'}\n- 错误详情: ${result.error || '未知错误'}\n\n请检查调试面板查看详细日志`, 'error');
         }
       }
       
@@ -1572,8 +1573,33 @@ export function CustomVideoConference({
     };
   }, [roomCtx, userId, userName]);
 
+  // 创建统一的toast通知函数
+  const showToast = (message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => {
+    const options = {
+      duration: 3000,
+      position: 'top-center' as const,
+      style: {
+        padding: '12px 16px',
+        borderRadius: '8px',
+        background: type === 'success' ? '#10b981' : 
+                   type === 'error' ? '#ef4444' : 
+                   type === 'warning' ? '#f59e0b' : '#3b82f6',
+        color: 'white',
+        fontWeight: '500',
+        maxWidth: '90%',
+        wordBreak: 'break-word' as const
+      },
+      icon: type === 'success' ? '✅' : 
+            type === 'error' ? '❌' : 
+            type === 'warning' ? '⚠️' : 'ℹ️',
+    };
+    
+    toast(message, options);
+  };
+
   return (
     <div className="lk-video-conference">
+      <Toaster />
       <div className="lk-video-conference-inner">
         <div className="main-content-area">
           <div className="video-and-sidebar" style={{ display: 'flex', height: '100vh' }}>
@@ -2558,6 +2584,30 @@ function MicParticipantTile({ currentUserRole, onApproveMic, userToken, setDebug
   const [isLoading, setIsLoading] = React.useState(false);
   const room = useRoomContext();
   
+  // 创建统一的toast通知函数
+  const showToast = (message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => {
+    const options = {
+      duration: 3000,
+      position: 'top-center' as const,
+      style: {
+        padding: '12px 16px',
+        borderRadius: '8px',
+        background: type === 'success' ? '#10b981' : 
+                   type === 'error' ? '#ef4444' : 
+                   type === 'warning' ? '#f59e0b' : '#3b82f6',
+        color: 'white',
+        fontWeight: '500',
+        maxWidth: '90%',
+        wordBreak: 'break-word' as const
+      },
+      icon: type === 'success' ? '✅' : 
+            type === 'error' ? '❌' : 
+            type === 'warning' ? '⚠️' : 'ℹ️',
+    };
+    
+    toast(message, options);
+  };
+  
   if (!participant) return null;
   
   const getParticipantRole = (participant: Participant): number => {
@@ -2627,15 +2677,15 @@ function MicParticipantTile({ currentUserRole, onApproveMic, userToken, setDebug
                           action === 'unmute_participant' ? '解除禁麦' : 
                           action === 'kick_from_mic' ? '踢下麦位' :
                           action === 'approve_mic' ? '批准上麦' : action;
-        alert(`✅ 操作成功：${participant.name} ${actionText}成功`);
+        showToast(`操作成功：${participant.name} ${actionText}成功`, 'success');
         setShowControlMenu(false);
       } else {
         console.error(`❌ ${action} 操作失败:`, result.error);
-        alert(`操作失败: ${result.error}`);
+        showToast(`操作失败: ${result.error}`, 'error');
       }
     } catch (error) {
       console.error(`❌ ${action} 操作异常:`, error);
-      alert('操作失败，请稍后重试');
+      showToast('操作失败，请稍后重试', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -2700,7 +2750,7 @@ function MicParticipantTile({ currentUserRole, onApproveMic, userToken, setDebug
           setDebugInfo(prev => prev + `  ✅ 批准上麦成功: ${JSON.stringify(result)}\n\n`);
         }
         // 🎯 添加成功提示
-        alert(`✅ 操作成功：${participant.name} 已批准上麦`);
+        showToast(`操作成功：${participant.name} 已批准上麦`, 'success');
         setShowControlMenu(false);
       } else {
         console.error('❌ 更新属性失败:', result);
@@ -2713,14 +2763,14 @@ function MicParticipantTile({ currentUserRole, onApproveMic, userToken, setDebug
         if (setDebugInfo) {
           setDebugInfo(prev => prev + `  ❌ 批准上麦失败: HTTP ${response.status} - ${JSON.stringify(result)}\n\n`);
         }
-        alert(`操作失败: ${result.error || '未知错误'}`);
+        showToast(`操作失败: ${result.error || '未知错误'}`, 'error');
       }
     } catch (error) {
       console.error('❌ 更新属性异常:', error);
       if (setDebugInfo) {
         setDebugInfo(prev => prev + `  ❌ 网络错误: ${error}\n\n`);
       }
-      alert('操作失败，请稍后重试');
+      showToast('操作失败，请稍后重试', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -2769,6 +2819,7 @@ function MicParticipantTile({ currentUserRole, onApproveMic, userToken, setDebug
       color: '#fff',
       position: 'relative'
     }}>
+      <Toaster />
       {/* 用户信息 - 移到最左边 */}
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: '13px' }}>
