@@ -492,9 +492,10 @@ export function SimpleMobileVideoConference({
                 onClick={toggleFullscreen}
               >
                 <img 
-                  src={getImagePath(isFullscreen ? '/images/small.png' : '/images/big.png')}
+                  src={getImagePath(isFullscreen ? '/images/small.svg' : '/images/big.svg')}
                   alt={isFullscreen ? '退出全屏' : '全屏'} 
                   title={isFullscreen ? '退出全屏' : '全屏'} 
+                  className="svg-icon"
                 />
               </div>
             </>
@@ -698,7 +699,12 @@ export function SimpleMobileVideoConference({
           color: #eab308;
         }
           
-        `}</style>
+        .svg-icon {
+          width: 24px;
+          height: 24px;
+          filter: brightness(1);
+        }
+      `}</style>
       
       <RoomAudioRenderer />
       <HideLiveKitCounters />

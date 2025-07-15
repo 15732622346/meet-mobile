@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { getImagePath } from '../lib/image-path';
 
 // 视频显示状态枚举
 enum VideoDisplayState {
@@ -208,9 +209,25 @@ export function MobileFloatingWindow({
             fontSize: '14px'
           }}
         >
-          <img alt="最大化" width="16" height="16" src="/images/big.png" />
+          <img alt="最大化" width="16" height="16" src={getImagePath('/images/big.svg')} className="svg-icon" />
         </button>
       </div>
     </div>
   );
+} 
+
+// 添加样式
+const styles = `
+  .svg-icon {
+    width: 16px;
+    height: 16px;
+    filter: brightness(1);
+  }
+`;
+
+// 添加样式到文档头
+if (typeof document !== 'undefined') {
+  const styleElement = document.createElement('style');
+  styleElement.innerHTML = styles;
+  document.head.appendChild(styleElement);
 } 

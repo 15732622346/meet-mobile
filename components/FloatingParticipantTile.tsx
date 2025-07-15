@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Image from 'next/image';
+import { getImagePath } from '../lib/image-path';
 
 interface FloatingWrapperProps {
   children: React.ReactNode;
@@ -403,32 +404,34 @@ export function FloatingWrapper({
           {children}
           
           {/* 最小化按钮 - 右上角 */}
-          <div style={{
-            position: 'absolute',
-            top: '8px',
-            right: '8px',
-            zIndex: 10001
-          }}>
-            <button
-              title={displayState === VideoDisplayState.MAXIMIZED ? '还原' : '最小化'}
-              style={{
-                background: 'rgba(0, 0, 0, 0.6)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '4px',
-                width: '28px',
-                height: '28px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                fontSize: '14px'
-              }}
-              onClick={displayState === VideoDisplayState.MAXIMIZED ? handleRestore : handleHide}
-            >
-              {displayState === VideoDisplayState.MAXIMIZED ? '❐' : '_'}
-            </button>
-          </div>
+          {displayState !== VideoDisplayState.MAXIMIZED && (
+            <div style={{
+              position: 'absolute',
+              top: '8px',
+              right: '8px',
+              zIndex: 10001
+            }}>
+              <button
+                title="最小化"
+                style={{
+                  background: 'rgba(0, 0, 0, 0.6)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  width: '28px',
+                  height: '28px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
+                onClick={handleHide}
+              >
+                _
+              </button>
+            </div>
+          )}
           
           {/* 最大化/恢复按钮 - 右下角 */}
           <div style={{
@@ -455,13 +458,20 @@ export function FloatingWrapper({
               onClick={handleToggleMaximize}
             >
               {displayState === VideoDisplayState.MAXIMIZED ? (
-                <span>❐</span>
+                <img
+                  alt="还原"
+                  src={getImagePath('/images/small.svg')}
+                  width={16}
+                  height={16}
+                  className="svg-icon"
+                />
               ) : (
                 <img
                   alt="全屏"
-                  src="/images/big.png"
+                  src={getImagePath('/images/big.svg')}
                   width={16}
                   height={16}
+                  className="svg-icon"
                 />
               )}
             </button>
@@ -494,4 +504,20 @@ export function FloatingWrapper({
       )}
     </div>
   );
+} 
+
+// 添加样式
+const styles = `
+  .svg-icon {
+    width: 16px;
+    height: 16px;
+    filter: brightness(1);
+  }
+`;
+
+// 添加样式到文档头
+if (typeof document !== 'undefined') {
+  const styleElement = document.createElement('style');
+  styleElement.innerHTML = styles;
+  document.head.appendChild(styleElement);
 } 

@@ -685,9 +685,10 @@ export function MobileVideoConference({
                   onClick={toggleFullscreen}
                 >
                   <img 
-                    src={getImagePath(isFullscreen ? '/images/small.png' : '/images/big.png')}
+                    src={getImagePath(isFullscreen ? '/images/small.svg' : '/images/big.svg')}
                     alt={isFullscreen ? '退出全屏' : '全屏'} 
                     title={isFullscreen ? '退出全屏' : '全屏'} 
+                    className="svg-icon"
                   />
                 </div>
                 
@@ -729,9 +730,10 @@ export function MobileVideoConference({
                     {/* 摄像头大小切换按钮 */}
                     <div className="camera-toggle-btn">
                       <img 
-                        src={getImagePath(isLocalCameraExpanded ? '/images/small.png' : '/images/big.png')}
+                        src={getImagePath(isLocalCameraExpanded ? '/images/small.svg' : '/images/big.svg')}
                         alt={isLocalCameraExpanded ? '缩小' : '放大'} 
                         title={isLocalCameraExpanded ? '缩小' : '放大'} 
+                        className="svg-icon"
                       />
                     </div>
                   </div>
@@ -1142,6 +1144,11 @@ export function MobileVideoConference({
         
         /* 移除浮动调试按钮样式 */
         
+        .svg-icon {
+          width: 24px;
+          height: 24px;
+          filter: brightness(1);
+        }
       `}</style>
       
       <style jsx global>{`
