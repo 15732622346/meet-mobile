@@ -1115,6 +1115,9 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
           border-radius: 8px;
           background-color: #222; /* 改为黑色背景 */
           max-width: 80%;
+          display: flex;
+          flex-direction: row; /* 使用水平排列 */
+          flex-wrap: wrap; /* 允许内容换行 */
         }
         
         .mobile-chat-message.self {
@@ -1126,14 +1129,19 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
         .mobile-chat-name {
           font-size: 12px;
           font-weight: bold;
-          margin-bottom: 2px;
+          margin-right: 4px;
           color: #4a9eff; /* 名字改为蓝色，在黑色背景上更醒目 */
+          display: inline-block; /* 改为行内块级元素 */
+          white-space: nowrap; /* 确保不换行 */
+          flex-shrink: 0; /* 防止昵称被压缩 */
         }
         
         .mobile-chat-content {
           font-size: 14px;
           wordBreak: break-word;
           color: white; /* 文字改为白色 */
+          display: inline; /* 恢复为内联显示 */
+          flex: 1; /* 允许内容部分灵活伸展 */
         }
         
         .chat-disabled-notice {

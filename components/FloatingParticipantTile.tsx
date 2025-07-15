@@ -490,8 +490,8 @@ export function FloatingWrapper({
           {/* 最大化/恢复按钮 - 右下角 */}
           <div style={{
             position: 'absolute',
-            bottom: '5px',
-            right: '5px',
+            bottom: '15px',
+            right: '15px',
             zIndex: 10001
           }}>
             <button
