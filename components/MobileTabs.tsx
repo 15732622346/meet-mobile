@@ -30,13 +30,12 @@ export function MobileTabs({ tabs, defaultActiveKey }: MobileTabsProps) {
             onClick={() => handleTabClick(tab.key)}
           >
             {tab.isMicInfo ? (
-              <div className="mic-status-display">
-                {tab.customLabel || (
-                  <span className="mic-count">
-                    {tab.label}
-                  </span>
-                )}
-              </div>
+              // 简化麦位信息的嵌套结构，直接显示customLabel
+              tab.customLabel || (
+                <span className="mic-count">
+                  {tab.label}
+                </span>
+              )
             ) : (
               tab.customLabel || tab.label
             )}
@@ -78,29 +77,18 @@ export function MobileTabs({ tabs, defaultActiveKey }: MobileTabsProps) {
         
         .mobile-tab-nav-item.mic-info {
           display: flex;
-          justify-content: flex-start;
-          align-items: center;
-          padding: 8px 4px;
+          padding: 8px 10px;
+          background-color: #22c55e;
+          width: 100%;
         }
         
-        .mic-status-display {
-          display: flex;
-          align-items: center;
-          justify-content: flex-start;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          max-width: 100%;
-        }
-        
-        .mic-icon {
-          font-size: 16px;
+        .mobile-tab-nav-item.mic-info > div {
+          width: 100%;
         }
         
         .mic-count {
           font-weight: 500;
           font-size: 13px;
-          padding-left: 10px;
         }
         
         .mobile-tabs-content {

@@ -297,7 +297,7 @@ export function SimpleMobileVideoConference({
       rightLabel = '';
     } else {
       // 数据已加载，显示详细信息
-      leftLabel = `当前麦位数 ${micStats.micListCount} 最大麦位数 ${roomDetails.maxMicSlots}`;
+      leftLabel = `麦位数 ${micStats.micListCount} 上限 ${roomDetails.maxMicSlots}`;
       const hostName = otherHostParticipant?.name || (currentUserIsHost ? userName : '未知');
       rightLabel = `房间:${participants.length}\n主持人:${hostName}`;
     }
@@ -308,23 +308,11 @@ export function SimpleMobileVideoConference({
         // 使用自定义渲染函数来创建左右布局
         label: '',
         customLabel: (
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            width: '100%',
-            padding: '0 5px'
-          }}>
-            <div className="left-info">{leftLabel}</div>
-            <div className="right-info" style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-end',
-              fontSize: '11px',
-              lineHeight: '1.2'
-            }}>
-              <div>房间:{participants.length}</div>
-              <div>主持人:{otherHostParticipant?.name || (currentUserIsHost ? userName : '未知')}</div>
-            </div>
+          <div className="single-line-info">
+            <span className="info-item">麦位数:{micStats.micListCount}   </span>
+            <span className="info-item">上限:{roomDetails?.maxMicSlots || maxMicSlots}   </span>
+            <span className="info-item">房间:{participants.length}   </span>
+            <span className="info-item">主持人:{otherHostParticipant?.name || (currentUserIsHost ? userName : '未知')}</span>
           </div>
         ),
         content: <MobileChat userRole={userRole} maxMicSlots={roomDetails?.maxMicSlots || maxMicSlots} />,
@@ -703,6 +691,73 @@ export function SimpleMobileVideoConference({
           width: 24px;
           height: 24px;
           filter: brightness(1);
+        }
+
+        .mic-info-wrapper {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          width: 100%;
+          padding: 0 5px;
+        }
+        
+        .mic-info {
+          font-size: 14px;
+          font-weight: 500;
+          color: white;
+          padding: 0;
+          margin-right: 10px;
+          display: flex;
+          align-items: center;
+          border-right: 1px solid rgba(255,255,255,0.5);
+          padding-right: 15px;
+        }
+        
+        .host-room-info {
+          display: flex;
+          flex-direction: row;
+          font-size: 14px;
+          align-items: center;
+          color: white;
+        }
+        
+        .info-item {
+          margin-left: 15px;
+          white-space: nowrap;
+        }
+        
+        .separator {
+          margin: 0 8px;
+          color: rgba(255,255,255,0.5);
+        }
+
+        .single-line-info {
+          display: flex;
+          align-items: center;
+          width: 100%;
+          padding: 0 10px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        
+        .mic-info {
+          font-size: 14px;
+          font-weight: 500;
+          color: white;
+          padding-right: 10px;
+        }
+        
+        .info-item {
+          white-space: nowrap;
+          color: white;
+          font-size: 14px;
+          margin-right: 15px;
+        }
+        
+        .separator {
+          margin: 0 8px;
+          color: rgba(255,255,255,0.5);
         }
       `}</style>
       
