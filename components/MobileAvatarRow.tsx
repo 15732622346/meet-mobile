@@ -125,7 +125,7 @@ export function MobileAvatarRow({ onAvatarClick }: MobileAvatarRowProps) {
         
         .mic-status-icon {
           position: absolute;
-          top: -4px;
+          top: -1px;
           right: -4px;
           width: 16px;
           height: 16px;
