@@ -5,7 +5,8 @@
   padding: 2px 0 !important; /* 从4px减少到2px */
   max-width: 80% !important;
   display: flex !important;
-  flex-direction: row !important;
+  flex-direction: row !important;  /* 恢复为水平排列 */
+  flex-wrap: wrap !important; /* 允许内容换行 */
   align-items: flex-start !important;
   overflow: hidden !important;
   position: relative !important;
@@ -30,7 +31,9 @@
   font-weight: bold !important;
   margin-right: 4px !important;
   color: #4a9eff !important;
-  display: inline !important;
+  display: inline-block !important; /* 改为行内块级元素 */
+  white-space: nowrap !important; /* 确保不换行 */
+  flex-shrink: 0 !important; /* 防止昵称被压缩 */
   background: transparent !important;
 }
 
@@ -38,7 +41,8 @@
   font-size: 14px !important;
   word-break: break-word !important;
   color: #000 !important;
-  display: inline !important;
+  display: inline !important; /* 恢复为内联显示 */
+  flex: 1 !important; /* 允许内容部分灵活伸展 */
   background: transparent !important;
 }
 
