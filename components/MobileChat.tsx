@@ -629,28 +629,25 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     setInputFocused(true);
     setKeyboardVisible(true); // 设置键盘为可见状态
     
-    // 立即设置固定宽度，避免键盘弹出时宽度变化
+    // 使表单充满屏幕宽度，而不是固定宽度
     const formWrapper = document.querySelector('.form-wrapper');
     const inputGrid = document.querySelector('.input-grid');
     const inputField = document.querySelector('.input-field');
     
     if (formWrapper) {
-      // 设置固定宽度，避免键盘弹出时宽度变化
-      formWrapper.setAttribute('style', 'width: 230px !important; max-width: 230px !important;');
+      // 设置为100%宽度，充满屏幕
+      formWrapper.setAttribute('style', 'width: 100% !important; max-width: 100% !important;');
     }
     
     if (inputGrid) {
-      // 确保输入网格也有固定宽度
-      inputGrid.setAttribute('style', 'width: 230px !important; max-width: 230px !important;');
+      // 确保输入网格也是100%宽度
+      inputGrid.setAttribute('style', 'width: 100% !important; max-width: 100% !important;');
     }
     
     if (inputField) {
-      // 确保输入框有固定宽度
-      inputField.setAttribute('style', 'width: 230px !important; max-width: 230px !important;');
+      // 确保输入框有足够宽度，但留出发送按钮的空间
+      inputField.setAttribute('style', 'width: calc(100% - 70px) !important; max-width: calc(100% - 70px) !important;');
     }
-    
-    // 更新宽度调试信息
-    // setTimeout(updateWidthDebugInfo, 300); // 移除调试功能
   };
 
   // 处理输入框失去焦点事件
@@ -662,25 +659,22 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     setInputFocused(false);
     setKeyboardVisible(false); // 设置键盘为隐藏状态
     
-    // 恢复默认样式，移除固定宽度
+    // 恢复为全屏宽度样式，而不是移除样式
     const formWrapper = document.querySelector('.form-wrapper');
     const inputGrid = document.querySelector('.input-grid');
     const inputField = document.querySelector('.input-field');
     
     if (formWrapper) {
-      formWrapper.removeAttribute('style');
+      formWrapper.setAttribute('style', 'width: 100% !important; max-width: 100% !important;');
     }
     
     if (inputGrid) {
-      inputGrid.removeAttribute('style');
+      inputGrid.setAttribute('style', 'width: 100% !important; max-width: 100% !important;');
     }
     
     if (inputField) {
-      inputField.removeAttribute('style');
+      inputField.setAttribute('style', 'width: calc(100% - 70px) !important; max-width: calc(100% - 70px) !important;');
     }
-    
-    // 更新宽度调试信息
-    // setTimeout(updateWidthDebugInfo, 300); // 移除调试功能
   };
 
   // 添加窗口大小调整监听器 - 用于处理键盘弹出
@@ -842,19 +836,14 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     const baseStyle = {
       flex: '1 1 auto',
       minWidth: '0',
-      boxSizing: 'border-box' as 'border-box'
+      boxSizing: 'border-box' as 'border-box',
+      width: 'calc(100% - 70px)', // 确保输入框宽度始终是全屏减去发送按钮宽度
+      maxWidth: 'calc(100% - 70px)'
     };
     
-    // 如果键盘可见，添加特定宽度
-    if (keyboardVisible) {
-      return {
-        ...baseStyle,
-        width: 'calc(100% - 70px)',
-      };
-    }
-    
+    // 无论键盘是否可见，都使用相同的宽度
     return baseStyle;
-  }, [keyboardVisible]);
+  }, []);
   
   // 获取发送按钮样式
   const getSendButtonStyle = React.useCallback(() => {
@@ -872,20 +861,13 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
       display: 'flex',
       gap: '8px',
       width: '100%',
+      maxWidth: '100%',
       boxSizing: 'border-box' as 'border-box'
     };
     
-    // 如果键盘可见，确保宽度计算正确
-    if (keyboardVisible) {
-      return {
-        ...baseStyle,
-        maxWidth: '100%',
-        paddingRight: '0'
-      };
-    }
-    
+    // 无论键盘是否可见，都使用100%宽度
     return baseStyle;
-  }, [keyboardVisible]);
+  }, []);
 
   return (
     <div className="mobile-chat" style={{ overflow: 'hidden', width: '100%' }}>
@@ -943,10 +925,10 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
         </div>
       )}        
       
-      <div className={`chat-input-container ${inputFocused ? 'focused' : ''}`}>
+      <div className={`chat-input-container ${inputFocused ? 'focused' : ''}`} style={{width: '100%', maxWidth: '100%'}}>
         {/* 输入区域 */}
         <div className="form-wrapper">
-          <form onSubmit={handleSendMessage} className="mobile-chat-input">
+          <form onSubmit={handleSendMessage} className="mobile-chat-input" style={{width: '100%', maxWidth: '100%'}}>
             <div className="input-grid" style={getInputGridStyle()}>
               <input
                 type="text"
@@ -1097,6 +1079,8 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
           flex-direction: column;
           height: 100%;
           background-color: #f8f8f8;
+          width: 100%;
+          max-width: 100%;
         }
         
         .mobile-chat-messages {
@@ -1163,6 +1147,8 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
           padding: 10px;
           box-sizing: border-box;
           transition: all 0.3s ease;
+          width: 100% !important;
+          max-width: 100% !important;
         }
         
         /* 聊天输入容器在焦点状态下的样式 */
@@ -1180,6 +1166,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
         .mobile-chat-input {
           display: flex;
           width: 100%;
+          max-width: 100%;
           box-sizing: border-box;
         }
         
@@ -1189,6 +1176,8 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
           min-width: 50px; /* 设置最小宽度，防止过度收缩 */
           box-sizing: border-box;
           transition: width 0.3s ease;
+          width: 100%;
+          max-width: 100%;
         }
         
         /* 控制按钮包装器样式 */
@@ -1212,6 +1201,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
           display: flex;
           gap: 8px;
           width: 100%;
+          max-width: 100%;
           overflow: hidden; /* 防止内容溢出 */
         }
         

@@ -56,37 +56,37 @@
 
 /* 添加固定宽度样式，确保键盘弹出时表单宽度稳定 */
 .form-wrapper {
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  transition: none; /* 禁用过渡效果，避免用户看到宽度变化过程 */
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  transition: none !important; /* 禁用过渡效果，避免用户看到宽度变化过程 */
 }
 
 .input-grid {
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  transition: none; /* 禁用过渡效果，避免用户看到宽度变化过程 */
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  transition: none !important; /* 禁用过渡效果，避免用户看到宽度变化过程 */
 }
 
 .input-field {
-  width: calc(100% - 70px);
-  box-sizing: border-box;
-  transition: none; /* 禁用过渡效果，避免用户看到宽度变化过程 */
+  width: calc(100% - 70px) !important;
+  box-sizing: border-box !important;
+  transition: none !important; /* 禁用过渡效果，避免用户看到宽度变化过程 */
 }
 
-/* 键盘激活状态下的固定宽度 */
+/* 移除键盘激活状态下的固定宽度规则，因为现在我们总是使用100%宽度 */
 .form-wrapper[style*="width: 230px"] {
-  width: 230px !important;
-  max-width: 230px !important;
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
 .input-grid[style*="width: 230px"] {
-  width: 230px !important;
-  max-width: 230px !important;
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
 .input-field[style*="width: 230px"] {
-  width: 230px !important;
-  max-width: 230px !important;
+  width: calc(100% - 70px) !important;
+  max-width: calc(100% - 70px) !important;
 } 
