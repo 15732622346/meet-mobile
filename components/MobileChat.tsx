@@ -833,17 +833,27 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
 
   // 获取输入框样式
   const getInputFieldStyle = React.useCallback(() => {
-    const baseStyle = {
+    // 当输入框未获得焦点时，它与控制按钮共享一行，需要更大的宽度
+    if (!inputFocused) {
+      return {
+        flex: '1 1 auto',
+        minWidth: '0',
+        boxSizing: 'border-box' as 'border-box',
+        width: 'calc(100% - 10px)', // 几乎占满整个form-wrapper
+        maxWidth: 'calc(100% - 10px)',
+        marginRight: '0'
+      };
+    }
+    
+    // 输入框获得焦点时的样式
+    return {
       flex: '1 1 auto',
       minWidth: '0',
       boxSizing: 'border-box' as 'border-box',
-      width: 'calc(100% - 70px)', // 确保输入框宽度始终是全屏减去发送按钮宽度
+      width: 'calc(100% - 70px)', // 留出发送按钮的空间
       maxWidth: 'calc(100% - 70px)'
     };
-    
-    // 无论键盘是否可见，都使用相同的宽度
-    return baseStyle;
-  }, []);
+  }, [inputFocused]);
   
   // 获取发送按钮样式
   const getSendButtonStyle = React.useCallback(() => {
@@ -926,8 +936,8 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
       )}        
       
       <div className={`chat-input-container ${inputFocused ? 'focused' : ''}`} style={{width: '100%', maxWidth: '100%'}}>
-        {/* 输入区域 */}
-        <div className="form-wrapper">
+        {/* 输入区域 - 增加flex值，让它占据更多空间 */}
+        <div className="form-wrapper" style={{flex: '1 1 auto', minWidth: '0'}}>
           <form onSubmit={handleSendMessage} className="mobile-chat-input" style={{width: '100%', maxWidth: '100%'}}>
             <div className="input-grid" style={getInputGridStyle()}>
               <input
@@ -979,9 +989,9 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
           </form>
         </div>
         
-        {/* 控制按钮区域 */}
-        <div className="controls-wrapper">
-          <div className="controls-grid">
+        {/* 控制按钮区域 - 减小宽度和边距 */}
+        <div className="controls-wrapper" style={{marginLeft: '5px', flex: '0 0 auto', maxWidth: '130px'}}>
+          <div className="controls-grid" style={{gap: '5px'}}>
             {/* 麦克风按钮 - 改用button元素替代div */}
             <button 
               key={`mic-button-${forceUpdate}`}
@@ -989,13 +999,14 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
               onClick={handleMicControl}
               disabled={false} // 不禁用按钮，让用户可以点击并获取提示信息
               title={!getMicAvailability.available ? getMicAvailability.reason : (localParticipant?.isMicrophoneEnabled ? '静音' : '开麦')}
+              style={{minWidth: '50px', padding: '0 5px'}} // 减小按钮宽度
             >
               <img 
                 src={getImagePath('/images/mic.svg')} 
                 alt={localParticipant?.isMicrophoneEnabled ? '静音' : '开麦'} 
                 className="btn-icon"
               />
-              <span className="btn-label">
+              <span className="btn-label" style={{fontSize: '12px'}}>
                 {localParticipant?.isMicrophoneEnabled ? '静音' : '开麦'}
               </span>
               
@@ -1032,7 +1043,9 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
                 style={{
                   backgroundColor: !hasHost || micStats.micListCount >= micStats.maxSlots ? '#9ca3af' : (localParticipant?.attributes?.mic_status === 'requesting' ? '#f97316' : '#eab308'),
                   opacity: !hasHost || micStats.micListCount >= micStats.maxSlots ? '0.7' : '1',
-                  cursor: !hasHost || micStats.micListCount >= micStats.maxSlots ? 'not-allowed' : 'pointer'
+                  cursor: !hasHost || micStats.micListCount >= micStats.maxSlots ? 'not-allowed' : 'pointer',
+                  minWidth: '50px', // 减小按钮宽度
+                  padding: '0 5px'
                 }}
               >
                 <img 
@@ -1040,7 +1053,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
                   alt="申请上麦" 
                   className="btn-icon"
                 />
-                <span className="btn-label">
+                <span className="btn-label" style={{fontSize: '12px'}}>
                   {localParticipant?.attributes?.mic_status === 'requesting' ? '等待' : 
                    !hasHost ? '等待' :
                    micStats.micListCount >= micStats.maxSlots ? '已满' : 
@@ -1212,12 +1225,14 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
           border-radius: 20px;
           font-size: 14px;
           outline: none;
-          flex: 1;
-          min-width: 30px; /* 输入框最小宽度 */
+          flex: 1 1 auto;
+          min-width: 150px; /* 增加最小宽度，确保输入框不会太窄 */
           box-sizing: border-box;
           height: 36px;
           transition: all 0.3s ease;
           text-overflow: ellipsis; /* 文本溢出显示省略号 */
+          width: calc(100% - 10px) !important; /* 几乎占满整个form-wrapper */
+          max-width: calc(100% - 10px) !important;
         }
         
         .input-field.disabled {
@@ -1402,38 +1417,60 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
 
         /* 按钮样式 - 新增，参考PC端样式 */
         .mobile-control-btn {
-          min-width: 60px;
+          min-width: 50px;
           height: 36px;
           border-radius: 18px;
           border: none;
+          background-color: #3b82f6;
           color: white;
-          cursor: pointer;
-          transition: all 0.3s ease;
           display: flex;
-          flex-direction: row;
           align-items: center;
           justify-content: center;
-          padding: 0 10px;
+          padding: 0 8px;
           font-size: 12px;
-          background-color: #444;
-          margin: 0 4px;
+          position: relative;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          box-sizing: border-box;
+          gap: 4px;
         }
         
-        .mobile-control-btn:focus {
-          outline: none;
+        .mobile-control-btn.active {
+          background-color: #22c55e;
         }
         
-        .mobile-control-btn .btn-icon {
+        .mobile-control-btn.inactive {
+          background-color: #ef4444;
+        }
+        
+        .mobile-control-btn.no-permission {
+          background-color: #9ca3af;
+          opacity: 0.7;
+        }
+        
+        .mobile-control-btn.disabled {
+          background-color: #9ca3af;
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+        
+        .mobile-control-btn.requesting {
+          background-color: #f97316;
+          animation: gentle-pulse 1.5s infinite;
+        }
+        
+        .btn-icon {
           width: 16px;
           height: 16px;
-          margin-right: 4px;
+          filter: brightness(0) invert(1);
         }
         
-        .mobile-control-btn .btn-label {
+        .btn-label {
+          font-size: 12px;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
-          max-width: 40px; /* 限制标签宽度 */
+          max-width: 50px;
         }
         
         /* 麦克风开启状态 */

@@ -60,6 +60,7 @@
   max-width: 100% !important;
   box-sizing: border-box !important;
   transition: none !important; /* 禁用过渡效果，避免用户看到宽度变化过程 */
+  flex: 1 1 auto !important; /* 允许增长和收缩，优先增长 */
 }
 
 .input-grid {
@@ -69,10 +70,14 @@
   transition: none !important; /* 禁用过渡效果，避免用户看到宽度变化过程 */
 }
 
+/* 输入框样式 - 增加默认宽度，确保在未获得焦点时也有足够宽度 */
 .input-field {
-  width: calc(100% - 70px) !important;
+  width: calc(100% - 10px) !important; /* 几乎占满整个form-wrapper */
   box-sizing: border-box !important;
   transition: none !important; /* 禁用过渡效果，避免用户看到宽度变化过程 */
+  flex: 1 1 auto !important; /* 允许增长和收缩，优先增长 */
+  min-width: 150px !important; /* 设置最小宽度，确保输入框不会太窄 */
+  margin-right: 0 !important; /* 移除右边距，最大化利用空间 */
 }
 
 /* 移除键盘激活状态下的固定宽度规则，因为现在我们总是使用100%宽度 */
@@ -87,6 +92,26 @@
 }
 
 .input-field[style*="width: 230px"] {
-  width: calc(100% - 70px) !important;
-  max-width: calc(100% - 70px) !important;
+  width: calc(100% - 10px) !important;
+  max-width: calc(100% - 10px) !important;
+} 
+
+/* 控制按钮包装器样式 - 减少宽度和边距，给输入框留更多空间 */
+.controls-wrapper {
+  margin-left: 5px !important;
+  flex: 0 0 auto !important; /* 不增长不收缩 */
+  max-width: 130px !important; /* 限制最大宽度 */
+}
+
+/* 控制按钮网格布局 - 减少间距 */
+.controls-grid {
+  gap: 5px !important;
+  flex-shrink: 0 !important; /* 防止控制按钮区域被压缩 */
+}
+
+/* 聊天输入容器 - 确保填满宽度 */
+.chat-input-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 10px 5px !important; /* 减少左右内边距，增加可用空间 */
 } 
