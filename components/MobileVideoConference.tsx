@@ -943,8 +943,8 @@ export function MobileVideoConference({
         
         .fullscreen-toggle-btn {
           position: absolute;
-          bottom: 5px;
-          right: 5px;
+          bottom: 15px;
+          right: 15px;
           background: rgba(0, 0, 0, 0.6);
           border-radius: 4px;
           width: 20px;
