@@ -373,9 +373,9 @@ export function MobileVideoConference({
         label: '',
         customLabel: (
           <div className="single-line-info">
-            <span className="info-item">麦位数:{micStats.micListCount}</span>
-            <span className="info-item">上限:{roomDetails?.maxMicSlots || maxMicSlots}</span>
-            <span className="info-item">房间:{participants.length}</span>
+            <span className="info-item">麦位数:{micStats.micListCount}     </span>
+            <span className="info-item">上限:{roomDetails?.maxMicSlots || maxMicSlots}     </span>
+            <span className="info-item">房间:{participants.length}     </span>
             <span className="info-item">主持人:{otherHostParticipant?.name || (currentUserIsHost ? userName : '未知')}</span>
           </div>
         ),
@@ -1213,9 +1213,14 @@ export function MobileVideoConference({
         
         .info-item {
           white-space: nowrap;
-          color: white;
+          color: black;
           font-size: 14px;
-          margin-right: 15px;
+          font-weight: normal;
+          font-family: sans-serif;
+          margin-right: 0;
+          margin-left: 0;
+          padding-right: 5px;
+          padding-left: 5px;
         }
       `}</style>
       

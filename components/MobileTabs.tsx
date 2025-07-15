@@ -72,7 +72,7 @@ export function MobileTabs({ tabs, defaultActiveKey }: MobileTabsProps) {
         .mobile-tab-nav-item.active {
           background: #22c55e;
           color: white;
-          font-weight: bold;
+          font-weight: normal;
         }
         
         .mobile-tab-nav-item.mic-info {
@@ -80,6 +80,8 @@ export function MobileTabs({ tabs, defaultActiveKey }: MobileTabsProps) {
           padding: 8px 10px;
           background-color: #22c55e;
           width: 100%;
+          font-weight: normal;
+          color: white;
         }
         
         .mobile-tab-nav-item.mic-info > div {

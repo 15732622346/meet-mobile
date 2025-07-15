@@ -1005,6 +1005,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
                 src={getImagePath('/images/mic.svg')} 
                 alt={localParticipant?.isMicrophoneEnabled ? '静音' : '开麦'} 
                 className="btn-icon"
+                style={{marginRight: '0'}} // 移除右侧间距
               />
               <span className="btn-label" style={{fontSize: '12px'}}>
                 {localParticipant?.isMicrophoneEnabled ? '静音' : '开麦'}
@@ -1052,6 +1053,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
                   src={getImagePath('/images/submic.svg')} 
                   alt="申请上麦" 
                   className="btn-icon"
+                  style={{marginRight: '0'}} // 移除右侧间距
                 />
                 <span className="btn-label" style={{fontSize: '12px'}}>
                   {localParticipant?.attributes?.mic_status === 'requesting' ? '等待' : 
@@ -1077,6 +1079,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
                   src={getImagePath('/images/submic.svg')} 
                   alt="申请上麦" 
                   className="btn-icon"
+                  style={{marginRight: '0'}} // 移除右侧间距
                 />
                 <span className="btn-label">申请</span>
                 <div className="guest-lock-icon">🔒</div>
@@ -1463,6 +1466,7 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
           width: 16px;
           height: 16px;
           filter: brightness(0) invert(1);
+          margin-right: 0; /* 移除全局右侧间距 */
         }
         
         .btn-label {
@@ -1524,12 +1528,13 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
           position: relative;
           flex-shrink: 0; /* 防止按钮被压缩 */
           white-space: nowrap; /* 防止按钮文字换行 */
+          gap: 0; /* 移除子元素之间的间距 */
         }
         
         .mobile-control-btn .btn-icon {
           width: 16px;
           height: 16px;
-          margin-right: 4px;
+          margin-right: 0; /* 移除图标的右侧间距 */
           flex-shrink: 0; /* 防止图标被压缩 */
         }
         
