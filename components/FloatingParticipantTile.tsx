@@ -23,8 +23,8 @@ export function FloatingWrapper({
   children,
   title = '参与者',
   initialPosition = { x: 100, y: 100 },
-  width = 120,
-  height = 120
+  width = 100,
+  height = 100
 }: FloatingWrapperProps) {
   const [position, setPosition] = React.useState(initialPosition);
   const [isDragging, setIsDragging] = React.useState(false);
@@ -109,7 +109,7 @@ export function FloatingWrapper({
           left: 0,
           top: 0,
           width: window.innerWidth,
-          height: window.innerHeight * 0.6  // 覆盖60%的高度，避免完全遮挡UI
+          height: window.innerHeight  // 使用100%的高度以充分利用全屏空间
         };
       case VideoDisplayState.HIDDEN:
         return {
@@ -257,6 +257,30 @@ export function FloatingWrapper({
       (document as any).msFullscreenElement
     );
     
+    // 如果是最大化/全屏状态，使用视口单位而不是像素
+    if (displayState === VideoDisplayState.MAXIMIZED || isFullscreen) {
+      return {
+        position: 'fixed' as const,
+        left: 0,
+        top: 0,
+        width: '100vw',
+        height: '100vh',
+        background: '#000',
+        border: 'none',
+        borderRadius: 0,
+        zIndex: 9999,
+        overflow: 'hidden',
+        boxShadow: 'none',
+        cursor: 'auto',
+        userSelect: 'none' as const,
+        transition: '0.3s all ease-in-out',
+        WebkitTransform: 'translateZ(0)',
+        MozTransform: 'translateZ(0)',
+        msTransform: 'translateZ(0)',
+        transform: 'translateZ(0)',
+      } as React.CSSProperties;
+    }
+    
     const baseStyles: React.CSSProperties = {
       position: 'fixed',
       left: `${dimensions.left}px`,
@@ -264,15 +288,14 @@ export function FloatingWrapper({
       width: `${dimensions.width}px`,
       height: `${dimensions.height}px`,
       background: '#000',
-      border: displayState === VideoDisplayState.MAXIMIZED ? 'none' : '2px solid #444',
-      borderRadius: displayState === VideoDisplayState.MAXIMIZED ? '0' : '8px',
-      zIndex: 900, // 降低z-index，确保在全屏模式下被屏幕共享区域覆盖
+      border: '2px solid #444',
+      borderRadius: '8px',
+      zIndex: 900,
       overflow: 'hidden',
       boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
       cursor: displayState === VideoDisplayState.HIDDEN ? 'pointer' : 'auto',
       userSelect: 'none',
       transition: '0.3s all ease-in-out',
-      // 增加浏览器前缀支持，确保在全屏模式下正常渲染
       WebkitTransform: 'translateZ(0)',
       MozTransform: 'translateZ(0)',
       msTransform: 'translateZ(0)',
@@ -280,7 +303,7 @@ export function FloatingWrapper({
     };
     
     return baseStyles;
-  }, [getCurrentDimensions, displayState]);
+  }, [getCurrentDimensions, displayState, isFullscreen]);
 
   // 全局鼠标事件监听
   React.useEffect(() => {
@@ -392,7 +415,7 @@ export function FloatingWrapper({
   return (
     <div 
       ref={wrapperRef}
-      className="floating-wrapper"
+      className={`floating-wrapper ${displayState === VideoDisplayState.MAXIMIZED ? 'fullscreen-mode' : ''}`}
       style={getStyles()}
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
@@ -512,6 +535,26 @@ const styles = `
     width: 16px;
     height: 16px;
     filter: brightness(1);
+  }
+  
+  .floating-wrapper.fullscreen-mode {
+    z-index: 9999;
+  }
+  
+  .floating-wrapper.fullscreen-mode video {
+    width: 100vw !important;
+    height: 100vh !important;
+    object-fit: cover !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+  }
+  
+  .floating-wrapper.fullscreen-mode .lk-video-element,
+  .floating-wrapper.fullscreen-mode .lk-participant-tile {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
   }
 `;
 

@@ -526,8 +526,8 @@ export function SimpleMobileVideoConference({
             key={participant.identity}
             title={`${participant.name || participant.identity}`}
             initialPosition={initialPosition}
-            width={120} // 移动端窗口宽度更小，已调整为方形
-            height={120} // 移动端窗口高度更小，已调整为方形
+            width={100} // 移动端窗口宽度更小，已调整为方形
+            height={100} // 移动端窗口高度更小，已调整为方形
           >
             <div style={{ 
               width: '100%', 

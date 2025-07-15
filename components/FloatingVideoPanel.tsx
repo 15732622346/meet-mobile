@@ -11,6 +11,8 @@ interface FloatingVideoPanelProps {
   userName?: string;
   isVisible: boolean;
   onClose: () => void;
+  onToggleFullscreen?: () => void; // 添加全屏切换回调
+  isFullscreen?: boolean; // 是否处于全屏状态
 }
 
 export function FloatingVideoPanel({
@@ -19,7 +21,9 @@ export function FloatingVideoPanel({
   userId,
   userName,
   isVisible,
-  onClose
+  onClose,
+  onToggleFullscreen,
+  isFullscreen = false
 }: FloatingVideoPanelProps) {
   const [position, setPosition] = React.useState({ x: 20, y: 80 });
   const [isDragging, setIsDragging] = React.useState(false);
@@ -87,25 +91,25 @@ export function FloatingVideoPanel({
   return (
     <div 
       ref={panelRef}
-      className="floating-video-panel"
+      className={`floating-video-panel ${isFullscreen ? 'fullscreen-mode' : ''}`}
       style={{ 
-        position: 'fixed',
-        left: position.x,
-        top: position.y,
-        width: '320px',
-        height: '240px',
+        position: isFullscreen ? 'fixed' : 'fixed',
+        left: isFullscreen ? 0 : position.x,
+        top: isFullscreen ? 0 : position.y,
+        width: isFullscreen ? '100vw' : '320px',
+        height: isFullscreen ? '100vh' : '240px',
         background: '#1a1a1a',
-        border: '2px solid #444',
-        borderRadius: '8px',
-        zIndex: 1000,
+        border: isFullscreen ? 'none' : '2px solid #444',
+        borderRadius: isFullscreen ? 0 : '8px',
+        zIndex: isFullscreen ? 9999 : 1000,
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-        cursor: isDragging ? 'grabbing' : 'grab',
+        boxShadow: isFullscreen ? 'none' : '0 4px 20px rgba(0,0,0,0.3)',
+        cursor: isDragging && !isFullscreen ? 'grabbing' : isFullscreen ? 'default' : 'grab',
         userSelect: 'none',
         overflow: 'hidden'
       }}
-      onMouseDown={handleMouseDown}
+      onMouseDown={!isFullscreen ? handleMouseDown : undefined}
     >
       {/* 浮动窗口头部 */}
       <div style={{
@@ -127,6 +131,29 @@ export function FloatingVideoPanel({
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* 全屏按钮 */}
+          {onToggleFullscreen && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleFullscreen();
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#888',
+                fontSize: '14px',
+                cursor: 'pointer',
+                padding: '2px',
+                borderRadius: '2px',
+                lineHeight: 1
+              }}
+              title={isFullscreen ? "退出全屏" : "全屏"}
+            >
+              {isFullscreen ? "⊏" : "⊐"}
+            </button>
+          )}
+          
           {/* 关闭按钮 */}
           <button
             onClick={(e) => {
@@ -155,7 +182,7 @@ export function FloatingVideoPanel({
         flex: '1',
         overflow: 'hidden',
         background: '#000',
-        borderRadius: '0 0 6px 6px',
+        borderRadius: isFullscreen ? 0 : '0 0 6px 6px',
         position: 'relative'
       }}>
         {videoTracks.length > 0 ? (
@@ -165,7 +192,7 @@ export function FloatingVideoPanel({
             display: 'grid',
             gridTemplateColumns: videoTracks.length === 1 ? '1fr' : 'repeat(2, 1fr)',
             gridTemplateRows: videoTracks.length <= 2 ? '1fr' : 'repeat(2, 1fr)',
-            gap: '2px'
+            gap: isFullscreen ? 0 : '2px'
           }}>
             {videoTracks.slice(0, 4).map((track, index) => (
               <div
@@ -173,18 +200,33 @@ export function FloatingVideoPanel({
                 style={{
                   position: 'relative',
                   background: '#2a2a2a',
-                  borderRadius: '4px',
+                  borderRadius: isFullscreen ? 0 : '4px',
                   overflow: 'hidden',
                   minHeight: '0'
                 }}
               >
-                                 <ParticipantTile 
-                   {...track}
-                   style={{
-                     width: '100%',
-                     height: '100%'
-                   }}
-                 />
+                <ParticipantTile 
+                  {...track}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: isFullscreen ? 'cover' : 'contain'
+                  }}
+                />
+                
+                {/* 添加强制样式覆盖 */}
+                {isFullscreen && (
+                  <style jsx global>{`
+                    .floating-video-panel.fullscreen-mode video {
+                      width: 100vw !important;
+                      height: 100vh !important;
+                      object-fit: cover !important;
+                      position: absolute !important;
+                      top: 0 !important;
+                      left: 0 !important;
+                    }
+                  `}</style>
+                )}
                 {/* 参与者名称覆盖层 */}
                 <div style={{
                   position: 'absolute',

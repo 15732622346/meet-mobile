@@ -62,7 +62,7 @@ export function MobileAvatarRow({ onAvatarClick }: MobileAvatarRowProps) {
                 {avatarLetter}
                 {showMicIcon && (
                   <div className="mic-status-icon">
-                    <img src={micIconSrc} alt="麦位状态" width={16} height={16} />
+                    <img src={micIconSrc} alt="麦位状态" width={12} height={12} />
                   </div>
                 )}
               </div>
@@ -90,7 +90,7 @@ export function MobileAvatarRow({ onAvatarClick }: MobileAvatarRowProps) {
         .mobile-avatar-row {
           display: flex;
           overflow-x: auto;
-          padding: 10px 5px;
+          padding: 3px 5px; /* 只修改上下内边距为3px */
           white-space: nowrap;
           -webkit-overflow-scrolling: touch;
           scrollbar-width: none; /* Firefox */
@@ -110,24 +110,25 @@ export function MobileAvatarRow({ onAvatarClick }: MobileAvatarRowProps) {
         
         .mobile-avatar {
           position: relative;
-          width: 50px;
-          height: 50px;
+          width: 39px;
+          height: 39px;
           border-radius: 50%;
           background-color: #22c55e;
           color: white;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 20px;
+          font-size: 16px; /* 减小字体大小以适应较小的头像 */
           margin: 0 auto;
+          border: none; /* 移除边框 */
         }
         
         .mic-status-icon {
           position: absolute;
-          top: -5px;
-          right: -5px;
-          width: 20px;
-          height: 20px;
+          top: -4px;
+          right: -4px;
+          width: 16px;
+          height: 16px;
           border-radius: 50%;
           background-color: #00CED1; /* 修改为青色背景 */
           display: flex;
@@ -138,7 +139,7 @@ export function MobileAvatarRow({ onAvatarClick }: MobileAvatarRowProps) {
         
         .mobile-avatar-name {
           font-size: 12px;
-          margin-top: 5px;
+          margin-top: 1px; /* 从5px减少到1px */
           color: white;
           text-overflow: ellipsis;
           overflow: hidden;

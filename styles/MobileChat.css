@@ -1,8 +1,8 @@
 /* 聊天消息样式专用CSS文件 */
 
 .mobile-chat-message {
-  margin-bottom: 10px !important;
-  padding: 4px 0 !important;
+  margin-bottom: 5px !important; /* 从10px减少到5px */
+  padding: 2px 0 !important; /* 从4px减少到2px */
   max-width: 80% !important;
   display: flex !important;
   flex-direction: row !important;
@@ -114,4 +114,9 @@
   width: 100% !important;
   max-width: 100% !important;
   padding: 10px 5px !important; /* 减少左右内边距，增加可用空间 */
+} 
+
+/* 添加新的样式规则，特别针对用户名和消息内容的行间距 */
+.mobile-chat-name, .mobile-chat-content {
+  line-height: 1.2 !important; /* 添加紧凑的行高 */
 } 
