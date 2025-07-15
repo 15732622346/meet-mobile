@@ -93,6 +93,13 @@ export function FloatingWrapper({
 
   // 获取当前显示尺寸
   const getCurrentDimensions = React.useCallback(() => {
+    type Dimensions = {
+      left: number;
+      top: number;
+      width: number | string;
+      height: number;
+    };
+    
     switch (displayState) {
       case VideoDisplayState.MAXIMIZED:
         // 如果已获取屏幕共享区域的位置，则使用它
@@ -102,7 +109,7 @@ export function FloatingWrapper({
             top: screenShareRef.current.top,
             width: screenShareRef.current.width,
             height: screenShareRef.current.height
-          };
+          } as Dimensions;
         }
         // 否则覆盖整个视口
         return {
@@ -110,14 +117,14 @@ export function FloatingWrapper({
           top: 0,
           width: window.innerWidth,
           height: window.innerHeight  // 使用100%的高度以充分利用全屏空间
-        };
+        } as Dimensions;
       case VideoDisplayState.HIDDEN:
         return {
           left: position.x,
           top: position.y,
-          width: 80,  // 减小宽度以适应更短的文字
+          width: 'auto',  // 改为自动宽度适应内容
           height: 44   // 保持相同高度以便于点击
-        };
+        } as Dimensions;
       case VideoDisplayState.NORMAL:
       default:
         return {
@@ -125,7 +132,7 @@ export function FloatingWrapper({
           top: position.y,
           width: width,
           height: height
-        };
+        } as Dimensions;
     }
   }, [displayState, position.x, position.y, width, height]);
 
@@ -281,6 +288,30 @@ export function FloatingWrapper({
       } as React.CSSProperties;
     }
     
+    // 最小化状态使用自适应宽度
+    if (displayState === VideoDisplayState.HIDDEN) {
+      return {
+        position: 'fixed' as const,
+        left: `${dimensions.left}px`,
+        top: `${dimensions.top}px`,
+        width: 'auto',
+        height: `${dimensions.height}px`,
+        background: '#000',
+        border: '2px solid #444',
+        borderRadius: '8px',
+        zIndex: 900,
+        overflow: 'hidden',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+        cursor: 'pointer',
+        userSelect: 'none' as const,
+        transition: '0.3s all ease-in-out',
+        WebkitTransform: 'translateZ(0)',
+        MozTransform: 'translateZ(0)',
+        msTransform: 'translateZ(0)',
+        transform: 'translateZ(0)',
+      } as React.CSSProperties;
+    }
+    
     const baseStyles: React.CSSProperties = {
       position: 'fixed',
       left: `${dimensions.left}px`,
@@ -293,7 +324,7 @@ export function FloatingWrapper({
       zIndex: 900,
       overflow: 'hidden',
       boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
-      cursor: displayState === VideoDisplayState.HIDDEN ? 'pointer' : 'auto',
+      cursor: displayState.toString() === 'hidden' ? 'pointer' : 'auto',
       userSelect: 'none',
       transition: '0.3s all ease-in-out',
       WebkitTransform: 'translateZ(0)',
@@ -419,10 +450,10 @@ export function FloatingWrapper({
       style={getStyles()}
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
-      onClick={displayState === VideoDisplayState.HIDDEN ? handleRestore : undefined}
+      onClick={displayState.toString() === 'hidden' ? handleRestore : undefined}
     >
       {/* 正常/最大化状态下显示内容 */}
-      {displayState !== VideoDisplayState.HIDDEN ? (
+      {displayState.toString() !== 'hidden' ? (
         <>
           {children}
           
@@ -503,8 +534,9 @@ export function FloatingWrapper({
       ) : (
         // 最小化状态下只显示恢复按钮
         <button
+          className="restore-button"
           style={{
-            width: '100%',
+            width: 'auto',
             height: '100%',
             background: '#2c9631',
             border: 'none',
@@ -515,7 +547,7 @@ export function FloatingWrapper({
             justifyContent: 'center',
             color: '#fff',
             fontSize: '14px',
-            padding: '0 8px',
+            padding: '0 4px',
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
             fontWeight: 'bold'
           }}
@@ -555,6 +587,14 @@ const styles = `
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
+  }
+  
+  /* 恢复按钮紧凑样式 */
+  .floating-wrapper button.restore-button {
+    width: auto !important;
+    padding: 0 4px !important;
+    white-space: nowrap !important;
+    min-width: fit-content !important;
   }
 `;
 
