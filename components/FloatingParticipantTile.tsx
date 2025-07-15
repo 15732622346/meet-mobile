@@ -97,7 +97,9 @@ export function FloatingWrapper({
       left: number;
       top: number;
       width: number | string;
-      height: number;
+      height: number | string;
+      minWidth?: string;
+      minHeight?: string;
     };
     
     switch (displayState) {
@@ -123,7 +125,9 @@ export function FloatingWrapper({
           left: position.x,
           top: position.y,
           width: 'auto',  // 改为自动宽度适应内容
-          height: 44   // 保持相同高度以便于点击
+          height: 'auto',   // 改为自动高度适应内容
+          minWidth: '44px', // 添加最小宽度确保可点击性
+          minHeight: '28px' // 添加最小高度确保可点击性
         } as Dimensions;
       case VideoDisplayState.NORMAL:
       default:
@@ -295,13 +299,15 @@ export function FloatingWrapper({
         left: `${dimensions.left}px`,
         top: `${dimensions.top}px`,
         width: 'auto',
-        height: `${dimensions.height}px`,
-        background: '#000',
-        border: '2px solid #444',
+        height: 'auto',
+        minWidth: dimensions.minWidth || 'auto',
+        minHeight: dimensions.minHeight || 'auto',
+        background: 'transparent', // 改为透明背景
+        border: 'none', // 移除边框
         borderRadius: '8px',
         zIndex: 900,
         overflow: 'hidden',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+        boxShadow: 'none', // 移除阴影效果
         cursor: 'pointer',
         userSelect: 'none' as const,
         transition: '0.3s all ease-in-out',
@@ -490,8 +496,8 @@ export function FloatingWrapper({
           {/* 最大化/恢复按钮 - 右下角 */}
           <div style={{
             position: 'absolute',
-            bottom: '15px',
-            right: '15px',
+            bottom: displayState === VideoDisplayState.MAXIMIZED ? '15px' : '5px',
+            right: displayState === VideoDisplayState.MAXIMIZED ? '15px' : '5px',
             zIndex: 10001
           }}>
             <button
@@ -537,7 +543,7 @@ export function FloatingWrapper({
           className="restore-button"
           style={{
             width: 'auto',
-            height: '100%',
+            height: 'auto', // 改为auto，根据内容自适应高度
             background: '#2c9631',
             border: 'none',
             borderRadius: '6px',
@@ -547,9 +553,10 @@ export function FloatingWrapper({
             justifyContent: 'center',
             color: '#fff',
             fontSize: '14px',
-            padding: '0 4px',
+            padding: '2px 4px', // 减小上下内边距为2px
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-            fontWeight: 'bold'
+            fontWeight: 'bold',
+            lineHeight: '1.1' // 添加紧凑的行高
           }}
           onClick={handleRestore}
           title="恢复视频窗口"
@@ -592,9 +599,11 @@ const styles = `
   /* 恢复按钮紧凑样式 */
   .floating-wrapper button.restore-button {
     width: auto !important;
-    padding: 0 4px !important;
+    height: auto !important; 
+    padding: 2px 4px !important;
     white-space: nowrap !important;
     min-width: fit-content !important;
+    line-height: 1.1 !important;
   }
 `;
 
