@@ -407,8 +407,8 @@ export function FloatingWrapper({
           {displayState !== VideoDisplayState.MAXIMIZED && (
             <div style={{
               position: 'absolute',
-              top: '8px',
-              right: '8px',
+              top: '5px',
+              right: '5px',
               zIndex: 10001
             }}>
               <button
@@ -418,13 +418,13 @@ export function FloatingWrapper({
                   color: '#fff',
                   border: 'none',
                   borderRadius: '4px',
-                  width: '28px',
-                  height: '28px',
+                  width: '16px',
+                  height: '16px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
-                  fontSize: '14px'
+                  fontSize: '10px'
                 }}
                 onClick={handleHide}
               >
@@ -436,8 +436,8 @@ export function FloatingWrapper({
           {/* 最大化/恢复按钮 - 右下角 */}
           <div style={{
             position: 'absolute',
-            bottom: '8px',
-            right: '8px',
+            bottom: '5px',
+            right: '5px',
             zIndex: 10001
           }}>
             <button
@@ -447,13 +447,13 @@ export function FloatingWrapper({
                 color: '#fff',
                 border: 'none',
                 borderRadius: '4px',
-                width: '28px',
-                height: '28px',
+                width: '16px',
+                height: '16px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                fontSize: '14px'
+                fontSize: '10px'
               }}
               onClick={handleToggleMaximize}
             >
@@ -461,16 +461,16 @@ export function FloatingWrapper({
                 <img
                   alt="还原"
                   src={getImagePath('/images/small.svg')}
-                  width={16}
-                  height={16}
+                  width={12}
+                  height={12}
                   className="svg-icon"
                 />
               ) : (
                 <img
                   alt="全屏"
                   src={getImagePath('/images/big.svg')}
-                  width={16}
-                  height={16}
+                  width={12}
+                  height={12}
                   className="svg-icon"
                 />
               )}

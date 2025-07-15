@@ -373,10 +373,10 @@ export function MobileVideoConference({
         label: '',
         customLabel: (
           <div className="single-line-info">
-            <span className="info-item">麦位数:{micStats.micListCount}     </span>
-            <span className="info-item">上限:{roomDetails?.maxMicSlots || maxMicSlots}     </span>
-            <span className="info-item">房间:{participants.length}     </span>
-            <span className="info-item">主持人:{otherHostParticipant?.name || (currentUserIsHost ? userName : '未知')}</span>
+            <span style={{color: 'black', fontSize: '14px', fontWeight: 'normal'}}>麦位数:{micStats.micListCount}</span>
+            <span style={{color: 'black', fontSize: '14px', fontWeight: 'normal', marginLeft: '5px'}}>     上限:{roomDetails?.maxMicSlots || maxMicSlots}</span>
+            <span style={{color: 'black', fontSize: '14px', fontWeight: 'normal', marginLeft: '5px'}}>     房间:{participants.length}</span>
+            <span style={{color: 'black', fontSize: '14px', fontWeight: 'normal', marginLeft: '5px'}}>     主持人:{otherHostParticipant?.name || (currentUserIsHost ? userName : '未知')}</span>
           </div>
         ),
         content: <MobileChat userRole={userRole} maxMicSlots={roomDetails?.maxMicSlots || maxMicSlots} />,
@@ -422,10 +422,12 @@ export function MobileVideoConference({
   // 切换全屏/横屏模式
   const toggleFullscreen = () => {
     try {
-      // 获取屏幕共享容器元素
-      const screenShareContainer = document.querySelector('.screen-share-wrapper');
+      // 获取容器元素 - 根据当前显示内容选择不同的容器
+      const container = hasScreenShare && screenTracks.length > 0 
+        ? document.querySelector('.screen-share-wrapper')
+        : document.querySelector('.video-wrapper');
       
-      if (screenShareContainer) {
+      if (container) {
         if (!isFullscreen) {
           // 先请求全屏，然后在成功回调中锁定横屏
           console.log('请求进入全屏模式');
@@ -449,18 +451,18 @@ export function MobileVideoConference({
           };
           
           // 请求全屏并处理成功情况
-          if ((screenShareContainer as any).requestFullscreen) {
-            (screenShareContainer as any).requestFullscreen()
+          if ((container as any).requestFullscreen) {
+            (container as any).requestFullscreen()
               .then(onFullscreenSuccess)
               .catch((err: any) => {
                 console.error('无法进入全屏模式:', err);
               });
-          } else if ((screenShareContainer as any).webkitRequestFullscreen) {
-            (screenShareContainer as any).webkitRequestFullscreen();
+          } else if ((container as any).webkitRequestFullscreen) {
+            (container as any).webkitRequestFullscreen();
             // WebKit没有Promise返回，使用延时
             setTimeout(onFullscreenSuccess, 100);
-          } else if ((screenShareContainer as any).msRequestFullscreen) {
-            (screenShareContainer as any).msRequestFullscreen();
+          } else if ((container as any).msRequestFullscreen) {
+            (container as any).msRequestFullscreen();
             setTimeout(onFullscreenSuccess, 100);
           }
         } else {
@@ -731,7 +733,7 @@ export function MobileVideoConference({
                 <div className="debug-overlay">{debugInfo}</div>
               </div>
             ) : mainVideoTrack ? (
-              <div className="video-wrapper">
+              <div className={`video-wrapper ${isFullscreen ? 'fullscreen-mode' : ''}`}>
                 {/* 保留原有的视频显示逻辑 */}
                 <video
                   ref={node => {
@@ -759,6 +761,19 @@ export function MobileVideoConference({
                   style={{ cursor: 'pointer' }}
                 >
                   <span className="minimize-icon">_</span>
+                </div>
+                
+                {/* 添加全屏/横屏切换按钮 */}
+                <div 
+                  className="fullscreen-toggle-btn"
+                  onClick={toggleFullscreen}
+                >
+                  <img 
+                    src={getImagePath(isFullscreen ? '/images/small.svg' : '/images/big.svg')}
+                    alt={isFullscreen ? '退出全屏' : '全屏'} 
+                    title={isFullscreen ? '退出全屏' : '全屏'} 
+                    className="svg-icon"
+                  />
                 </div>
                 
                 {/* 直接嵌入式摄像头面板 - 视频轨道情况 */}
@@ -885,13 +900,27 @@ export function MobileVideoConference({
         }
         
         .video-wrapper {
-          position: relative;
           width: 100%;
-          height: 100%;
-          display: flex;
-          justify-content: center;
-          align-items: center;
+          position: relative;
+          height: 30vh; /* 默认高度 */
           overflow: hidden;
+        }
+        
+        .video-wrapper.fullscreen-mode {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh; /* 兼容性回退 */
+          height: calc(var(--vh, 1vh) * 100);
+          z-index: 9999;
+          background-color: #000;
+        }
+        
+        .video-wrapper.fullscreen-mode video {
+          width: 100% !important;
+          height: 100% !important;
+          object-fit: cover !important;
         }
         
         .video-wrapper video {
@@ -914,12 +943,12 @@ export function MobileVideoConference({
         
         .fullscreen-toggle-btn {
           position: absolute;
-          bottom: 8px;
-          right: 8px;
+          bottom: 5px;
+          right: 5px;
           background: rgba(0, 0, 0, 0.6);
           border-radius: 4px;
-          width: 28px;
-          height: 28px;
+          width: 20px;
+          height: 20px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -928,8 +957,8 @@ export function MobileVideoConference({
         }
         
         .fullscreen-toggle-btn img {
-          width: 16px;
-          height: 16px;
+          width: 14px;
+          height: 14px;
         }
         
         /* 最小化按钮样式 */
