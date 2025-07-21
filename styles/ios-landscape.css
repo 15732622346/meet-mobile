@@ -80,7 +80,9 @@ body.ios-landscape-active {
 
 /* 处理屏幕共享容器 - 让JavaScript控制布局 */
 .ios-landscape-mode.screen-share-wrapper,
-.fullscreen-mode.screen-share-wrapper {
+.fullscreen-mode.screen-share-wrapper,
+.ios-landscape-mode.floating-wrapper,
+.fullscreen-mode.floating-wrapper {
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
@@ -94,14 +96,16 @@ body.ios-landscape-active {
 
 /* iOS Safari 特殊修复 - 确保旋转模式下完全覆盖屏幕 */
 @supports (-webkit-touch-callout: none) {
-  .ios-landscape-mode.screen-share-wrapper {
+  .ios-landscape-mode.screen-share-wrapper,
+  .ios-landscape-mode.floating-wrapper {
     width: 100vh !important;  /* 设备竖屏时的宽度=视口高度 */
     height: 100vw !important; /* 设备竖屏时的高度=视口宽度 */
   }
   
   /* 设备已横屏时正确显示 */
   @media screen and (orientation: landscape) {
-    .ios-landscape-mode.screen-share-wrapper.device-landscape {
+    .ios-landscape-mode.screen-share-wrapper.device-landscape,
+    .ios-landscape-mode.floating-wrapper.device-landscape {
       width: 100vw !important;
       height: 100vh !important;
     }
@@ -144,14 +148,16 @@ body.ios-landscape-active {
 }
 
 /* 确保屏幕共享在Safari中正确显示 */
-.screen-share-wrapper.ios-landscape-mode {
+.screen-share-wrapper.ios-landscape-mode,
+.floating-wrapper.ios-landscape-mode {
   min-width: 100vh !important;
   min-height: 100vw !important;
   z-index: 99999 !important; /* 最高层级 */
 }
 
 /* 修复iOS Safari中底部栏问题 */
-.ios-landscape-active .screen-share-wrapper.ios-landscape-mode {
+.ios-landscape-active .screen-share-wrapper.ios-landscape-mode,
+.ios-landscape-active .floating-wrapper.ios-landscape-mode {
   padding-bottom: env(safe-area-inset-bottom) !important;
   padding-top: env(safe-area-inset-top) !important;
 } 
