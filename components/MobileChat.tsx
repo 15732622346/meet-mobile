@@ -592,61 +592,214 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     }
   };
 
-  // 移除宽度调试信息状态和函数
-  // const [widthDebugInfo, setWidthDebugInfo] = React.useState({
-  //   formWrapper: '未找到',
-  //   inputGrid: '未找到',
-  //   inputField: '未找到',
-  //   sendButton: '未找到',
-  //   windowWidth: window.innerWidth
-  // });
-  
-  // 更新宽度调试信息
-  // const updateWidthDebugInfo = React.useCallback(() => {
-  //   const formWrapper = document.querySelector('.form-wrapper');
-  //   const inputGrid = document.querySelector('.input-grid');
-  //   const inputField = document.querySelector('.input-field');
-  //   const sendButton = document.querySelector('.send-button');
-    
-  //   setWidthDebugInfo({
-  //     formWrapper: formWrapper ? `${formWrapper.offsetWidth}px` : '未找到',
-  //     inputGrid: inputGrid ? `${inputGrid.offsetWidth}px` : '未找到',
-  //     inputField: inputField ? `${inputField.offsetWidth}px` : '未找到',
-  //     sendButton: sendButton ? `${sendButton.offsetWidth}px` : '未找到',
-  //     windowWidth: window.innerWidth
-  //   });
-  // }, []);
-  
-  // 在组件挂载、窗口大小变化、调试模式变化时更新宽度信息
-  // React.useEffect(() => {
-  //   updateWidthDebugInfo();
-  //   window.addEventListener('resize', updateWidthDebugInfo);
-  //   return () => window.removeEventListener('resize', updateWidthDebugInfo);
-  // }, [updateWidthDebugInfo]);
+  // 存储视口事件清理函数的状态
+  const [viewportCleanup, setViewportCleanup] = React.useState<(() => void) | null>(null);
+  // 存储原始meta viewport内容，以便恢复
+  const [originalViewport, setOriginalViewport] = React.useState<string | null>(null);
+  // 存储iOS键盘修复DOM元素ID
+  const iOSFixElementId = "ios-keyboard-fix-input-container";
+
+  // iOS处理器，设置meta viewport和强制修复键盘问题
+  const setupIOSFix = React.useCallback(() => {
+    // 保存原始meta viewport
+    const metaViewport = document.querySelector('meta[name="viewport"]');
+    if (metaViewport) {
+      setOriginalViewport(metaViewport.getAttribute('content'));
+      // 设置新的meta viewport以防止缩放
+      metaViewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+    }
+
+    // 检查是否已经创建了修复元素
+    let fixElement = document.getElementById(iOSFixElementId);
+    if (!fixElement) {
+      // 创建一个绝对定位的输入框容器
+      fixElement = document.createElement('div');
+      fixElement.id = iOSFixElementId;
+      document.body.appendChild(fixElement);
+    }
+
+    // 设置输入框容器的样式
+    Object.assign(fixElement.style, {
+      position: 'absolute',
+      zIndex: '99999',
+      bottom: '0',
+      left: '0',
+      width: '100%',
+      padding: '10px',
+      backgroundColor: '#ffffff',
+      borderTop: '1px solid #e0e0e0',
+      boxShadow: '0 -2px 10px rgba(0,0,0,0.1)',
+      transition: 'transform 0.3s ease',
+      transform: 'translateY(0)',
+      boxSizing: 'border-box'
+    });
+
+    // 创建一个强制的内联样式标签
+    let styleTag = document.getElementById("ios-keyboard-fix-style");
+    if (!styleTag) {
+      styleTag = document.createElement('style');
+      styleTag.id = "ios-keyboard-fix-style";
+      document.head.appendChild(styleTag);
+    }
+
+    // 添加强制样式，确保没有横向滚动
+    styleTag.innerHTML = `
+      html, body {
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+      }
+      #${iOSFixElementId} {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        z-index: 99999 !important;
+      }
+      .original-input-hidden {
+        position: absolute !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        z-index: -1 !important;
+      }
+    `;
+
+    // 返回清理函数
+    return () => {
+      // 恢复原始meta viewport
+      if (metaViewport && originalViewport) {
+        metaViewport.setAttribute('content', originalViewport);
+      }
+      
+      // 移除修复元素
+      if (fixElement && fixElement.parentNode) {
+        fixElement.parentNode.removeChild(fixElement);
+      }
+      
+      // 移除样式标签
+      if (styleTag && styleTag.parentNode) {
+        styleTag.parentNode.removeChild(styleTag);
+      }
+    };
+  }, [originalViewport, iOSFixElementId]);
+
+  // 当键盘弹出或收起时，调整固定输入框的位置
+  const adjustIOSInputPosition = React.useCallback((keyboardHeight: number) => {
+    const fixElement = document.getElementById(iOSFixElementId);
+    if (!fixElement) return;
+
+    if (keyboardHeight > 0) {
+      // 键盘弹出，将输入框放在键盘上方
+      fixElement.style.transform = `translateY(-${keyboardHeight}px)`;
+    } else {
+      // 键盘收起，将输入框恢复到底部
+      fixElement.style.transform = 'translateY(0)';
+    }
+  }, [iOSFixElementId]);
 
   // 处理输入框焦点事件
   const handleInputFocus = () => {
     setInputFocused(true);
-    setKeyboardVisible(true); // 设置键盘为可见状态
+    setKeyboardVisible(true);
     
-    // 使表单充满屏幕宽度，而不是固定宽度
-    const formWrapper = document.querySelector('.form-wrapper');
-    const inputGrid = document.querySelector('.input-grid');
-    const inputField = document.querySelector('.input-field');
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     
-    if (formWrapper) {
-      // 设置为100%宽度，充满屏幕
-      formWrapper.setAttribute('style', 'width: 100% !important; max-width: 100% !important;');
-    }
-    
-    if (inputGrid) {
-      // 确保输入网格也是100%宽度
-      inputGrid.setAttribute('style', 'width: 100% !important; max-width: 100% !important;');
-    }
-    
-    if (inputField) {
-      // 确保输入框有足够宽度，但留出发送按钮的空间
-      inputField.setAttribute('style', 'width: calc(100% - 70px) !important; max-width: calc(100% - 70px) !important;');
+    if (isIOS) {
+      // 获取输入框容器
+      const chatInputContainer = document.querySelector('.chat-input-container');
+      if (chatInputContainer) {
+        // 1. 防止iOS键盘滚动行为 - 透明度闪烁技术
+        (chatInputContainer as HTMLElement).style.opacity = '0';
+        
+        // 2. 添加CSS类，应用专用样式
+        chatInputContainer.classList.add('keyboard-visible');
+        document.body.classList.add('ios-keyboard-open');
+        
+        // 3. 预设样式，确保输入框始终固定在视口底部
+        (chatInputContainer as HTMLElement).style.position = 'fixed';
+        (chatInputContainer as HTMLElement).style.bottom = '0';
+        (chatInputContainer as HTMLElement).style.left = '0';
+        (chatInputContainer as HTMLElement).style.width = '100%';
+        (chatInputContainer as HTMLElement).style.zIndex = '10000';
+        (chatInputContainer as HTMLElement).style.backgroundColor = '#fff';
+        
+        // 4. 防止横向滚动
+        document.documentElement.style.maxWidth = '100%';
+        document.documentElement.style.overflowX = 'hidden';
+        document.body.style.maxWidth = '100%';
+        document.body.style.overflowX = 'hidden';
+        
+        // 5. 设置meta viewport，禁止缩放和用户缩放
+        const viewportMeta = document.querySelector('meta[name="viewport"]');
+        if (viewportMeta) {
+          viewportMeta.setAttribute(
+            'content', 
+            'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover'
+          );
+        }
+        
+        // 6. 恢复透明度和其他样式
+        setTimeout(() => {
+          // 应用闪烁动画
+          (chatInputContainer as HTMLElement).classList.add('ios-input-focus');
+          (chatInputContainer as HTMLElement).style.opacity = '1';
+          (chatInputContainer as HTMLElement).style.transition = 'bottom 0.3s ease';
+          
+          // 设置输入框聚焦样式
+          const inputElement = chatInputContainer.querySelector('input');
+          if (inputElement) {
+            (inputElement as HTMLElement).classList.add('login-style-input');
+          }
+          
+          // 在iOS上设置键盘可视化
+          if (window.visualViewport) {
+            const handleViewportChange = () => {
+              const keyboardHeight = Math.max(0, window.innerHeight - window.visualViewport.height);
+              if (keyboardHeight > 0 && inputFocused) {
+                (chatInputContainer as HTMLElement).style.bottom = `${keyboardHeight}px`;
+              } else {
+                (chatInputContainer as HTMLElement).style.bottom = '0';
+              }
+            };
+            
+            // 执行一次以设置初始位置
+            handleViewportChange();
+            
+            // 添加视口事件监听
+            window.visualViewport.addEventListener('resize', handleViewportChange);
+            window.visualViewport.addEventListener('scroll', handleViewportChange);
+            
+            // 定时检查确保位置正确
+            const intervalId = setInterval(handleViewportChange, 300);
+            
+            // 存储清理函数
+            setViewportCleanup(() => {
+              window.visualViewport.removeEventListener('resize', handleViewportChange);
+              window.visualViewport.removeEventListener('scroll', handleViewportChange);
+              clearInterval(intervalId);
+            });
+          }
+        }, 50);
+      }
+    } else {
+      // Android设备的正常处理
+      const formWrapper = document.querySelector('.form-wrapper');
+      const inputGrid = document.querySelector('.input-grid');
+      const inputField = document.querySelector('.input-field');
+      
+      if (formWrapper) {
+        formWrapper.setAttribute('style', 'width: 100% !important; max-width: 100% !important;');
+      }
+      
+      if (inputGrid) {
+        inputGrid.setAttribute('style', 'width: 100% !important; max-width: 100% !important;');
+      }
+      
+      if (inputField) {
+        inputField.setAttribute('style', 'width: calc(100% - 70px) !important; max-width: calc(100% - 70px) !important;');
+      }
     }
   };
 
@@ -656,26 +809,208 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     if (message.trim()) {
       return;
     }
+    
     setInputFocused(false);
-    setKeyboardVisible(false); // 设置键盘为隐藏状态
+    setKeyboardVisible(false);
     
-    // 恢复为全屏宽度样式，而不是移除样式
-    const formWrapper = document.querySelector('.form-wrapper');
-    const inputGrid = document.querySelector('.input-grid');
-    const inputField = document.querySelector('.input-field');
-    
-    if (formWrapper) {
-      formWrapper.setAttribute('style', 'width: 100% !important; max-width: 100% !important;');
+    // 清理视口事件
+    if (viewportCleanup) {
+      viewportCleanup();
+      setViewportCleanup(null);
     }
     
-    if (inputGrid) {
-      inputGrid.setAttribute('style', 'width: 100% !important; max-width: 100% !important;');
-    }
-    
-    if (inputField) {
-      inputField.setAttribute('style', 'width: calc(100% - 70px) !important; max-width: calc(100% - 70px) !important;');
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (isIOS) {
+      // 恢复meta viewport
+      const viewportMeta = document.querySelector('meta[name="viewport"]');
+      if (viewportMeta) {
+        viewportMeta.setAttribute(
+          'content', 
+          'width=device-width, initial-scale=1, viewport-fit=cover'
+        );
+      }
+      
+      // 恢复输入容器样式
+      const chatInputContainer = document.querySelector('.chat-input-container');
+      if (chatInputContainer) {
+        // 移除CSS类
+        chatInputContainer.classList.remove('keyboard-visible');
+        document.body.classList.remove('ios-keyboard-open');
+        chatInputContainer.classList.remove('ios-input-focus');
+        
+        // 恢复样式
+        (chatInputContainer as HTMLElement).style.position = '';
+        (chatInputContainer as HTMLElement).style.bottom = '';
+        (chatInputContainer as HTMLElement).style.left = '';
+        (chatInputContainer as HTMLElement).style.width = '';
+        (chatInputContainer as HTMLElement).style.zIndex = '';
+        (chatInputContainer as HTMLElement).style.backgroundColor = '';
+        (chatInputContainer as HTMLElement).style.transition = '';
+        
+        // 恢复输入元素样式
+        const inputElement = chatInputContainer.querySelector('input');
+        if (inputElement) {
+          (inputElement as HTMLElement).classList.remove('login-style-input');
+        }
+      }
+      
+      // 恢复文档样式
+      document.documentElement.style.maxWidth = '';
+      document.documentElement.style.overflowX = '';
+      document.body.style.maxWidth = '';
+      document.body.style.overflowX = '';
+    } else {
+      // Android设备的正常处理
+      const formWrapper = document.querySelector('.form-wrapper');
+      const inputGrid = document.querySelector('.input-grid');
+      const inputField = document.querySelector('.input-field');
+      
+      if (formWrapper) {
+        formWrapper.setAttribute('style', 'width: 100% !important; max-width: 100% !important;');
+      }
+      
+      if (inputGrid) {
+        inputGrid.setAttribute('style', 'width: 100% !important; max-width: 100% !important;');
+      }
+      
+      if (inputField) {
+        inputField.setAttribute('style', 'width: calc(100% - 70px) !important; max-width: calc(100% - 70px) !important;');
+      }
     }
   };
+
+  // 诊断信息用useEffect替换之前的setTimeout
+  React.useEffect(() => {
+    if (inputFocused && keyboardVisible) {
+      // 延迟1.5秒后显示诊断信息
+      const timeoutId = setTimeout(() => {
+        // 构建诊断信息对象
+        const diagnosticInfo = {
+          // 设备类型
+          设备类型: {
+            isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
+            isAndroid: /android/i.test(navigator.userAgent),
+            userAgent: navigator.userAgent.substring(0, 50) + '...'
+          },
+          
+          // 页面尺寸
+          页面尺寸: {
+            bodyScrollWidth: document.body.scrollWidth,
+            bodyClientWidth: document.body.clientWidth,
+            bodyOffsetWidth: document.body.offsetWidth,
+            documentScrollWidth: document.documentElement.scrollWidth,
+            documentClientWidth: document.documentElement.clientWidth,
+            documentOffsetWidth: document.documentElement.offsetWidth
+          },
+          
+          // 视口信息
+          视口信息: window.visualViewport ? {
+            width: window.visualViewport.width,
+            height: window.visualViewport.height,
+            offsetTop: window.visualViewport.offsetTop,
+            offsetLeft: window.visualViewport.offsetLeft,
+            pageTop: window.visualViewport.pageTop,
+            pageLeft: window.visualViewport.pageLeft,
+            scale: window.visualViewport.scale
+          } : '不支持',
+          
+          // 窗口尺寸
+          窗口尺寸: {
+            innerWidth: window.innerWidth,
+            innerHeight: window.innerHeight,
+            outerWidth: window.outerWidth,
+            outerHeight: window.outerHeight,
+            devicePixelRatio: window.devicePixelRatio
+          },
+          
+          // 文档滚动位置
+          文档滚动位置: {
+            scrollTop: document.documentElement.scrollTop || document.body.scrollTop,
+            scrollLeft: document.documentElement.scrollLeft || document.body.scrollLeft,
+            pageYOffset: window.pageYOffset,
+            pageXOffset: window.pageXOffset
+          },
+          
+          // Meta视口信息
+          Meta视口: (() => {
+            const metaViewport = document.querySelector('meta[name="viewport"]');
+            return metaViewport ? metaViewport.getAttribute('content') : '未找到';
+          })(),
+          
+          // body样式
+          Body样式: {
+            position: document.body.style.position,
+            top: document.body.style.top,
+            left: document.body.style.left,
+            width: document.body.style.width,
+            maxWidth: document.body.style.maxWidth,
+            overflowX: document.body.style.overflowX,
+            overflowY: document.body.style.overflowY,
+            classes: document.body.className
+          },
+          
+          // 文档样式
+          文档样式: {
+            width: document.documentElement.style.width,
+            maxWidth: document.documentElement.style.maxWidth,
+            overflow: document.documentElement.style.overflow,
+            overflowX: document.documentElement.style.overflowX,
+            overflowY: document.documentElement.style.overflowY
+          }
+        };
+        
+        // 输入框位置信息
+        const chatInputContainer = document.querySelector('.chat-input-container');
+        if (chatInputContainer) {
+          const rect = chatInputContainer.getBoundingClientRect();
+          diagnosticInfo['输入框位置'] = {
+            top: Math.round(rect.top),
+            bottom: Math.round(rect.bottom),
+            height: Math.round(rect.height),
+            width: Math.round(rect.width),
+            position: window.getComputedStyle(chatInputContainer).position,
+            bottom_style: window.getComputedStyle(chatInputContainer).bottom
+          };
+        }
+        
+        // 消息容器位置
+        const chatMessagesContainer = document.getElementById('chat-messages-container');
+        if (chatMessagesContainer) {
+          const rect = chatMessagesContainer.getBoundingClientRect();
+          diagnosticInfo['消息容器位置'] = {
+            top: Math.round(rect.top),
+            bottom: Math.round(rect.bottom),
+            height: Math.round(rect.height),
+            width: Math.round(rect.width),
+            maxHeight: window.getComputedStyle(chatMessagesContainer).maxHeight
+          };
+        }
+        
+        // 将信息转换为可读字符串
+        let alertText = '键盘弹出后页面位置诊断信息:\n\n';
+        
+        // 遍历诊断信息对象并格式化
+        for (const [section, data] of Object.entries(diagnosticInfo)) {
+          alertText += `${section}:\n`;
+          
+          if (typeof data === 'object') {
+            for (const [key, value] of Object.entries(data)) {
+              alertText += `  ${key}: ${value}\n`;
+            }
+          } else {
+            alertText += `  ${data}\n`;
+          }
+          
+          alertText += '\n';
+        }
+        
+        // 使用alert显示诊断信息
+        alert(alertText);
+      }, 1500);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [inputFocused, keyboardVisible, message]);
 
   // 添加窗口大小调整监听器 - 用于处理键盘弹出
   React.useEffect(() => {
