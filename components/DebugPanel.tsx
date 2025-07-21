@@ -44,23 +44,23 @@ export function DebugPanel({ isVisible, data, onClose, onAction }: DebugPanelPro
       } 
       
       // 处理基本类型值
-      let displayValue = value;
+    let displayValue = value;
       let valueColor = '#ffffff';
       
-      if (typeof value === 'boolean') {
-        displayValue = value ? '是' : '否';
+    if (typeof value === 'boolean') {
+      displayValue = value ? '是' : '否';
         valueColor = value ? '#88ff88' : '#ff8888';
-      } else if (value === null || value === undefined) {
-        displayValue = '未定义';
+    } else if (value === null || value === undefined) {
+      displayValue = '未定义';
         valueColor = '#aaaaaa';
-      } else if (typeof value === 'object') {
-        try {
-          displayValue = JSON.stringify(value);
-        } catch (e) {
-          displayValue = '无法序列化';
-        }
+    } else if (typeof value === 'object') {
+      try {
+        displayValue = JSON.stringify(value);
+      } catch (e) {
+        displayValue = '无法序列化';
       }
-      
+    }
+    
       return (
         <div key={key} style={{ marginBottom: '6px' }}>
           <span style={{ 
@@ -75,7 +75,7 @@ export function DebugPanel({ isVisible, data, onClose, onAction }: DebugPanelPro
           </span>
         </div>
       );
-    });
+  });
   };
 
   return (
