@@ -629,6 +629,24 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     setInputFocused(true);
     setKeyboardVisible(true); // 设置键盘为可见状态
     
+    // 设置viewport元标签，禁止缩放
+    const viewportMeta = document.querySelector('meta[name="viewport"]');
+    if (viewportMeta) {
+      viewportMeta.setAttribute(
+        'content',
+        'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover'
+      );
+    }
+    
+    // 仅限制聊天区域的滚动，不影响全局
+    const chatContainer = document.querySelector('.mobile-chat');
+    if (chatContainer) {
+      chatContainer.classList.add('keyboard-active');
+      (chatContainer as HTMLElement).style.overflow = 'hidden';
+      (chatContainer as HTMLElement).style.maxWidth = '100%';
+      (chatContainer as HTMLElement).style.overflowX = 'hidden';
+    }
+    
     // 使表单充满屏幕宽度，而不是固定宽度
     const formWrapper = document.querySelector('.form-wrapper');
     const inputGrid = document.querySelector('.input-grid');
@@ -658,6 +676,24 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     }
     setInputFocused(false);
     setKeyboardVisible(false); // 设置键盘为隐藏状态
+    
+    // 恢复viewport设置
+    const viewportMeta = document.querySelector('meta[name="viewport"]');
+    if (viewportMeta) {
+      viewportMeta.setAttribute(
+        'content',
+        'width=device-width, initial-scale=1, viewport-fit=cover'
+      );
+    }
+    
+    // 恢复聊天区域的滚动设置
+    const chatContainer = document.querySelector('.mobile-chat');
+    if (chatContainer) {
+      chatContainer.classList.remove('keyboard-active');
+      (chatContainer as HTMLElement).style.overflow = '';
+      (chatContainer as HTMLElement).style.maxWidth = '';
+      (chatContainer as HTMLElement).style.overflowX = '';
+    }
     
     // 恢复为全屏宽度样式，而不是移除样式
     const formWrapper = document.querySelector('.form-wrapper');

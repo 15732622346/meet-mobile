@@ -123,4 +123,28 @@
 /* 添加新的样式规则，特别针对用户名和消息内容的行间距 */
 .mobile-chat-name, .mobile-chat-content {
   line-height: 1.2 !important; /* 添加紧凑的行高 */
+}
+
+/* 移动端键盘弹出时防止页面缩放 */
+.mobile-chat {
+  /* 限制聊天区域最大宽度，防止因键盘弹出导致的布局溢出 */
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+}
+
+/* 虚拟键盘显示时的样式 */
+.mobile-chat.keyboard-active {
+  /* 防止横向滚动，但不影响FloatingWrapper */
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+
+/* 防止iOS设备上输入框自动放大 - 只针对聊天区域 */
+.mobile-chat input, 
+.mobile-chat textarea, 
+.mobile-chat select {
+  font-size: 16px !important; /* iOS上低于16px的字体会导致页面放大 */
+  max-width: 100% !important;
+  box-sizing: border-box !important;
 } 
