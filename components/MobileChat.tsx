@@ -6,7 +6,6 @@ import { API_CONFIG } from '../lib/config';
 import { RoomEvent } from 'livekit-client';
 // 导入专用样式文件
 import '../styles/MobileChat.css';
-import '../styles/ios-landscape.css'; // 导入iOS键盘修复样式
 // 导入toast通知
 import toast, { Toaster } from 'react-hot-toast';
 // 移除调试功能导入
@@ -630,29 +629,6 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     setInputFocused(true);
     setKeyboardVisible(true); // 设置键盘为可见状态
     
-    // 添加键盘激活类名
-    document.documentElement.classList.add('keyboard-active');
-    document.body.classList.add('keyboard-active');
-    
-    // 设置viewport元标签，禁止缩放
-    const viewportMeta = document.querySelector('meta[name="viewport"]');
-    if (viewportMeta) {
-      viewportMeta.setAttribute(
-        'content',
-        'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover'
-      );
-    }
-    
-    // 防止整个页面滚动和缩放
-    document.documentElement.style.overflow = 'hidden';
-    document.body.style.overflow = 'hidden';
-    
-    // 防止横向滚动
-    document.documentElement.style.maxWidth = '100%';
-    document.documentElement.style.overflowX = 'hidden';
-    document.body.style.maxWidth = '100%';
-    document.body.style.overflowX = 'hidden';
-    
     // 使表单充满屏幕宽度，而不是固定宽度
     const formWrapper = document.querySelector('.form-wrapper');
     const inputGrid = document.querySelector('.input-grid');
@@ -682,27 +658,6 @@ export function MobileChat({ userRole = 1, maxMicSlots = 5 }) {
     }
     setInputFocused(false);
     setKeyboardVisible(false); // 设置键盘为隐藏状态
-    
-    // 移除键盘激活类名
-    document.documentElement.classList.remove('keyboard-active');
-    document.body.classList.remove('keyboard-active');
-    
-    // 恢复viewport设置
-    const viewportMeta = document.querySelector('meta[name="viewport"]');
-    if (viewportMeta) {
-      viewportMeta.setAttribute(
-        'content',
-        'width=device-width, initial-scale=1, viewport-fit=cover'
-      );
-    }
-    
-    // 恢复滚动设置
-    document.documentElement.style.overflow = '';
-    document.body.style.overflow = '';
-    document.documentElement.style.maxWidth = '';
-    document.documentElement.style.overflowX = '';
-    document.body.style.maxWidth = '';
-    document.body.style.overflowX = '';
     
     // 恢复为全屏宽度样式，而不是移除样式
     const formWrapper = document.querySelector('.form-wrapper');
