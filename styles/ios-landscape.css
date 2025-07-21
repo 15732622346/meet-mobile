@@ -201,3 +201,42 @@ body.ios-landscape-active {
   left: 0 !important;
   right: 0 !important;
 } 
+
+/* 确保按钮在iOS横屏模式下正确显示 */
+.ios-landscape-mode button,
+.ios-landscape-mode [role="button"],
+.ios-landscape-mode .floating-wrapper button {
+  transform: none !important; /* 防止继承旋转变换 */
+  transform-origin: center center !important;
+}
+
+/* 确保按钮容器在iOS横屏模式下正确显示 */
+.ios-landscape-mode div[style*="position: absolute"] {
+  transform: none !important; /* 防止继承旋转变换 */
+  z-index: 999999 !important; /* 确保按钮始终在最上层 */
+  pointer-events: auto !important; /* 确保可点击 */
+}
+
+/* 特别处理浮动窗口中的按钮 */
+.floating-wrapper.ios-landscape-mode div[style*="position: absolute"] {
+  position: absolute !important;
+  transform: none !important;
+  z-index: 999999 !important;
+}
+
+/* 确保按钮在旋转模式下保持正确位置 */
+.floating-wrapper.ios-landscape-mode div[style*="top: 5px"][style*="right: 5px"],
+.floating-wrapper.ios-landscape-mode div[style*="bottom: 5px"][style*="right: 5px"],
+.floating-wrapper.ios-landscape-mode div[style*="bottom: 15px"][style*="right: 15px"] {
+  transform: rotate(90deg) !important;
+  transform-origin: center center !important;
+}
+
+/* 在设备已经物理横屏时恢复按钮的原始方向 */
+@media screen and (orientation: landscape) {
+  .ios-landscape-mode.device-landscape div[style*="position: absolute"],
+  .ios-landscape-mode.device-landscape button,
+  .ios-landscape-mode.device-landscape [role="button"] {
+    transform: none !important;
+  }
+} 

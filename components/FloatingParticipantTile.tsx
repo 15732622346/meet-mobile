@@ -468,6 +468,14 @@ export function FloatingWrapper({
             (wrapperRef.current as HTMLElement).style.justifyContent = 'center'; // 水平居中
             (wrapperRef.current as HTMLElement).style.textAlign = 'center'; // 文本居中
             
+            // 确保按钮容器保持正确位置
+            const buttonContainers = wrapperRef.current.querySelectorAll('div[style*="position: absolute"]');
+            buttonContainers.forEach((container) => {
+              (container as HTMLElement).style.transform = 'none';
+              (container as HTMLElement).style.zIndex = '999999';
+              (container as HTMLElement).style.pointerEvents = 'auto';
+            });
+            
             // 检查安全区域 - 添加与屏幕共享组件相同的处理
             if ('CSS' in window && CSS.supports('padding: env(safe-area-inset-bottom)')) {
               (wrapperRef.current as HTMLElement).style.paddingBottom = 'env(safe-area-inset-bottom)';
@@ -795,7 +803,9 @@ export function FloatingWrapper({
               position: 'absolute',
               top: '5px',
               right: '5px',
-              zIndex: 10001
+              zIndex: 10001,
+              pointerEvents: 'auto',
+              transform: 'none'  // 防止继承父元素的旋转变换
             }}>
               <button
                 title="最小化"
@@ -810,7 +820,9 @@ export function FloatingWrapper({
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
-                  fontSize: '10px'
+                  fontSize: '10px',
+                  padding: 0,
+                  margin: 0
                 }}
                 onClick={handleHide}
               >
@@ -824,7 +836,9 @@ export function FloatingWrapper({
             position: 'absolute',
             bottom: displayState === VideoDisplayState.MAXIMIZED ? '15px' : '5px',
             right: displayState === VideoDisplayState.MAXIMIZED ? '15px' : '5px',
-            zIndex: 10001
+            zIndex: 10001,
+            pointerEvents: 'auto',
+            transform: 'none'  // 防止继承父元素的旋转变换
           }}>
             <button
               title={displayState === VideoDisplayState.MAXIMIZED ? '还原' : '全屏'}
@@ -839,7 +853,9 @@ export function FloatingWrapper({
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                fontSize: '10px'
+                fontSize: '10px',
+                padding: 0,
+                margin: 0
               }}
               onClick={handleToggleMaximize}
             >
@@ -930,6 +946,26 @@ const styles = `
     white-space: nowrap !important;
     min-width: fit-content !important;
     line-height: 1.1 !important;
+  }
+  
+  /* 确保按钮容器在iOS横屏模式下正确显示 */
+  .floating-wrapper.ios-landscape-mode div[style*="position: absolute"] {
+    transform: none !important;
+    z-index: 999999 !important;
+    pointer-events: auto !important;
+  }
+  
+  /* 确保按钮在iOS横屏模式下正确显示 */
+  .floating-wrapper.ios-landscape-mode button {
+    transform: none !important;
+  }
+  
+  /* 确保按钮在iOS横屏模式下正确定位 */
+  .floating-wrapper.ios-landscape-mode div[style*="top: 5px"][style*="right: 5px"],
+  .floating-wrapper.ios-landscape-mode div[style*="bottom: 5px"][style*="right: 5px"],
+  .floating-wrapper.ios-landscape-mode div[style*="bottom: 15px"][style*="right: 15px"] {
+    position: absolute !important;
+    z-index: 999999 !important;
   }
 `;
 
