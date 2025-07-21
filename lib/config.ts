@@ -3,7 +3,7 @@
 
 export const API_CONFIG = {
   // 后端API服务器地址
-  BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://meet.pge006.com/manager/meet-manager',
+  BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://meet.pge006.com/admin',
   
   // LiveKit服务器配置 - 使用NEXT_PUBLIC_前缀以便在客户端访问
   LIVEKIT: {

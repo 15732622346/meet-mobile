@@ -5,7 +5,6 @@ import '../styles/globals.css';
 import '@livekit/components-styles';
 import '@livekit/components-styles/prefabs';
 import '../styles/keyboard-fix.css'; // 导入键盘修复样式
-import '../styles/ios-landscape.css'; // 导入iOS横屏样式
 import { setupKeyboardFix } from '../lib/keyboard-fix'; // 导入键盘修复函数
 
 export default function RootLayout({

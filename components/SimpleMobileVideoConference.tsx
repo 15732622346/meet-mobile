@@ -24,7 +24,6 @@ import { isHostOrAdmin, isCameraEnabled, shouldShowInMicList } from '../lib/toke
 import { getImagePath } from '../lib/image-path';
 import { setupViewportFix, enableBottomAlignment } from '../lib/viewport-debug';
 import { API_CONFIG } from '../lib/config';
-import { DebugPanel } from './DebugPanel'; // 添加导入
 
 // 默认最大麦位数量
 const DEFAULT_MAX_MIC_SLOTS = 5;
@@ -337,868 +336,82 @@ export function SimpleMobileVideoConference({
     return tabItems;
   }, [micStats, userRole, userName, userToken, forceUpdateTrigger]);
   
-  // 添加调试面板状态
-  const [debugPanelVisible, setDebugPanelVisible] = React.useState(false);
-  const [debugData, setDebugData] = React.useState<Record<string, any>>({});
-  
-  // 处理调试面板操作
-  const handleDebugAction = (action: string) => {
-    console.log(`调试面板动作: ${action}`);
-    if (action === 'refresh-video-style') {
-      forceRefreshVideoStyle();
-    }
-  };
-  
-  // 添加屏幕方向状态
-  const [deviceOrientation, setDeviceOrientation] = React.useState<string>('portrait');
-  const [orientationListenerActive, setOrientationListenerActive] = React.useState<boolean>(false);
-  const fullscreenContainerRef = React.useRef<HTMLElement | null>(null);
-  
-  // 添加标志变量，控制方向变化处理
-  const [isExitingFullscreen, setIsExitingFullscreen] = React.useState<boolean>(false);
-  
-  // 添加强制刷新视频样式的函数
-  const forceRefreshVideoStyle = React.useCallback(() => {
-    try {
-      // 获取当前活动的容器
-      const container = hasScreenShare && screenTracks.length > 0 
-        ? document.querySelector('.screen-share-wrapper')
-        : document.querySelector('.video-wrapper');
-        
-      if (!container) {
-        console.error('找不到视频容器，无法刷新样式');
-        return;
-      }
-      
-      // 获取视频元素
-      const videoElement = container.querySelector('video');
-      if (!videoElement) {
-        console.error('找不到视频元素，无法刷新样式');
-        return;
-      }
-      
-      console.log('🔄 强制刷新视频样式');
-      
-      // 先移除所有优化标记
-      videoElement.removeAttribute('data-fullscreen-optimized');
-      
-      // 延迟执行，确保先清理再应用
-      setTimeout(() => {
-        // 重新应用样式优化
-        applyVideoStyles(videoElement as HTMLElement, container as HTMLElement);
-        
-        // 更新调试信息
-        collectDebugInfo(container as HTMLElement);
-        
-        console.log('✅ 视频样式刷新完成');
-      }, 100);
-    } catch (error) {
-      console.error('强制刷新视频样式失败:', error);
-    }
-  }, [hasScreenShare, screenTracks.length]);
-
-  // 处理设备方向变化
-  const handleOrientationChange = React.useCallback(() => {
-    try {
-      // 获取当前的容器元素
-      const container = fullscreenContainerRef.current || (
-        screenTracks.length > 0
-          ? document.querySelector('.screen-share-wrapper')
-          : document.querySelector('.floating-wrapper')
-      );
-      
-      if (!container) return;
-      
-      // 检查实际方向
-      const isLandscape = window.innerWidth > window.innerHeight ||
-                        (window.orientation !== undefined && 
-                        (Math.abs(window.orientation as number) === 90));
-      
-      // 更新方向状态
-      setDeviceOrientation(isLandscape ? 'landscape' : 'portrait');
-      
-      // 检查是否在全屏模式
-      const hasFullscreenClass = container.classList.contains('fullscreen-mode') || 
-                              container.classList.contains('ios-landscape-mode');
-      
-      if (!hasFullscreenClass) return; // 如果不是全屏模式，不调整样式
-      
-      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-      if (!isIOS) return; // 只对iOS设备进行处理
-      
-      console.log(`设备方向变化: ${isLandscape ? '横屏' : '竖屏'}`);
-      
-      // 获取视频元素
-      const videoElement = container.querySelector('video');
-      if (videoElement) {
-        applyVideoStyles(videoElement, container as HTMLElement);
-      }
-      
-      if (isLandscape) {
-        // 设备已物理横屏，移除CSS旋转但保持全屏状态
-        container.classList.remove('ios-landscape-mode');
-        container.classList.add('device-landscape'); // 添加设备物理横屏标记
-      } else {
-        // 设备竖屏，应用CSS旋转
-        container.classList.add('ios-landscape-mode');
-        container.classList.remove('device-landscape'); // 移除设备物理横屏标记
-      }
-      
-      // 收集和显示最新调试信息
-      collectDebugInfo(container as HTMLElement);
-    } catch (error) {
-      console.error('处理屏幕方向变化出错:', error);
-    }
-  }, [screenTracks.length]);
-  
-  // 设置和清理方向变化监听器
-  React.useEffect(() => {
-    // 监听屏幕方向变化
-    window.addEventListener('orientationchange', handleOrientationChange);
-    window.addEventListener('resize', handleOrientationChange);
-    setOrientationListenerActive(true);
-    
-    // 初始化方向状态
-    const isLandscape = window.innerWidth > window.innerHeight ||
-                       (window.orientation !== undefined && 
-                       (Math.abs(window.orientation as number) === 90));
-    setDeviceOrientation(isLandscape ? 'landscape' : 'portrait');
-    
-    return () => {
-      window.removeEventListener('orientationchange', handleOrientationChange);
-      window.removeEventListener('resize', handleOrientationChange);
-      setOrientationListenerActive(false);
-    };
-  }, [handleOrientationChange]);
-  
-  // 优化视频比例填充
-  const optimizeVideoFit = (container: HTMLElement) => {
-    const videoElement = container.querySelector('video');
-    if (!videoElement) return;
-    
-    // 立即应用一次样式
-    applyVideoStyles(videoElement, container);
-    
-    // 延迟处理，确保视频加载完成后再次应用样式
-    setTimeout(() => applyVideoStyles(videoElement, container), 500);
-    
-    // 再次延迟处理，处理可能的异步加载
-    setTimeout(() => applyVideoStyles(videoElement, container), 1500);
-    
-    // 使用MutationObserver监视视频元素的属性变化，确保样式不被覆盖
-    try {
-      const observer = new MutationObserver((mutations) => {
-        // 属性变化时重新应用样式
-        applyVideoStyles(videoElement, container);
-      });
-      
-      // 监视视频元素的属性变化
-      observer.observe(videoElement, {
-        attributes: true,
-        attributeFilter: ['style', 'class']
-      });
-      
-      // 监视容器元素的属性变化
-      observer.observe(container, {
-        attributes: true,
-        attributeFilter: ['style', 'class']
-      });
-      
-      // 监视网格布局容器的变化
-      const gridLayout = container.querySelector('.lk-grid-layout');
-      if (gridLayout) {
-        observer.observe(gridLayout, {
-          attributes: true,
-          attributeFilter: ['style', 'class']
-        });
-      }
-      
-      // 30秒后断开观察器，避免长时间占用资源
-      setTimeout(() => {
-        observer.disconnect();
-        console.log('视频样式观察器已断开');
-      }, 30000);
-    } catch (error) {
-      console.error('设置视频样式观察器失败:', error);
-    }
-  };
-  
-  // 应用视频样式的函数
-  const applyVideoStyles = (videoElement: HTMLElement, container: HTMLElement) => {
-    try {
-      // 检查是否在全屏模式
-      const isFullscreenMode = container.classList.contains('fullscreen-mode') ||
-                             container.classList.contains('ios-landscape-mode');
-      
-      if (isFullscreenMode) {
-        console.log('应用全屏视频样式');
-        
-        // 转换为HTMLVideoElement类型
-        const videoHTMLVideoElement = videoElement as HTMLVideoElement;
-        
-        // 获取视频原始比例信息
-        const videoWidth = videoHTMLVideoElement.videoWidth || 1920;
-        const videoHeight = videoHTMLVideoElement.videoHeight || 1080;
-        const videoRatio = videoWidth / videoHeight;
-        
-        console.log(`应用视频样式 - 分辨率: ${videoWidth}×${videoHeight}, 比例: ${videoRatio.toFixed(2)}`);
-        
-        // 获取屏幕尺寸
-        const screenW = window.innerWidth;
-        const screenH = window.innerHeight;
-        console.log(`屏幕尺寸: ${screenW}×${screenH}`);
-        
-        // 检查是iOS横屏模式
-        const isIOSLandscape = container.classList.contains('ios-landscape-mode');
-        
-        // 处理iOS横屏模式特殊情况
-        if (isIOSLandscape) {
-          // 对于iOS横屏模式，我们需要考虑旋转后的尺寸
-          // 在iOS模式下，屏幕宽高需要对调
-          const actualScreenW = screenH; // 旋转后实际可用宽度是屏幕高度
-          const actualScreenH = screenW; // 旋转后实际可用高度是屏幕宽度
-          
-          console.log(`iOS横屏模式 - 旋转后可用空间: ${actualScreenW}×${actualScreenH}`);
-          
-          // 基于视频比例计算最佳尺寸
-          let optimalWidth, optimalHeight;
-          
-          if (videoRatio > actualScreenW / actualScreenH) {
-            // 视频更宽，以可用宽度为基准
-            optimalWidth = actualScreenW;
-            optimalHeight = actualScreenW / videoRatio;
-          } else {
-            // 视频更高，以可用高度为基准
-            optimalHeight = actualScreenH;
-            optimalWidth = actualScreenH * videoRatio;
-          }
-          
-          console.log(`计算的最佳尺寸: ${optimalWidth.toFixed(0)}×${optimalHeight.toFixed(0)}`);
-          
-          // 直接设置内联样式，优先级最高
-          videoElement.style.width = optimalWidth + 'px';
-          videoElement.style.height = optimalHeight + 'px';
-          videoElement.style.maxWidth = 'none';
-          videoElement.style.maxHeight = 'none';
-          videoElement.style.objectFit = 'contain'; // 使用contain保持比例，避免变形
-          videoElement.style.margin = '0';
-          videoElement.style.padding = '0';
-          
-          // 设置data属性以便CSS选择器识别和调试
-          videoElement.setAttribute('data-fullscreen-optimized', 'true');
-          videoElement.setAttribute('data-optimization-timestamp', new Date().toISOString());
-          videoElement.setAttribute('data-style-setter', 'applyVideoStyles-iOS-Simple');
-          videoElement.setAttribute('data-video-ratio', videoRatio.toFixed(2));
-          
-          // 调整网格布局容器
-          const gridLayout = container.querySelector('.lk-grid-layout');
-          if (gridLayout) {
-            // 将网格容器设置为足够大，容纳视频元素
-            (gridLayout as HTMLElement).style.width = optimalWidth + 'px';
-            (gridLayout as HTMLElement).style.height = optimalHeight + 'px';
-            (gridLayout as HTMLElement).style.maxWidth = 'none';
-            (gridLayout as HTMLElement).style.maxHeight = 'none';
-            (gridLayout as HTMLElement).style.minWidth = optimalWidth + 'px';
-            (gridLayout as HTMLElement).style.minHeight = optimalHeight + 'px';
-            (gridLayout as HTMLElement).style.display = 'flex';
-            (gridLayout as HTMLElement).style.alignItems = 'center';
-            (gridLayout as HTMLElement).style.justifyContent = 'center';
-            (gridLayout as HTMLElement).style.margin = '0';
-            (gridLayout as HTMLElement).style.padding = '0';
-          }
-        } else {
-          // 非iOS横屏模式，正常计算
-          if (videoRatio > screenW / screenH) {
-            // 视频更宽，以宽度为基准
-            videoElement.style.width = screenW + 'px';
-            videoElement.style.height = (screenW / videoRatio) + 'px';
-          } else {
-            // 视频更高，以高度为基准
-            videoElement.style.height = screenH + 'px';
-            videoElement.style.width = (screenH * videoRatio) + 'px';
-          }
-          videoElement.style.maxWidth = 'none';
-          videoElement.style.maxHeight = 'none';
-          
-          // 添加调试标记
-          videoElement.setAttribute('data-fullscreen-optimized', 'true');
-          videoElement.setAttribute('data-optimization-timestamp', new Date().toISOString());
-          videoElement.setAttribute('data-style-setter', 'applyVideoStyles-Standard-Simple');
-          videoElement.setAttribute('data-video-ratio', videoRatio.toFixed(2));
-        }
-        
-        // 在应用样式后触发调试面板更新
-        setTimeout(() => {
-          collectDebugInfo(container);
-          // 确保调试面板可见
-          setDebugPanelVisible(true);
-        }, 300);
-      }
-    } catch (error) {
-      console.error('应用视频样式失败:', error);
-    }
-  };
-
   // 切换全屏/横屏模式 - 用于屏幕共享和摄像头视频
   const toggleFullscreen = () => {
     try {
-      // 在按钮点击时立即记录关键信息
-      const clickInfo = {
-        time: new Date().toLocaleTimeString(),
-        fullscreenState: isFullscreen,
-        deviceOrientation,
-        viewport: `${window.innerWidth}×${window.innerHeight}`,
-        orientation: window.orientation !== undefined ? window.orientation : '未知',
-        isIOS: /iPhone|iPad|iPod/i.test(navigator.userAgent)
-      };
-      
-      console.log('全屏切换按钮点击', clickInfo);
-      
       // 根据当前显示的内容选择合适的容器
       const container = screenTracks.length > 0
         ? document.querySelector('.screen-share-wrapper')
         : document.querySelector('.floating-wrapper'); // 浮动窗口用于摄像头视频
       
-      // 保存引用以便方向变化处理函数使用
       if (container) {
-        fullscreenContainerRef.current = container as HTMLElement;
-      }
-        
-      // 检测设备类型
-      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-      
-      if (container) {
-        // 检查当前DOM状态而非React状态
-        const isCurrentlyFullscreen = !!(
-          document.fullscreenElement ||
-          (document as any).webkitFullscreenElement ||
-          (document as any).msFullscreenElement
-        );
-        
-        // 检查是否已应用了全屏样式类
-        const hasFullscreenClass = container.classList.contains('fullscreen-mode') || 
-                                 container.classList.contains('ios-landscape-mode');
-        
-        // 同步React状态与DOM状态
-        if (isCurrentlyFullscreen !== isFullscreen) {
-          setIsFullscreen(isCurrentlyFullscreen);
-        }
-        
-        if (!isCurrentlyFullscreen) {
+        if (!isFullscreen) {
+          // 先请求全屏，然后在成功回调中锁定横屏
           console.log('请求进入全屏模式');
           
-          // 1. 安卓设备：使用API锁定屏幕方向
-          if (!isIOS && screen.orientation && 'lock' in screen.orientation) {
-            // 安卓设备 - 先请求全屏，然后锁定横屏
-            if (container.requestFullscreen) {
-              // 先设置状态，避免状态滞后于DOM变化
-              setIsFullscreen(true);
-              
-              container.requestFullscreen()
-                .then(() => {
-                  // 添加全屏CSS类
-                  container.classList.add('fullscreen-mode');
-                  
-                  setTimeout(() => {
-                    try {
-                      (screen.orientation as any).lock('landscape').catch((err: any) => {
-                        console.error('无法锁定横屏方向:', err);
-                      });
-                    } catch (orientationError) {
-                      console.error('屏幕方向API错误:', orientationError);
-                    }
-                    
-                    // 收集和显示调试信息
-                    collectDebugInfo(container as HTMLElement);
-                  }, 300);
-                })
-                .catch(err => {
-                  console.error('无法进入全屏模式:', err);
-                  // 恢复状态
-                  setIsFullscreen(false);
-                });
-            } else if ((container as any).webkitRequestFullscreen) {
-              // 先设置状态
-              setIsFullscreen(true);
-              
-              (container as any).webkitRequestFullscreen();
-              // 添加全屏CSS类
-              container.classList.add('fullscreen-mode');
-              
-              setTimeout(() => {
-                try {
-                  (screen.orientation as any).lock('landscape').catch((err: any) => {
-                    console.error('无法锁定横屏方向:', err);
-                  });
-                } catch (orientationError) {
-                  console.error('屏幕方向API错误:', orientationError);
-                }
-                
-                // 收集和显示调试信息
-                collectDebugInfo(container as HTMLElement);
-              }, 300);
-            }
-          } 
-          // 2. iOS设备：使用CSS旋转模拟横屏
-          else if (isIOS) {
-            // 先同步设置状态，避免状态延迟
-            setIsFullscreen(true);
-            
-            // 同步标记状态更新完成，用于调试信息收集
-            (window as any).__isFullscreenStateUpdated = true;
-            
-            // iOS设备 - 先请求全屏
-            if ((container as any).webkitRequestFullscreen) {
-              try {
-                (container as any).webkitRequestFullscreen();
-              } catch (e) {
-                console.log('iOS全屏请求失败，使用CSS模拟');
-              }
-            }
-            
-            // 移除已存在的样式类以避免叠加
-            container.classList.remove('ios-landscape-mode');
-            container.classList.remove('fullscreen-mode');
-            container.classList.remove('device-landscape');
-            
-            // 清除之前可能设置的内联样式
-            (container as HTMLElement).style.position = '';
-            (container as HTMLElement).style.top = '';
-            (container as HTMLElement).style.left = '';
-            (container as HTMLElement).style.width = '';
-            (container as HTMLElement).style.height = '';
-            (container as HTMLElement).style.transformOrigin = '';
-            (container as HTMLElement).style.transform = '';
-            (container as HTMLElement).style.zIndex = '';
-            
-            // 在下一个渲染周期应用新样式，避免闪烁
+          // 定义成功进入全屏后的回调
+          const onFullscreenSuccess = () => {
+            // 延迟一小段时间再锁定屏幕方向，等待全屏模式完全建立
             setTimeout(() => {
-              // 确保在隐藏其他UI元素之前捕获body引用
-              const bodyElement = document.body;
-            
-              // 应用CSS变换模拟横屏 - 使用直接样式和类名
-              container.classList.add('ios-landscape-mode');
-              container.classList.add('fullscreen-mode'); // 添加通用全屏类
-              bodyElement.classList.add('ios-landscape-active');
-              
-              // 强制隐藏可能遮挡的UI元素
-              const elementsToHide = document.querySelectorAll('.header-bar, .footer-bar, .nav-bar, .tab-bar');
-              elementsToHide.forEach((el) => {
-                (el as HTMLElement).style.display = 'none';
-              });
-              
-              // 直接应用内联样式确保旋转效果生效
-              (container as HTMLElement).style.position = 'fixed';
-              (container as HTMLElement).style.top = '0';
-              (container as HTMLElement).style.left = '0';
-              (container as HTMLElement).style.width = '100vh';
-              (container as HTMLElement).style.height = '100vw';
-              (container as HTMLElement).style.transformOrigin = 'left top';
-              (container as HTMLElement).style.transform = 'rotate(-90deg) translateX(-100%)';
-              (container as HTMLElement).style.zIndex = '99999'; // 最高层级
-              
-              // 检查安全区域
-              if ('CSS' in window && CSS.supports('padding: env(safe-area-inset-bottom)')) {
-                (container as HTMLElement).style.paddingBottom = 'env(safe-area-inset-bottom)';
-                (container as HTMLElement).style.paddingTop = 'env(safe-area-inset-top)';
+              try {
+                // 强制锁定为横屏模式
+                if (screen.orientation && 'lock' in screen.orientation) {
+                  console.log('请求锁定横屏方向');
+                  (screen.orientation as any).lock('landscape').catch((err: any) => {
+                    console.error('无法锁定屏幕方向:', err);
+                  });
+                }
+              } catch (orientationError) {
+                console.error('屏幕方向API错误:', orientationError);
               }
-              
-              // 优化视频比例
-              optimizeVideoFit(container as HTMLElement);
-              
-              // 收集和显示调试信息
-              setTimeout(() => {
-                collectDebugInfo(container as HTMLElement);
-              }, 300);
-            }, 50);
-          }
-        } else {
-          // 退出全屏模式
-          
-          // 先更新状态
-          setIsFullscreen(false);
-          
-          // 检测设备类型
-          const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-          
-          // 显示调试信息
-          const debugInfo = {
-            '点击时间': new Date().toLocaleTimeString(),
-            '设备类型': isIOS ? 'iOS' : '非iOS',
-            '视口尺寸': `${window.innerWidth}×${window.innerHeight}`,
-            '方向值': window.orientation !== undefined ? window.orientation : '不支持',
-            '设备方向': deviceOrientation,
-            'DOM全屏元素': document.fullscreenElement ? '有' : '无',
-            'webkit全屏元素': (document as any).webkitFullscreenElement ? '有' : '无',
-            'React全屏状态': isFullscreen ? '是' : '否',
-            '容器类名': container ? container.className : '未知',
-            'body类名': document.body.className,
-            '按钮CSS类名': document.querySelector('.fullscreen-toggle-btn')?.className || '未找到'
+            }, 300); // 300ms延迟，等待全屏模式稳定和提示条显示完成
           };
           
-          alert(`
-【SimpleMobile退出全屏按钮点击】
-设备: ${debugInfo['设备类型']}
-时间: ${debugInfo['点击时间']}
-视口: ${debugInfo['视口尺寸']}
-方向: ${debugInfo['方向值']}
-设备方向: ${debugInfo['设备方向']}
-DOM全屏: ${debugInfo['DOM全屏元素']}
-webkit全屏: ${debugInfo['webkit全屏元素']}
-React全屏: ${debugInfo['React全屏状态']}
-容器类: ${debugInfo['容器类名']}
-body类: ${debugInfo['body类名']}
-按钮类: ${debugInfo['按钮CSS类名']}
-          `);
-          
-          // 安卓设备
-          if (!isIOS) {
-            // 退出全屏
-            if (document.exitFullscreen) {
-              document.exitFullscreen().catch(err => {
-                console.error('无法退出全屏模式:', err);
+          // 请求全屏并处理成功情况
+          if (container.requestFullscreen) {
+            container.requestFullscreen()
+              .then(onFullscreenSuccess)
+              .catch(err => {
+                console.error('无法进入全屏模式:', err);
               });
-            } else if ((document as any).webkitExitFullscreen) {
-              (document as any).webkitExitFullscreen();
-            }
-            
-            // 先移除CSS类
-            container.classList.remove('fullscreen-mode');
-            
-            // 解除屏幕方向锁定
-            try {
-              if (screen.orientation && 'unlock' in screen.orientation) {
-                console.log('解除屏幕方向锁定');
-                (screen.orientation as any).unlock();
-              }
-            } catch (orientationError) {
-              console.error('屏幕方向API错误:', orientationError);
-            }
-          } 
-          // iOS设备
-          else {
-            console.log('iOS设备退出全屏模式');
-            
-            // 收集退出全屏前的信息
-            const beforeExitInfo = {
-              viewport: `${window.innerWidth} × ${window.innerHeight}`,
-              orientation: window.orientation !== undefined ? window.orientation : 'unknown',
-              isFullscreen: isFullscreen,
-              hasScreenShare: screenTracks.length > 0,
-              containerClasses: container ? container.className : 'unknown',
-              deviceOrientation,
-              bodyClasses: document.body.className
-            };
-            
-            // 先更新状态并设置锁定标志，防止方向变化事件干扰
-            setIsFullscreen(false);
-            setIsExitingFullscreen(true);
-            // 重置状态标记
-            (window as any).__isFullscreenStateUpdated = false;
-            
-            // 暂时移除方向变化和resize事件监听器，防止重新应用横屏样式
-            window.removeEventListener('orientationchange', handleOrientationChange);
-            window.removeEventListener('resize', handleOrientationChange);
-            
-            // 显示退出前的信息
-            const alertMsg = `
-【退出全屏前信息】
-视口尺寸: ${beforeExitInfo.viewport}
-设备方向: ${beforeExitInfo.orientation}度
-React全屏状态: ${beforeExitInfo.isFullscreen}
-屏幕共享状态: ${beforeExitInfo.hasScreenShare}
-容器类名: ${beforeExitInfo.containerClasses}
-方向状态: ${beforeExitInfo.deviceOrientation}
-body类名: ${beforeExitInfo.bodyClasses}
-            `;
-            
-            alert(alertMsg);
-            
-            // 确保退出全屏API调用
-            if ((document as any).webkitExitFullscreen) {
-              try {
-                (document as any).webkitExitFullscreen();
-              } catch (e) {
-                console.log('iOS退出全屏API调用失败，继续使用CSS方法');
-              }
-            }
-            
-            // 第一阶段：立即清除CSS类和内联样式
-            const clearStyles = () => {
-              console.log('清除CSS样式 - 阶段1');
-              // 移除所有横屏相关的CSS类
-              container.classList.remove('ios-landscape-mode');
-              container.classList.remove('fullscreen-mode');
-              container.classList.remove('device-landscape');
-              document.body.classList.remove('ios-landscape-active');
-              
-              // 直接移除所有可能影响布局的内联样式
-              const elementsToClear = [container, document.body];
-              
-              elementsToClear.forEach(el => {
-                if (el) {
-                  (el as HTMLElement).style.position = '';
-                  (el as HTMLElement).style.top = '';
-                  (el as HTMLElement).style.left = '';
-                  (el as HTMLElement).style.width = '';
-                  (el as HTMLElement).style.height = '';
-                  (el as HTMLElement).style.transformOrigin = '';
-                  (el as HTMLElement).style.transform = '';
-                  (el as HTMLElement).style.zIndex = '';
-                  (el as HTMLElement).style.margin = '';
-                  (el as HTMLElement).style.padding = '';
-                  (el as HTMLElement).style.overflow = '';
-                }
-              });
-              
-              // 对视频容器特别处理
-              const videoElement = container.querySelector('video');
-              if (videoElement) {
-                (videoElement as HTMLElement).style.transform = '';
-                (videoElement as HTMLElement).style.transformOrigin = '';
-                (videoElement as HTMLElement).style.width = '';
-                (videoElement as HTMLElement).style.height = '';
-                (videoElement as HTMLElement).style.objectFit = '';
-                
-                // 移除data-lk-orientation属性或设置为portrait
-                if (videoElement.hasAttribute('data-lk-orientation')) {
-                  videoElement.setAttribute('data-lk-orientation', 'portrait');
-                }
-              }
-              
-              // 处理屏幕共享包装器
-              const screenShareWrapper = document.querySelector('.screen-share-wrapper');
-              if (screenShareWrapper) {
-                (screenShareWrapper as HTMLElement).style.position = 'relative';
-                (screenShareWrapper as HTMLElement).style.width = '100%';
-                (screenShareWrapper as HTMLElement).style.height = '30vh'; // 恢复竖屏高度
-                (screenShareWrapper as HTMLElement).style.transform = '';
-                (screenShareWrapper as HTMLElement).style.transformOrigin = '';
-                (screenShareWrapper as HTMLElement).style.top = '';
-                (screenShareWrapper as HTMLElement).style.left = '';
-                (screenShareWrapper as HTMLElement).style.right = '';
-                (screenShareWrapper as HTMLElement).style.bottom = '';
-                (screenShareWrapper as HTMLElement).style.zIndex = '';
-              }
-              
-              // 处理grid布局
-              const gridLayout = document.querySelector('.lk-grid-layout');
-              if (gridLayout) {
-                (gridLayout as HTMLElement).style.width = '100%';
-                (gridLayout as HTMLElement).style.height = '100%';
-                (gridLayout as HTMLElement).style.maxWidth = '';
-                (gridLayout as HTMLElement).style.maxHeight = '';
-                (gridLayout as HTMLElement).style.padding = '';
-                (gridLayout as HTMLElement).style.margin = '';
-                (gridLayout as HTMLElement).style.transform = '';
-              }
-              
-              // 处理mobile-video-container
-              const mobileVideoContainer = document.querySelector('.mobile-video-container');
-              if (mobileVideoContainer) {
-                (mobileVideoContainer as HTMLElement).style.width = '100%';
-                (mobileVideoContainer as HTMLElement).style.height = '';
-                (mobileVideoContainer as HTMLElement).style.position = 'relative';
-              }
-              
-              // 恢复隐藏的UI元素
-              const hiddenElements = document.querySelectorAll('.header-bar, .footer-bar, .nav-bar, .tab-bar');
-              hiddenElements.forEach((el) => {
-                (el as HTMLElement).style.display = '';
-              });
-            };
-            
-            // 立即执行第一阶段
-            clearStyles();
-            
-            // 强制重绘整个页面
-            document.body.style.display = 'none';
-            const forceReflow = document.body.offsetHeight;
-            document.body.style.display = '';
-            
-            // 第二阶段：延时200ms后再次清除，防止被重新应用
-            setTimeout(() => {
-              console.log('清除CSS样式 - 阶段2');
-              clearStyles();
-              window.scrollTo(0, 0);
-              
-              // 第三阶段：延时500ms后再次清除，确保完全退出
-              setTimeout(() => {
-                console.log('清除CSS样式 - 阶段3');
-                clearStyles();
-                
-                // 第四阶段：恢复事件监听
-                setTimeout(() => {
-                  console.log('恢复方向监听');
-                  window.addEventListener('orientationchange', handleOrientationChange);
-                  window.addEventListener('resize', handleOrientationChange);
-                  setIsExitingFullscreen(false);
-                  
-                  // 收集最终状态信息
-                  const screenShareWrapper = document.querySelector('.screen-share-wrapper');
-                  const videoElement = container.querySelector('video');
-                  const gridLayout = document.querySelector('.lk-grid-layout');
-                  
-                  const afterExitInfo = {
-                    viewport: `${window.innerWidth} × ${window.innerHeight}`,
-                    orientation: window.orientation !== undefined ? window.orientation : 'unknown',
-                    isFullscreen: isFullscreen,
-                    containerClasses: container ? container.className : 'unknown',
-                    deviceOrientation,
-                    bodyClasses: document.body.className,
-                    videoElement: videoElement ? {
-                      style: {
-                        width: videoElement.style.width,
-                        height: videoElement.style.height,
-                        transform: videoElement.style.transform,
-                        objectFit: videoElement.style.objectFit
-                      },
-                      orientation: videoElement.getAttribute('data-lk-orientation')
-                    } : 'none',
-                    screenShareWrapper: screenShareWrapper ? {
-                      style: {
-                        position: (screenShareWrapper as HTMLElement).style.position,
-                        width: (screenShareWrapper as HTMLElement).style.width,
-                        height: (screenShareWrapper as HTMLElement).style.height
-                      }
-                    } : 'none'
-                  };
-                  
-                  // 显示退出后的信息
-                  const alertMsg = `
-【退出全屏后信息】
-视口尺寸: ${afterExitInfo.viewport}
-设备方向: ${afterExitInfo.orientation}度
-React全屏状态: ${afterExitInfo.isFullscreen}
-容器类名: ${afterExitInfo.containerClasses}
-方向状态: ${afterExitInfo.deviceOrientation}
-视频orientation: ${typeof afterExitInfo.videoElement === 'object' ? afterExitInfo.videoElement.orientation : 'none'}
-屏幕共享容器高度: ${typeof afterExitInfo.screenShareWrapper === 'object' ? afterExitInfo.screenShareWrapper.style.height : 'none'}
-                  `;
-                  
-                  alert(alertMsg);
-                  
-                }, 1000);
-                
-              }, 500);
-            }, 200);
-            
-            // 尝试强制刷新视图结构
-            if (typeof window !== 'undefined' && window.requestAnimationFrame) {
-              window.requestAnimationFrame(() => {
-                window.dispatchEvent(new Event('resize'));
-              });
-            }
+          } else if ((container as any).webkitRequestFullscreen) {
+            (container as any).webkitRequestFullscreen();
+            // WebKit没有Promise返回，使用延时
+            setTimeout(onFullscreenSuccess, 100);
+          } else if ((container as any).msRequestFullscreen) {
+            (container as any).msRequestFullscreen();
+            setTimeout(onFullscreenSuccess, 100);
+          }
+        } else {
+          // 退出全屏
+          console.log('请求退出全屏模式');
+          if (document.exitFullscreen) {
+            document.exitFullscreen().catch(err => {
+              console.error('无法退出全屏模式:', err);
+            });
+          } else if ((document as any).webkitExitFullscreen) {
+            (document as any).webkitExitFullscreen();
+          } else if ((document as any).msExitFullscreen) {
+            (document as any).msExitFullscreen();
           }
           
-          // 收集和显示调试信息
-          setTimeout(() => {
-            collectDebugInfo(container as HTMLElement);
-            
-            // 显示退出全屏后的状态
-            const afterExitInfo = {
-              '点击后时间': new Date().toLocaleTimeString(),
-              '视口尺寸': `${window.innerWidth}×${window.innerHeight}`,
-              '方向值': window.orientation !== undefined ? window.orientation : '不支持',
-              '设备方向': deviceOrientation,
-              'DOM全屏元素': document.fullscreenElement ? '有' : '无',
-              'webkit全屏元素': (document as any).webkitFullscreenElement ? '有' : '无',
-              'React全屏状态': isFullscreen ? '是' : '否',
-              '容器类名': container ? container.className : '未知',
-              'body类名': document.body.className,
-              '内联样式position': (container as HTMLElement).style.position || '无',
-              '内联样式transform': (container as HTMLElement).style.transform || '无',
-              '视频objectFit': document.querySelector('video')?.style.objectFit || '无',
-              '按钮类名': document.querySelector('.fullscreen-toggle-btn')?.className || '未找到'
-            };
-            
-            alert(`
-【SimpleMobile退出全屏后状态】
-时间: ${afterExitInfo['点击后时间']}
-视口: ${afterExitInfo['视口尺寸']}
-方向: ${afterExitInfo['方向值']}
-设备方向: ${afterExitInfo['设备方向']}
-DOM全屏: ${afterExitInfo['DOM全屏元素']}
-webkit全屏: ${afterExitInfo['webkit全屏元素']}
-React全屏: ${afterExitInfo['React全屏状态']}
-容器类: ${afterExitInfo['容器类名']}
-body类: ${afterExitInfo['body类名']}
-内联position: ${afterExitInfo['内联样式position']}
-内联transform: ${afterExitInfo['内联样式transform']}
-视频objectFit: ${afterExitInfo['视频objectFit']}
-按钮类名: ${afterExitInfo['按钮类名']}
-            `);
-          }, 300);
+          // 恢复屏幕方向
+          try {
+            if (screen.orientation && 'unlock' in screen.orientation) {
+              console.log('解除屏幕方向锁定');
+              (screen.orientation as any).unlock();
+            }
+          } catch (orientationError) {
+            console.error('屏幕方向API错误:', orientationError);
+          }
         }
       }
     } catch (error) {
       console.error('切换全屏模式出错:', error);
     }
-  };
-  
-  // 收集和显示调试信息的函数
-  const collectDebugInfo = (containerElement: HTMLElement) => {
-    try {
-      // 获取视口信息
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      
-      // 判断当前是否为横屏模式
-      const isLandscapeMode = containerElement.classList.contains('ios-landscape-mode') || 
-                             containerElement.classList.contains('fullscreen-mode') ||
-                             containerElement.classList.contains('device-landscape');
-      
-      // 获取组件尺寸
-      const containerWidth = containerElement.offsetWidth;
-      const containerHeight = containerElement.offsetHeight;
-      const containerRatio = (containerWidth / containerHeight).toFixed(2);
-      
-      // 获取视频元素
-      const videoElement = containerElement.querySelector('video') as HTMLVideoElement;
-      
-      // 获取视频流尺寸和比例
-      const videoWidth = videoElement ? videoElement.videoWidth : 'unknown';
-      const videoHeight = videoElement ? videoElement.videoHeight : 'unknown';
-      const videoRatio = videoWidth !== 'unknown' && videoHeight !== 'unknown' ? 
-        (Number(videoWidth) / Number(videoHeight)).toFixed(2) : 'unknown';
-      
-      // 获取视频元素实际显示尺寸
-      const videoClientWidth = videoElement ? videoElement.clientWidth : 'unknown';
-      const videoClientHeight = videoElement ? videoElement.clientHeight : 'unknown';
-      const videoDisplayRatio = videoClientWidth !== 'unknown' && videoClientHeight !== 'unknown' ?
-        (Number(videoClientWidth) / Number(videoClientHeight)).toFixed(2) : 'unknown';
-        
-      // 获取 screen-share-wrapper 的尺寸
-      const screenShareWrapper = containerElement.closest('.screen-share-wrapper') as HTMLElement;
-      const wrapperWidth = screenShareWrapper ? screenShareWrapper.offsetWidth : 'unknown';
-      const wrapperHeight = screenShareWrapper ? screenShareWrapper.offsetHeight : 'unknown';
-      const wrapperRatio = wrapperWidth !== 'unknown' && wrapperHeight !== 'unknown' ?
-        (Number(wrapperWidth) / Number(wrapperHeight)).toFixed(2) : 'unknown';
-      
-      // 清空原有调试信息，只保留组件和视频流的尺寸信息
-      const debugInfo = {
-        [isLandscapeMode ? '横屏模式' : '竖屏模式']: {
-          '容器尺寸': `${containerWidth} × ${containerHeight}`,
-          '容器比例': containerRatio,
-          'screen-share-wrapper尺寸': `${wrapperWidth} × ${wrapperHeight}`,
-          'screen-share-wrapper比例': wrapperRatio,
-          '视频流尺寸': `${videoWidth} × ${videoHeight}`,
-          '视频流比例': videoRatio,
-          '视频元素尺寸': `${videoClientWidth} × ${videoClientHeight}`,
-          '视频元素比例': videoDisplayRatio,
-          '视口尺寸': `${viewportWidth} × ${viewportHeight}`,
-          '视口比例': (viewportWidth / viewportHeight).toFixed(2)
-        }
-      };
-      
-      // 更新调试数据并显示面板
-      setDebugData(debugInfo);
-      setDebugPanelVisible(true);
-      
-      console.log('视频尺寸调试信息:', debugInfo);
-    } catch (err) {
-      console.error('获取状态信息出错:', err);
-    }
+    
+    // 更新全屏状态
+    setIsFullscreen(!isFullscreen);
   };
 
   // 监听全屏状态变化
@@ -1242,8 +455,6 @@ body类: ${afterExitInfo['body类名']}
       document.removeEventListener('msfullscreenchange', handleFullscreenChange);
     };
   }, [isFullscreen]);
-
-
 
   // 在返回的JSX中，修改视频显示逻辑，使用浮动窗口
   return (
@@ -1345,14 +556,6 @@ body类: ${afterExitInfo['body类名']}
       
       {/* 移除调试按钮 */}
       
-      {/* 添加调试面板 */}
-      <DebugPanel 
-        isVisible={debugPanelVisible}
-        data={debugData}
-        onClose={() => setDebugPanelVisible(false)}
-        onAction={handleDebugAction}
-      />
-      
       <style jsx>{`
         .mobile-video-conference {
           display: flex;
@@ -1377,7 +580,6 @@ body类: ${afterExitInfo['body类名']}
           display: flex;
           justify-content: center;
           align-items: center;
-          overflow: visible;
         }
         
         /* 屏幕共享容器样式优化 */
@@ -1389,7 +591,6 @@ body类: ${afterExitInfo['body类名']}
           display: flex;
           justify-content: center;
           align-items: center;
-          background-color: #000;
         }
         
         /* 确保GridLayout和VideoTrack充满整个容器 */
@@ -1401,7 +602,7 @@ body类: ${afterExitInfo['body类名']}
         .screen-share-wrapper :global(.lk-video-track) {
           width: 100% !important;
           height: 100% !important;
-          object-fit: cover !important;
+  object-fit: cover !important;
         }
         
         /* 全屏模式样式 */
@@ -1409,25 +610,11 @@ body类: ${afterExitInfo['body类名']}
           position: fixed;
           top: 0;
           left: 0;
-          right: 0;
-          bottom: 0;
           width: 100vw;
           height: 100vh; /* 兼容性回退 */
           height: calc(var(--vh, 1vh) * 100);
-          z-index: 99999; /* 提高z-index，确保在最顶层 */
+          z-index: 9999;
           background-color: #000;
-          max-width: none;
-          max-height: none;
-        }
-        
-        /* 移除可能导致屏幕共享被截断的样式 */
-        .mobile-video-container {
-          width: 100%;
-          position: relative;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          overflow: visible;
         }
         
         .mobile-video-name {
@@ -1456,12 +643,6 @@ body类: ${afterExitInfo['body类名']}
           align-items: center;
           cursor: pointer;
           z-index: 2;
-        }
-        
-        /* 全屏状态下的按钮位置 */
-        .fullscreen-mode .fullscreen-toggle-btn {
-          bottom: 15px;
-          right: 15px;
         }
         
         .fullscreen-toggle-btn img {
