@@ -1,45 +1,53 @@
 'use client';
 
 import * as React from 'react';
+import { useContext, useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
+  useLocalParticipant,
+  useRoomContext,
+  useParticipants,
+  useTracks,
   GridLayout,
-  ParticipantTile,
+  useConnectionState,
+  useDataChannel,
+  useChat,
+  ConnectionState,
+  ChatMessage,
+  MessageFormatter,
+  useChatToggle,
   RoomAudioRenderer,
-  Chat,
-  ControlBar,
-  LayoutContextProvider,
-  ParticipantName,
-  ConnectionQualityIndicator,
-  TrackMutedIndicator,
   TrackRefContext,
+  ParticipantTile,
   VideoTrack,
+  useRoomInfo,
+  Chat,
   ParticipantLoop,
   ParticipantContext,
+  ParticipantName,
 } from '@livekit/components-react';
-import { 
-  useParticipants, 
-  useTracks,
-  useCreateLayoutContext,
-  useLocalParticipant,
-  useRoomInfo,
-  useRoomContext,
-  useChat,
-  useRemoteParticipant,
-} from '@livekit/components-react';
-import { Track, Participant, RoomEvent, RemoteParticipant, DataPacket_Kind, AudioPresets } from 'livekit-client';
-import type { MessageFormatter, WidgetState as BaseWidgetState } from '@livekit/components-react';
+import { RoomEvent, Track, Participant, Room, AudioPresets } from 'livekit-client';
+import { HideLiveKitCounters } from '../../../components/HideLiveKitCounters';
+import { SimpleMicManagement } from '../../../components/SimpleMicManagement';
+import { FloatingWrapper } from '../../../components/FloatingParticipantTile';
+import { ErrorToast } from '../../../components/ErrorToast';
+import { AudioShareHelper } from '../../../components/AudioShareHelper';
+import { ModernFooter } from '../../../components/ModernFooter';
+import { LiveKitHostControlPanel } from '../../../components/LiveKitHostControlPanel';
+import { DraggableVideoTile } from '../../../components/DraggableVideoTile';
+import { AttributeBasedVideoTile } from '../../../components/AttributeBasedVideoTile';
+// import { DebugPanel } from '../../../components/DebugPanel'; // 移除DebugPanel导入
+import { API_CONFIG } from '../../../lib/config';
+import { isHostOrAdmin, isCameraEnabled, shouldShowInMicList, parseParticipantAttributes, getMicStatusText } from '../../../lib/token-utils';
+import { getImagePath } from '../../../lib/image-path';
 import { useRouter } from 'next/navigation';
 import toast, { Toaster } from 'react-hot-toast';
 
-// MicRequestButton 组件已移除
-// import { LiveKitHostControlPanel } from '../../../components/LiveKitHostControlPanel';
-import { ModernFooter } from '../../../components/ModernFooter';
-import { FloatingWrapper } from '../../../components/FloatingParticipantTile';
-import { DebugPanel } from '../../../components/DebugPanel';
-import { AudioShareHelper } from '../../../components/AudioShareHelper';
-import { AttributeBasedVideoTile } from '../../../components/AttributeBasedVideoTile';
-import { API_CONFIG } from '@/lib/config';
-import { shouldShowInMicList, isRequestingMic, isOnMic, isMuted, canSpeak, isHostOrAdmin, getMicStatusText, getRoleText, parseParticipantAttributes, isCameraEnabled } from '../../../lib/token-utils';
+// 定义基础Widget状态类型，替代从lib/types导入
+interface BaseWidgetState {
+  showChat: boolean;
+  showSettings: boolean;
+  unreadMessages: number; // 改为必需属性，适配ModernFooter组件要求
+}
 
 interface CustomVideoConferenceProps {
   chatMessageFormatter?: MessageFormatter;
@@ -58,6 +66,18 @@ interface CustomWidgetState extends BaseWidgetState {
   showAudioHelper: boolean;
 }
 
+// 初始化UI显示状态
+const initialWidgetState: CustomWidgetState = {
+  showChat: false,
+  showSettings: false,
+  showParticipants: false,
+  showHostPanel: false,
+  showMicMenu: false,
+  showDebugPanel: false, // 默认不显示调试面板
+  showAudioHelper: false,
+  unreadMessages: 0, // 添加必需的属性
+};
+
 export function CustomVideoConference({
   chatMessageFormatter,
   SettingsComponent,
@@ -73,16 +93,7 @@ export function CustomVideoConference({
 
   // 🎯 版本验证弹窗已移除
 
-  const [widgetState, setWidgetState] = React.useState<CustomWidgetState>({
-    showChat: false,
-    showParticipants: true, // 默认显示参与者列表
-    showHostPanel: false, // 默认不显示主持人面板
-    showMicMenu: false, // 默认不显示麦克风菜单
-    showDebugPanel: false, // 默认不显示调试面板
-    showAudioHelper: false, // 默认不显示音频帮助
-    unreadMessages: 0,
-    showSettings: false,
-  });
+  const [widgetState, setWidgetState] = React.useState<CustomWidgetState>(initialWidgetState);
 
   const [isScreenSharing, setIsScreenSharing] = React.useState(false);
   const [autoScreenShareAttempted, setAutoScreenShareAttempted] = React.useState(false);
@@ -128,7 +139,8 @@ export function CustomVideoConference({
     { updateOnlyOn: [RoomEvent.ActiveSpeakersChanged], onlySubscribed: false },
   );
 
-  const layoutContext = useCreateLayoutContext();
+  // 创建简化的布局上下文对象，替代useCreateLayoutContext
+  const layoutContext = React.useMemo(() => ({ layout: 'grid' }), []);
 
   // 🎯 新增：监听房间元数据变化，更新roomDetails
   React.useEffect(() => {
@@ -1997,12 +2009,12 @@ export function CustomVideoConference({
           </div>
         )}
 
-        {/* 调试面板 */}
-        {widgetState.showDebugPanel && (
+        {/* 调试面板 - 已移除 */}
+        {/*widgetState.showDebugPanel && (
           <DebugPanel 
             onClose={() => setWidgetState(prev => ({ ...prev, showDebugPanel: false }))}
           />
-        )}
+        )*/}
 
         {/* 音频分享帮助 */}
         <AudioShareHelper 
@@ -2069,34 +2081,7 @@ export function CustomVideoConference({
         {/* 房间音频渲染器 */}
         <RoomAudioRenderer />
 
-        {/* 麦克风状态调试按钮 - 固定在右下角 */}
-        {/* 
-        <button
-          onClick={() => setWidgetState(prev => ({ ...prev, showDebugPanel: !prev.showDebugPanel }))}
-          style={{
-            position: 'fixed',
-            bottom: '20px',
-            right: '20px',
-            background: widgetState.showDebugPanel ? '#ff6b6b' : '#666',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '50%',
-            width: '50px',
-            height: '50px',
-            cursor: 'pointer',
-            fontSize: '20px',
-            zIndex: 999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
-            transition: 'background 0.2s'
-          }}
-          title="麦克风按钮状态调试"
-        >
-          🎤
-        </button>
-        */}
+        {/* 移除调试按钮 */}
       </div>
     </div>
   );
@@ -2823,7 +2808,7 @@ function MicParticipantTile({ currentUserRole, onApproveMic, userToken, setDebug
       {/* 用户信息 - 移到最左边 */}
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: '13px' }}>
-          <ParticipantName />
+          {participant.name || 'Unknown User'}
         </div>
         <div style={{ fontSize: '11px', color: '#888' }}>
           {roleText} - {micStatusText}

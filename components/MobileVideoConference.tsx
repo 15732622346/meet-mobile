@@ -22,7 +22,7 @@ import { isHostOrAdmin, isCameraEnabled, shouldShowInMicList } from '../lib/toke
 import { getImagePath } from '../lib/image-path';
 import { setupViewportFix, enableBottomAlignment } from '../lib/viewport-debug';
 import { API_CONFIG } from '../lib/config';
-import { DebugPanel } from './DebugPanel'; // 添加导入
+// 移除DebugPanel导入
 
 // 视频显示状态枚举
 enum VideoDisplayState {
@@ -426,17 +426,17 @@ export function MobileVideoConference({
     return true;
   }, [mainVideoTrack]);
 
-  // 添加调试面板状态
-  const [debugPanelVisible, setDebugPanelVisible] = React.useState(false);
-  const [debugData, setDebugData] = React.useState<Record<string, any>>({});
+  // 调试面板状态已移除
+  // const [debugPanelVisible, setDebugPanelVisible] = React.useState(false);
+  // const [debugData, setDebugData] = React.useState<Record<string, any>>({});
   
-  // 处理调试面板操作
-  const handleDebugAction = (action: string) => {
+  // 调试面板操作已移除
+  /*const handleDebugAction = (action: string) => {
     console.log(`调试面板动作: ${action}`);
     if (action === 'refresh-video-style') {
       forceRefreshVideoStyle();
     }
-  };
+  };*/
   
   // 设置和清理方向变化监听器
   React.useEffect(() => {
@@ -630,12 +630,12 @@ export function MobileVideoConference({
           videoElement.setAttribute('data-video-ratio', videoRatio.toFixed(2));
         }
         
-        // 在应用样式后触发调试面板更新
-        setTimeout(() => {
+        // 调试面板代码已移除
+        /*setTimeout(() => {
           collectDebugInfo(container);
           // 确保调试面板可见
           setDebugPanelVisible(true);
-        }, 300);
+        }, 300);*/
       }
     } catch (error) {
       console.error('应用视频样式失败:', error);
@@ -729,7 +729,8 @@ export function MobileVideoConference({
           : document.querySelector('.video-wrapper');
           
         if (container) {
-          collectDebugInfo(container as HTMLElement);
+          // 调试信息收集已移除
+          // collectDebugInfo(container as HTMLElement);
         }
       }, 300);
     } catch (error) {
@@ -738,221 +739,221 @@ export function MobileVideoConference({
   }, [isFullscreen, hasScreenShare, screenTracks.length, isIOS]);
   
   // 收集和显示调试信息的函数
-  const collectDebugInfo = (containerElement: HTMLElement) => {
-    try {
-      // 收集视口信息
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      
-      // 检查是否支持window.orientation
-      let orientationDegree = 'undefined';
-      try {
-        orientationDegree = (window as any).orientation !== undefined 
-          ? `${(window as any).orientation}deg` 
-          : 'not supported';
-      } catch (e) {
-        orientationDegree = 'error getting orientation';
-      }
-      
-      // 获取screen.orientation信息
-      let orientationType = 'undefined';
-      try {
-        orientationType = screen.orientation 
-          ? screen.orientation.type 
-          : 'not supported';
-      } catch (e) {
-        orientationType = 'error getting orientation type';
-      }
-      
-      // 获取视频元素信息 - 强制重新获取最新状态
-      const videoElement = containerElement.querySelector('video') as HTMLVideoElement;
-      
-      // 获取视频样式信息
-      const videoStyles = videoElement ? {
-        objectFit: videoElement.style.objectFit || 'not set',
-        inlineWidth: videoElement.style.width || 'not set',
-        inlineHeight: videoElement.style.height || 'not set',
-        inlineMaxHeight: videoElement.style.maxHeight || 'not set',
-        optimized: videoElement.hasAttribute('data-fullscreen-optimized') ? 'yes' : 'no'
-      } : 'no video element';
-      
-      // 原有的视频信息获取
-      const videoWidth = videoElement ? videoElement.videoWidth : 'unknown';
-      const videoHeight = videoElement ? videoElement.videoHeight : 'unknown';
-      const videoClientWidth = videoElement ? videoElement.clientWidth : 'unknown';
-      const videoClientHeight = videoElement ? videoElement.clientHeight : 'unknown';
-      const videoOffsetWidth = videoElement ? videoElement.offsetWidth : 'unknown';
-      const videoOffsetHeight = videoElement ? videoElement.offsetHeight : 'unknown';
-      
-      // 获取视频的样式
-      const videoStyle = videoElement ? window.getComputedStyle(videoElement) : null;
-      const videoObjectFit = videoStyle ? videoStyle.objectFit : 'unknown';
-      const videoDisplay = videoStyle ? videoStyle.display : 'unknown';
-      
-      // 获取视频完整的计算样式
-      const videoFullStyles = videoStyle ? {
-        objectFit: videoStyle.objectFit,
-        display: videoStyle.display,
-        width: videoStyle.width,
-        height: videoStyle.height,
-        maxWidth: videoStyle.maxWidth,
-        maxHeight: videoStyle.maxHeight,
-        minWidth: videoStyle.minWidth,
-        minHeight: videoStyle.minHeight,
-        position: videoStyle.position,
-        margin: videoStyle.margin,
-        padding: videoStyle.padding,
-        top: videoStyle.top,
-        left: videoStyle.left,
-        right: videoStyle.right,
-        bottom: videoStyle.bottom,
-        transform: videoStyle.transform,
-        zIndex: videoStyle.zIndex
-      } : 'no video style';
-      
-      // 获取真实可用视口（排除浏览器UI）
-      const availableHeight = window.screen.availHeight;
-      const availableWidth = window.screen.availWidth;
-      
-      // 获取内部容器信息
-      const gridLayout = containerElement.querySelector('.lk-grid-layout');
-      const gridWidth = gridLayout ? (gridLayout as HTMLElement).offsetWidth : 'unknown';
-      const gridHeight = gridLayout ? (gridLayout as HTMLElement).offsetHeight : 'unknown';
-      
-      // 获取网格布局样式 - 扩展更多关键CSS属性
-      const gridStyles = gridLayout ? {
-        display: (gridLayout as HTMLElement).style.display || 'not set',
-        alignItems: (gridLayout as HTMLElement).style.alignItems || 'not set',
-        justifyContent: (gridLayout as HTMLElement).style.justifyContent || 'not set',
-        width: (gridLayout as HTMLElement).style.width || 'not set',
-        height: (gridLayout as HTMLElement).style.height || 'not set',
-        maxWidth: (gridLayout as HTMLElement).style.maxWidth || 'not set',
-        maxHeight: (gridLayout as HTMLElement).style.maxHeight || 'not set',
-        padding: (gridLayout as HTMLElement).style.padding || 'not set',
-        margin: (gridLayout as HTMLElement).style.margin || 'not set'
-      } : 'no grid layout';
-      
-      // 获取计算样式 - 这个更准确地反映实际应用的样式
-      const computedGridStyle = gridLayout ? window.getComputedStyle(gridLayout as HTMLElement) : null;
-      const computedGridStyles = computedGridStyle ? {
-        display: computedGridStyle.display,
-        alignItems: computedGridStyle.alignItems,
-        justifyContent: computedGridStyle.justifyContent,
-        width: computedGridStyle.width,
-        height: computedGridStyle.height,
-        maxWidth: computedGridStyle.maxWidth,
-        maxHeight: computedGridStyle.maxHeight,
-        padding: computedGridStyle.padding,
-        margin: computedGridStyle.margin
-      } : 'no computed style';
-      
-      // 获取屏幕共享包装器样式
-      const screenShareWrapper = containerElement.closest('.screen-share-wrapper');
-      const wrapperWidth = screenShareWrapper ? (screenShareWrapper as HTMLElement).offsetWidth : 'unknown';
-      const wrapperHeight = screenShareWrapper ? (screenShareWrapper as HTMLElement).offsetHeight : 'unknown';
-      const wrapperComputedStyle = screenShareWrapper ? window.getComputedStyle(screenShareWrapper as HTMLElement) : null;
-      const wrapperStyles = wrapperComputedStyle ? {
-        width: wrapperComputedStyle.width,
-        height: wrapperComputedStyle.height,
-        maxWidth: wrapperComputedStyle.maxWidth,
-        maxHeight: wrapperComputedStyle.maxHeight,
-        padding: wrapperComputedStyle.padding,
-        margin: wrapperComputedStyle.margin,
-        position: wrapperComputedStyle.position,
-        display: wrapperComputedStyle.display
-      } : 'no wrapper style';
-      
-      // 计算视口和容器的比例
-      const containerWidth = containerElement ? containerElement.offsetWidth : 0;
-      const containerHeight = containerElement ? containerElement.offsetHeight : 0;
-      const containerRatio = containerElement ? 
-        (containerWidth / containerHeight).toFixed(2) : 'unknown';
-      const viewportRatio = (viewportWidth / viewportHeight).toFixed(2);
-      const videoRatio = videoWidth !== 'unknown' && videoHeight !== 'unknown' ? 
-        (Number(videoWidth) / Number(videoHeight)).toFixed(2) : 'unknown';
-      
-      // 获取CSS变换信息
-      const computedStyle = containerElement ? window.getComputedStyle(containerElement) : null;
-      const transform = computedStyle ? computedStyle.transform : 'unknown';
-      const position = computedStyle ? computedStyle.position : 'unknown';
-      
-      // 检测真实的全屏状态
-      const isDocumentFullscreen = !!(
-        document.fullscreenElement ||
-        (document as any).webkitFullscreenElement ||
-        (document as any).msFullscreenElement
-      );
-      
-      // 检查实际的CSS类
-      const actualClasses = containerElement ? containerElement.className : 'unknown';
-      const hasFullscreenClass = containerElement ? 
-        containerElement.classList.contains('fullscreen-mode') || 
-        containerElement.classList.contains('ios-landscape-mode') : 
-        false;
-      
-      // 内联样式检查
-      const inlinePosition = containerElement ? containerElement.style.position : 'none';
-      const inlineTransform = containerElement ? containerElement.style.transform : 'none';
-      
-      // 获取样式应用标记
-      const optimizedTimestamp = videoElement ? 
-        videoElement.getAttribute('data-optimization-timestamp') || '未应用' : '无视频元素';
-        
-      // 检查样式被什么函数修改过
-      const lastStyleSetter = videoElement ?
-        videoElement.getAttribute('data-style-setter') || '未知' : '无视频元素';
-        
-      // 获取保存的视频比例信息
-      const savedVideoRatio = videoElement ?
-        videoElement.getAttribute('data-video-ratio') || '未保存' : '无视频元素';
-        
-      // 收集调试数据
-      const debugInfo = {
-        '测试部署字段': '部署测试成功-20230818',
-        '设备类型': /iPhone|iPad|iPod/i.test(navigator.userAgent) ? 'iOS' : 'Android/其他',
-        '视口尺寸': `${viewportWidth}×${viewportHeight}`,
-        '可用视口': `${availableWidth}×${availableHeight}`,
-        '物理方向': deviceOrientation,
-        'window.orientation': orientationDegree,
-        'screen.orientation': orientationType,
-        '组件尺寸': `${containerWidth}×${containerHeight}`,
-        '组件比例': containerRatio,
-        '视口比例': viewportRatio,
-        '内层容器': `${gridWidth}×${gridHeight}`,
-        '网格布局样式': gridStyles,
-        '视频分辨率': `${videoWidth}×${videoHeight}`,
-        '视频显示尺寸': `${videoClientWidth}×${videoClientHeight}`,
-        '视频布局尺寸': `${videoOffsetWidth}×${videoOffsetHeight}`,
-        '视频比例': videoRatio,
-        '计算的比例': savedVideoRatio,
-        '最后样式设置者': lastStyleSetter,
-        '样式应用时间': optimizedTimestamp,
-        '视频内联样式': videoStyles,
-        '视频object-fit': videoObjectFit,
-        '视频display': videoDisplay,
-        '全屏模式': isDocumentFullscreen,
-        '组件类': actualClasses,
-        'CSS变换': transform,
-        '变换原点': computedStyle ? computedStyle.transformOrigin : 'unknown',
-        '内联position': inlinePosition,
-        '内联transform': inlineTransform,
-        'position': position,
-        'React全屏状态': isFullscreen,
-        'CSS类包含fullscreen': hasFullscreenClass,
-        '显示状态': displayState,
-        '屏幕共享': hasScreenShare ? '是' : '否',
-        '屏幕共享轨道': screenTracks.length,
-        '最后更新': new Date().toLocaleTimeString()
-      };
-      
-      // 更新调试数据并显示面板
-      setDebugData(debugInfo);
-      
-      console.log('调试信息:', debugInfo);
-    } catch (err) {
-      console.error('获取状态信息出错:', err);
-    }
-  };
+  // const collectDebugInfo = (containerElement: HTMLElement) => {
+  //   try {
+  //     // 收集视口信息
+  //     const viewportWidth = window.innerWidth;
+  //     const viewportHeight = window.innerHeight;
+  //     
+  //     // 检查是否支持window.orientation
+  //     let orientationDegree = 'undefined';
+  //     try {
+  //       orientationDegree = (window as any).orientation !== undefined 
+  //         ? `${(window as any).orientation}deg` 
+  //         : 'not supported';
+  //     } catch (e) {
+  //       orientationDegree = 'error getting orientation';
+  //     }
+  //     
+  //     // 获取screen.orientation信息
+  //     let orientationType = 'undefined';
+  //     try {
+  //       orientationType = screen.orientation 
+  //         ? screen.orientation.type 
+  //         : 'not supported';
+  //     } catch (e) {
+  //       orientationType = 'error getting orientation type';
+  //     }
+  //     
+  //     // 获取视频元素信息 - 强制重新获取最新状态
+  //     const videoElement = containerElement.querySelector('video') as HTMLVideoElement;
+  //     
+  //     // 获取视频样式信息
+  //     const videoStyles = videoElement ? {
+  //       objectFit: videoElement.style.objectFit || 'not set',
+  //       inlineWidth: videoElement.style.width || 'not set',
+  //       inlineHeight: videoElement.style.height || 'not set',
+  //       inlineMaxHeight: videoElement.style.maxHeight || 'not set',
+  //       optimized: videoElement.hasAttribute('data-fullscreen-optimized') ? 'yes' : 'no'
+  //     } : 'no video element';
+  //     
+  //     // 原有的视频信息获取
+  //     const videoWidth = videoElement ? videoElement.videoWidth : 'unknown';
+  //     const videoHeight = videoElement ? videoElement.videoHeight : 'unknown';
+  //     const videoClientWidth = videoElement ? videoElement.clientWidth : 'unknown';
+  //     const videoClientHeight = videoElement ? videoElement.clientHeight : 'unknown';
+  //     const videoOffsetWidth = videoElement ? videoElement.offsetWidth : 'unknown';
+  //     const videoOffsetHeight = videoElement ? videoElement.offsetHeight : 'unknown';
+  //     
+  //     // 获取视频的样式
+  //     const videoStyle = videoElement ? window.getComputedStyle(videoElement) : null;
+  //     const videoObjectFit = videoStyle ? videoStyle.objectFit : 'unknown';
+  //     const videoDisplay = videoStyle ? videoStyle.display : 'unknown';
+  //     
+  //     // 获取视频完整的计算样式
+  //     const videoFullStyles = videoStyle ? {
+  //       objectFit: videoStyle.objectFit,
+  //       display: videoStyle.display,
+  //       width: videoStyle.width,
+  //       height: videoStyle.height,
+  //       maxWidth: videoStyle.maxWidth,
+  //       maxHeight: videoStyle.maxHeight,
+  //       minWidth: videoStyle.minWidth,
+  //       minHeight: videoStyle.minHeight,
+  //       position: videoStyle.position,
+  //       margin: videoStyle.margin,
+  //       padding: videoStyle.padding,
+  //       top: videoStyle.top,
+  //       left: videoStyle.left,
+  //       right: videoStyle.right,
+  //       bottom: videoStyle.bottom,
+  //       transform: videoStyle.transform,
+  //       zIndex: videoStyle.zIndex
+  //     } : 'no video style';
+  //     
+  //     // 获取真实可用视口（排除浏览器UI）
+  //     const availableHeight = window.screen.availHeight;
+  //     const availableWidth = window.screen.availWidth;
+  //     
+  //     // 获取内部容器信息
+  //     const gridLayout = containerElement.querySelector('.lk-grid-layout');
+  //     const gridWidth = gridLayout ? (gridLayout as HTMLElement).offsetWidth : 'unknown';
+  //     const gridHeight = gridLayout ? (gridLayout as HTMLElement).offsetHeight : 'unknown';
+  //     
+  //     // 获取网格布局样式 - 扩展更多关键CSS属性
+  //     const gridStyles = gridLayout ? {
+  //       display: (gridLayout as HTMLElement).style.display || 'not set',
+  //       alignItems: (gridLayout as HTMLElement).style.alignItems || 'not set',
+  //       justifyContent: (gridLayout as HTMLElement).style.justifyContent || 'not set',
+  //       width: (gridLayout as HTMLElement).style.width || 'not set',
+  //       height: (gridLayout as HTMLElement).style.height || 'not set',
+  //       maxWidth: (gridLayout as HTMLElement).style.maxWidth || 'not set',
+  //       maxHeight: (gridLayout as HTMLElement).style.maxHeight || 'not set',
+  //       padding: (gridLayout as HTMLElement).style.padding || 'not set',
+  //       margin: (gridLayout as HTMLElement).style.margin || 'not set'
+  //     } : 'no grid layout';
+  //     
+  //     // 获取计算样式 - 这个更准确地反映实际应用的样式
+  //     const computedGridStyle = gridLayout ? window.getComputedStyle(gridLayout as HTMLElement) : null;
+  //     const computedGridStyles = computedGridStyle ? {
+  //       display: computedGridStyle.display,
+  //       alignItems: computedGridStyle.alignItems,
+  //       justifyContent: computedGridStyle.justifyContent,
+  //       width: computedGridStyle.width,
+  //       height: computedGridStyle.height,
+  //       maxWidth: computedGridStyle.maxWidth,
+  //       maxHeight: computedGridStyle.maxHeight,
+  //       padding: computedGridStyle.padding,
+  //       margin: computedGridStyle.margin
+  //     } : 'no computed style';
+  //     
+  //     // 获取屏幕共享包装器样式
+  //     const screenShareWrapper = containerElement.closest('.screen-share-wrapper');
+  //     const wrapperWidth = screenShareWrapper ? (screenShareWrapper as HTMLElement).offsetWidth : 'unknown';
+  //     const wrapperHeight = screenShareWrapper ? (screenShareWrapper as HTMLElement).offsetHeight : 'unknown';
+  //     const wrapperComputedStyle = screenShareWrapper ? window.getComputedStyle(screenShareWrapper as HTMLElement) : null;
+  //     const wrapperStyles = wrapperComputedStyle ? {
+  //       width: wrapperComputedStyle.width,
+  //       height: wrapperComputedStyle.height,
+  //       maxWidth: wrapperComputedStyle.maxWidth,
+  //       maxHeight: wrapperComputedStyle.maxHeight,
+  //       padding: wrapperComputedStyle.padding,
+  //       margin: wrapperComputedStyle.margin,
+  //       position: wrapperComputedStyle.position,
+  //       display: wrapperComputedStyle.display
+  //     } : 'no wrapper style';
+  //     
+  //     // 计算视口和容器的比例
+  //     const containerWidth = containerElement ? containerElement.offsetWidth : 0;
+  //     const containerHeight = containerElement ? containerElement.offsetHeight : 0;
+  //     const containerRatio = containerElement ? 
+  //       (containerWidth / containerHeight).toFixed(2) : 'unknown';
+  //     const viewportRatio = (viewportWidth / viewportHeight).toFixed(2);
+  //     const videoRatio = videoWidth !== 'unknown' && videoHeight !== 'unknown' ? 
+  //       (Number(videoWidth) / Number(videoHeight)).toFixed(2) : 'unknown';
+  //     
+  //     // 获取CSS变换信息
+  //     const computedStyle = containerElement ? window.getComputedStyle(containerElement) : null;
+  //     const transform = computedStyle ? computedStyle.transform : 'unknown';
+  //     const position = computedStyle ? computedStyle.position : 'unknown';
+  //     
+  //     // 检测真实的全屏状态
+  //     const isDocumentFullscreen = !!(
+  //       document.fullscreenElement ||
+  //       (document as any).webkitFullscreenElement ||
+  //       (document as any).msFullscreenElement
+  //     );
+  //     
+  //     // 检查实际的CSS类
+  //     const actualClasses = containerElement ? containerElement.className : 'unknown';
+  //     const hasFullscreenClass = containerElement ? 
+  //       containerElement.classList.contains('fullscreen-mode') || 
+  //       containerElement.classList.contains('ios-landscape-mode') : 
+  //       false;
+  //     
+  //     // 内联样式检查
+  //     const inlinePosition = containerElement ? containerElement.style.position : 'none';
+  //     const inlineTransform = containerElement ? containerElement.style.transform : 'none';
+  //     
+  //     // 获取样式应用标记
+  //     const optimizedTimestamp = videoElement ? 
+  //       videoElement.getAttribute('data-optimization-timestamp') || '未应用' : '无视频元素';
+  //       
+  //     // 检查样式被什么函数修改过
+  //     const lastStyleSetter = videoElement ?
+  //       videoElement.getAttribute('data-style-setter') || '未知' : '无视频元素';
+  //       
+  //     // 获取保存的视频比例信息
+  //     const savedVideoRatio = videoElement ?
+  //       videoElement.getAttribute('data-video-ratio') || '未保存' : '无视频元素';
+  //       
+  //     // 收集调试数据
+  //     const debugInfo = {
+  //       '测试部署字段': '部署测试成功-20230818',
+  //       '设备类型': /iPhone|iPad|iPod/i.test(navigator.userAgent) ? 'iOS' : 'Android/其他',
+  //       '视口尺寸': `${viewportWidth}×${viewportHeight}`,
+  //       '可用视口': `${availableWidth}×${availableHeight}`,
+  //       '物理方向': deviceOrientation,
+  //       'window.orientation': orientationDegree,
+  //       'screen.orientation': orientationType,
+  //       '组件尺寸': `${containerWidth}×${containerHeight}`,
+  //       '组件比例': containerRatio,
+  //       '视口比例': viewportRatio,
+  //       '内层容器': `${gridWidth}×${gridHeight}`,
+  //       '网格布局样式': gridStyles,
+  //       '视频分辨率': `${videoWidth}×${videoHeight}`,
+  //       '视频显示尺寸': `${videoClientWidth}×${videoClientHeight}`,
+  //       '视频布局尺寸': `${videoOffsetWidth}×${videoOffsetHeight}`,
+  //       '视频比例': videoRatio,
+  //       '计算的比例': savedVideoRatio,
+  //       '最后样式设置者': lastStyleSetter,
+  //       '样式应用时间': optimizedTimestamp,
+  //       '视频内联样式': videoStyles,
+  //       '视频object-fit': videoObjectFit,
+  //       '视频display': videoDisplay,
+  //       '全屏模式': isDocumentFullscreen,
+  //       '组件类': actualClasses,
+  //       'CSS变换': transform,
+  //       '变换原点': computedStyle ? computedStyle.transformOrigin : 'unknown',
+  //       '内联position': inlinePosition,
+  //       '内联transform': inlineTransform,
+  //       'position': position,
+  //       'React全屏状态': isFullscreen,
+  //       'CSS类包含fullscreen': hasFullscreenClass,
+  //       '显示状态': displayState,
+  //       '屏幕共享': hasScreenShare ? '是' : '否',
+  //       '屏幕共享轨道': screenTracks.length,
+  //       '最后更新': new Date().toLocaleTimeString()
+  //     };
+  //     
+  //     // 更新调试数据并显示面板
+  //     setDebugData(debugInfo);
+  //     
+  //     console.log('调试信息:', debugInfo);
+  //   } catch (err) {
+  //     console.error('获取状态信息出错:', err);
+  //   }
+  // };
   
   // 新增: 切换本地摄像头显示大小
   const toggleLocalCameraSize = () => {
@@ -1038,7 +1039,7 @@ export function MobileVideoConference({
         applyVideoStyles(videoElement as HTMLElement, container as HTMLElement);
         
         // 更新调试信息
-        collectDebugInfo(container as HTMLElement);
+        // collectDebugInfo(container as HTMLElement);
         
         console.log('✅ 视频样式刷新完成');
       }, 100);
@@ -1773,12 +1774,12 @@ export function MobileVideoConference({
       `}</style>
       
       {/* 添加调试面板 */}
-      <DebugPanel 
+      {/* <DebugPanel 
         isVisible={debugPanelVisible}
         data={debugData}
         onClose={() => setDebugPanelVisible(false)}
         onAction={handleDebugAction}
-      />
+      /> */}
       
       {/* 添加自定义样式 */}
       <style jsx>{`

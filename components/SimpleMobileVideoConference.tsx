@@ -24,7 +24,7 @@ import { isHostOrAdmin, isCameraEnabled, shouldShowInMicList } from '../lib/toke
 import { getImagePath } from '../lib/image-path';
 import { setupViewportFix, enableBottomAlignment } from '../lib/viewport-debug';
 import { API_CONFIG } from '../lib/config';
-import { DebugPanel } from './DebugPanel'; // 添加导入
+// 移除DebugPanel导入
 
 // 默认最大麦位数量
 const DEFAULT_MAX_MIC_SLOTS = 5;
@@ -337,20 +337,20 @@ export function SimpleMobileVideoConference({
     return tabItems;
   }, [micStats, userRole, userName, userToken, forceUpdateTrigger]);
   
-  // 添加调试面板状态
-  const [debugPanelVisible, setDebugPanelVisible] = React.useState(false);
-  const [debugData, setDebugData] = React.useState<Record<string, any>>({});
+  // 调试面板状态已移除
+  // const [debugPanelVisible, setDebugPanelVisible] = React.useState(false);
+  // const [debugData, setDebugData] = React.useState<Record<string, any>>({});
   
-  // 处理调试面板操作
-  const handleDebugAction = (action: string) => {
+  // 调试面板操作已移除
+  /*const handleDebugAction = (action: string) => {
     console.log(`调试面板动作: ${action}`);
     if (action === 'refresh-video-style') {
       forceRefreshVideoStyle();
     }
-  };
+  };*/
   
   // 添加屏幕方向状态
-  const [deviceOrientation, setDeviceOrientation] = React.useState<string>('portrait');
+  const [deviceOrientation, setDeviceOrientation] = React.useState<'portrait' | 'landscape'>('portrait');
   const [orientationListenerActive, setOrientationListenerActive] = React.useState<boolean>(false);
   const fullscreenContainerRef = React.useRef<HTMLElement | null>(null);
   
@@ -387,8 +387,8 @@ export function SimpleMobileVideoConference({
         // 重新应用样式优化
         applyVideoStyles(videoElement as HTMLElement, container as HTMLElement);
         
-        // 更新调试信息
-        collectDebugInfo(container as HTMLElement);
+        // 调试信息收集已移除
+        // collectDebugInfo(container as HTMLElement);
         
         console.log('✅ 视频样式刷新完成');
       }, 100);
@@ -444,8 +444,8 @@ export function SimpleMobileVideoConference({
         container.classList.remove('device-landscape'); // 移除设备物理横屏标记
       }
       
-      // 收集和显示最新调试信息
-      collectDebugInfo(container as HTMLElement);
+      // 调试信息收集已移除
+      // collectDebugInfo(container as HTMLElement);
     } catch (error) {
       console.error('处理屏幕方向变化出错:', error);
     }
@@ -627,12 +627,10 @@ export function SimpleMobileVideoConference({
           videoElement.setAttribute('data-video-ratio', videoRatio.toFixed(2));
         }
         
-        // 在应用样式后触发调试面板更新
-        setTimeout(() => {
-          collectDebugInfo(container);
-          // 确保调试面板可见
-          setDebugPanelVisible(true);
-        }, 300);
+        // 移除调试面板触发代码
+        if (videoElement instanceof HTMLVideoElement) {
+          videoElement.setAttribute('data-video-ratio', videoRatio.toFixed(2));
+        }
       }
     } catch (error) {
       console.error('应用视频样式失败:', error);
@@ -640,7 +638,7 @@ export function SimpleMobileVideoConference({
   };
 
   // 切换全屏/横屏模式 - 用于屏幕共享和摄像头视频
-  const toggleFullscreen = () => {
+  const toggleFullscreen = React.useCallback(() => {
     try {
       // 在按钮点击时立即记录关键信息
       const clickInfo = {
@@ -708,8 +706,8 @@ export function SimpleMobileVideoConference({
                       console.error('屏幕方向API错误:', orientationError);
                     }
                     
-                    // 收集和显示调试信息
-                    collectDebugInfo(container as HTMLElement);
+                    // 调试信息收集已移除
+                    // collectDebugInfo(container as HTMLElement);
                   }, 300);
                 })
                 .catch(err => {
@@ -734,8 +732,8 @@ export function SimpleMobileVideoConference({
                   console.error('屏幕方向API错误:', orientationError);
                 }
                 
-                // 收集和显示调试信息
-                collectDebugInfo(container as HTMLElement);
+                // 调试信息收集已移除
+                // collectDebugInfo(container as HTMLElement);
               }, 300);
             }
           } 
@@ -806,10 +804,10 @@ export function SimpleMobileVideoConference({
               // 优化视频比例
               optimizeVideoFit(container as HTMLElement);
               
-              // 收集和显示调试信息
-              setTimeout(() => {
-                collectDebugInfo(container as HTMLElement);
-              }, 300);
+              // 调试信息收集已移除
+              // setTimeout(() => {
+              //   collectDebugInfo(container as HTMLElement);
+              // }, 300);
             }, 50);
           }
         } else {
@@ -836,20 +834,8 @@ export function SimpleMobileVideoConference({
             '按钮CSS类名': document.querySelector('.fullscreen-toggle-btn')?.className || '未找到'
           };
           
-          alert(`
-【SimpleMobile退出全屏按钮点击】
-设备: ${debugInfo['设备类型']}
-时间: ${debugInfo['点击时间']}
-视口: ${debugInfo['视口尺寸']}
-方向: ${debugInfo['方向值']}
-设备方向: ${debugInfo['设备方向']}
-DOM全屏: ${debugInfo['DOM全屏元素']}
-webkit全屏: ${debugInfo['webkit全屏元素']}
-React全屏: ${debugInfo['React全屏状态']}
-容器类: ${debugInfo['容器类名']}
-body类: ${debugInfo['body类名']}
-按钮类: ${debugInfo['按钮CSS类名']}
-          `);
+          // 移除alert调用
+          console.log('【SimpleMobile退出全屏按钮点击】', debugInfo);
           
           // 安卓设备
           if (!isIOS) {
@@ -912,7 +898,8 @@ React全屏状态: ${beforeExitInfo.isFullscreen}
 body类名: ${beforeExitInfo.bodyClasses}
             `;
             
-            alert(alertMsg);
+            // 移除alert调用
+            console.log('【退出全屏前信息】', beforeExitInfo);
             
             // 确保退出全屏API调用
             if ((document as any).webkitExitFullscreen) {
@@ -1076,7 +1063,8 @@ React全屏状态: ${afterExitInfo.isFullscreen}
 屏幕共享容器高度: ${typeof afterExitInfo.screenShareWrapper === 'object' ? afterExitInfo.screenShareWrapper.style.height : 'none'}
                   `;
                   
-                  alert(alertMsg);
+                  // 移除alert调用
+                  console.log('【退出全屏后信息】', afterExitInfo);
                   
                 }, 1000);
                 
@@ -1091,50 +1079,36 @@ React全屏状态: ${afterExitInfo.isFullscreen}
             }
           }
           
-          // 收集和显示调试信息
-          setTimeout(() => {
-            collectDebugInfo(container as HTMLElement);
+          // 调试信息收集已移除
+          // setTimeout(() => {
+          //   collectDebugInfo(container as HTMLElement);
+          // }, 300);
             
-            // 显示退出全屏后的状态
-            const afterExitInfo = {
-              '点击后时间': new Date().toLocaleTimeString(),
-              '视口尺寸': `${window.innerWidth}×${window.innerHeight}`,
-              '方向值': window.orientation !== undefined ? window.orientation : '不支持',
-              '设备方向': deviceOrientation,
-              'DOM全屏元素': document.fullscreenElement ? '有' : '无',
-              'webkit全屏元素': (document as any).webkitFullscreenElement ? '有' : '无',
-              'React全屏状态': isFullscreen ? '是' : '否',
-              '容器类名': container ? container.className : '未知',
-              'body类名': document.body.className,
-              '内联样式position': (container as HTMLElement).style.position || '无',
-              '内联样式transform': (container as HTMLElement).style.transform || '无',
-              '视频objectFit': document.querySelector('video')?.style.objectFit || '无',
-              '按钮类名': document.querySelector('.fullscreen-toggle-btn')?.className || '未找到'
-            };
-            
-            alert(`
-【SimpleMobile退出全屏后状态】
-时间: ${afterExitInfo['点击后时间']}
-视口: ${afterExitInfo['视口尺寸']}
-方向: ${afterExitInfo['方向值']}
-设备方向: ${afterExitInfo['设备方向']}
-DOM全屏: ${afterExitInfo['DOM全屏元素']}
-webkit全屏: ${afterExitInfo['webkit全屏元素']}
-React全屏: ${afterExitInfo['React全屏状态']}
-容器类: ${afterExitInfo['容器类名']}
-body类: ${afterExitInfo['body类名']}
-内联position: ${afterExitInfo['内联样式position']}
-内联transform: ${afterExitInfo['内联样式transform']}
-视频objectFit: ${afterExitInfo['视频objectFit']}
-按钮类名: ${afterExitInfo['按钮类名']}
-            `);
-          }, 300);
+          // 显示退出全屏后的状态
+          const afterExitInfo = {
+            '点击后时间': new Date().toLocaleTimeString(),
+            '视口尺寸': `${window.innerWidth}×${window.innerHeight}`,
+            '方向值': window.orientation !== undefined ? window.orientation : '不支持',
+            '设备方向': deviceOrientation,
+            'DOM全屏元素': document.fullscreenElement ? '有' : '无',
+            'webkit全屏元素': (document as any).webkitFullscreenElement ? '有' : '无',
+            'React全屏状态': isFullscreen ? '是' : '否',
+            '容器类名': container ? container.className : '未知',
+            'body类名': document.body.className,
+            '内联样式position': (container as HTMLElement).style.position || '无',
+            '内联样式transform': (container as HTMLElement).style.transform || '无',
+            '视频objectFit': document.querySelector('video')?.style.objectFit || '无',
+            '按钮类名': document.querySelector('.fullscreen-toggle-btn')?.className || '未找到'
+          };
+          
+          // 移除alert调用
+          console.log('【SimpleMobile退出全屏后状态】', afterExitInfo);
         }
       }
     } catch (error) {
       console.error('切换全屏模式出错:', error);
     }
-  };
+  }, [isFullscreen, deviceOrientation, screenTracks, hasScreenShare]);
   
   // 收集和显示调试信息的函数
   const collectDebugInfo = (containerElement: HTMLElement) => {
@@ -1192,8 +1166,8 @@ body类: ${afterExitInfo['body类名']}
       };
       
       // 更新调试数据并显示面板
-      setDebugData(debugInfo);
-      setDebugPanelVisible(true);
+      // setDebugData(debugInfo);
+      // setDebugPanelVisible(true);
       
       console.log('视频尺寸调试信息:', debugInfo);
     } catch (err) {
@@ -1346,12 +1320,12 @@ body类: ${afterExitInfo['body类名']}
       {/* 移除调试按钮 */}
       
       {/* 添加调试面板 */}
-      <DebugPanel 
+      {/* <DebugPanel 
         isVisible={debugPanelVisible}
         data={debugData}
         onClose={() => setDebugPanelVisible(false)}
         onAction={handleDebugAction}
-      />
+      /> */}
       
       <style jsx>{`
         .mobile-video-conference {
