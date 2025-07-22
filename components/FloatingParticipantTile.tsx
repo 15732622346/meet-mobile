@@ -231,28 +231,49 @@ export function FloatingWrapper({
       if (!isIOS) {
         console.log('Android设备退出全屏模式');
         
+        // 设置一个退出全屏的通用函数 - 安卓设备专用
+        const completeExitFullscreen = () => {
+          // 更新状态
+          setIsFullscreen(false);
+          
+          // 恢复屏幕方向
+          try {
+            if (screen.orientation && 'unlock' in screen.orientation) {
+              console.log('解除屏幕方向锁定');
+              (screen.orientation as any).unlock();
+            }
+          } catch (orientationError) {
+            console.error('屏幕方向API错误:', orientationError);
+          }
+          
+          // 延迟移除fullscreen-mode类，确保状态和UI同步
+          setTimeout(() => {
+            if (wrapperRef.current) {
+              wrapperRef.current.classList.remove('fullscreen-mode');
+            }
+          }, 50);
+        };
+        
         // 先退出全屏API
         if (document.exitFullscreen) {
-          document.exitFullscreen().catch((err: any) => {
-            console.error('无法退出全屏模式:', err);
-          });
+          document.exitFullscreen()
+            .then(completeExitFullscreen)
+            .catch((err: any) => {
+              console.error('无法退出全屏模式:', err);
+              // 即使API调用失败，也尝试恢复状态
+              completeExitFullscreen();
+            });
         } else if ((document as any).webkitExitFullscreen) {
           (document as any).webkitExitFullscreen();
-        }
-        
-        // 恢复屏幕方向
-        try {
-          if (screen.orientation && 'unlock' in screen.orientation) {
-            console.log('解除屏幕方向锁定');
-            (screen.orientation as any).unlock();
-          }
-        } catch (orientationError) {
-          console.error('屏幕方向API错误:', orientationError);
-        }
-        
-        // 移除全屏CSS类
-        if (wrapperRef.current) {
-          wrapperRef.current.classList.remove('fullscreen-mode');
+          // 由于无Promise返回，使用延时
+          setTimeout(completeExitFullscreen, 100);
+        } else if ((document as any).msExitFullscreen) {
+          (document as any).msExitFullscreen();
+          // 由于无Promise返回，使用延时
+          setTimeout(completeExitFullscreen, 100);
+        } else {
+          // 无API可用，直接调用
+          completeExitFullscreen();
         }
       }
       // iOS设备
@@ -302,7 +323,7 @@ export function FloatingWrapper({
         }
         
         // 恢复之前隐藏的UI元素
-        const hiddenElements = document.querySelectorAll('.header-bar, .footer-bar, .nav-bar, .tab-bar, .mobile-tabs-container, .mobile-chat, .chat-disabled-notice, .mobile-tabs-nav, .mobile-tabs-content');
+        const hiddenElements = document.querySelectorAll('.header-bar, .footer-bar, .nav-bar, .tab-bar, .mobile-tabs-container, .mobile-chat, .chat-disabled-notice, .mobile-tabs-nav, .mobile-tabs-content, .mobile-footer, .lk-control-bar, .control-bar, .chat-panel, .participants-panel, .bottom-bar, .top-bar, .sidebar, .mobile-sidebar');
         hiddenElements.forEach((el) => {
           (el as HTMLElement).style.display = '';
         });
@@ -310,14 +331,15 @@ export function FloatingWrapper({
         // 恢复视口设置
         const metaViewport = document.querySelector('meta[name="viewport"]');
         if (metaViewport) {
-          metaViewport.setAttribute('content', 'width=device-width, initial-scale=1.0');
+          metaViewport.setAttribute('content', 'width=device-width, initial-scale=1.0, viewport-fit=cover');
         }
+        
+        setIsFullscreen(false);
       }
-      
-      // 统一设置状态
-      setIsFullscreen(false);
     } catch (error) {
       console.error('退出全屏模式出错:', error);
+      // 尝试恢复状态
+      setIsFullscreen(false);
     }
   }, []);
 
@@ -353,51 +375,53 @@ export function FloatingWrapper({
                         (window.orientation !== undefined && 
                         (Math.abs(window.orientation as number) === 90));
       
-      // 安卓设备使用screen.orientation API
-      if (!isIOS && screen.orientation && 'lock' in screen.orientation) {
+      // 定义成功进入全屏后的回调 - 用于Android设备
+      const onFullscreenSuccess = () => {
+        // 设置状态
+        setIsFullscreen(true);
+        
+        // 添加全屏CSS类
+        if (wrapperRef.current) {
+          wrapperRef.current.classList.add('fullscreen-mode');
+        }
+        
+        // 延迟一小段时间再锁定屏幕方向，等待全屏模式完全建立
+        setTimeout(() => {
+          try {
+            // 强制锁定为横屏模式
+            if (screen.orientation && 'lock' in screen.orientation) {
+              console.log('请求锁定横屏方向');
+              (screen.orientation as any).lock('landscape').catch((err: any) => {
+                console.error('无法锁定屏幕方向:', err);
+              });
+            }
+          } catch (orientationError) {
+            console.error('屏幕方向API错误:', orientationError);
+          }
+        }, 300); // 300ms延迟，等待全屏模式稳定和提示条显示完成
+      };
+      
+      // 安卓设备
+      if (!isIOS) {
         // 请求全屏并处理成功情况
         if (wrapperRef.current.requestFullscreen) {
           wrapperRef.current.requestFullscreen()
-            .then(() => {
-              // 添加全屏CSS类
-              wrapperRef.current?.classList.add('fullscreen-mode');
-              
-              // 延迟一小段时间再锁定屏幕方向
-              setTimeout(() => {
-                try {
-                  // 强制锁定为横屏模式
-                  (screen.orientation as any).lock('landscape').catch((err: any) => {
-                    console.error('无法锁定横屏方向:', err);
-                  });
-                } catch (orientationError) {
-                  console.error('屏幕方向API错误:', orientationError);
-                }
-              }, 300);
-            })
+            .then(onFullscreenSuccess)
             .catch((err: any) => {
               console.error('无法进入全屏模式:', err);
             });
         } else if ((wrapperRef.current as any).webkitRequestFullscreen) {
           (wrapperRef.current as any).webkitRequestFullscreen();
-          // 添加全屏CSS类
-          wrapperRef.current.classList.add('fullscreen-mode');
-          
           // WebKit没有Promise返回，使用延时
-          setTimeout(() => {
-            try {
-              (screen.orientation as any).lock('landscape').catch((err: any) => {
-                console.error('无法锁定横屏方向:', err);
-              });
-            } catch (orientationError) {
-              console.error('屏幕方向API错误:', orientationError);
-            }
-          }, 300);
+          setTimeout(onFullscreenSuccess, 100);
+        } else if ((wrapperRef.current as any).msRequestFullscreen) {
+          (wrapperRef.current as any).msRequestFullscreen();
+          setTimeout(onFullscreenSuccess, 100);
         }
-      }
-      // iOS设备使用CSS模拟横屏
-      else if (isIOS) {
-        // 先同步设置状态，避免状态延迟
-        setIsFullscreen(true);
+      } 
+      // iOS设备 - 使用CSS模拟横屏
+      else {
+        console.log('iOS设备进入全屏模式 - 使用CSS模拟横屏');
         
         // iOS设备 - 先请求全屏
         if ((wrapperRef.current as any).webkitRequestFullscreen) {
@@ -407,6 +431,9 @@ export function FloatingWrapper({
             console.log('iOS全屏请求失败，使用CSS模拟');
           }
         }
+        
+        // 先同步设置状态，避免状态延迟
+        setIsFullscreen(true);
         
         // 移除已存在的样式类以避免叠加
         wrapperRef.current.classList.remove('ios-landscape-mode');
@@ -482,12 +509,6 @@ export function FloatingWrapper({
               (wrapperRef.current as HTMLElement).style.paddingTop = 'env(safe-area-inset-top)';
             }
             
-            // 优化视频元素
-            optimizeVideoElement();
-            // 延迟再次调用，确保视频加载完成后样式被正确应用
-            setTimeout(() => optimizeVideoElement(), 300);
-            setTimeout(() => optimizeVideoElement(), 1000);
-            
             // 处理Safari底部导航栏
             const meta = document.createElement('meta');
             meta.name = 'viewport';
@@ -496,6 +517,12 @@ export function FloatingWrapper({
             
             // 尝试滚动到顶部，减少地址栏的影响
             window.scrollTo(0, 0);
+            
+            // 优化视频元素
+            optimizeVideoElement();
+            // 延迟再次调用，确保视频加载完成后样式被正确应用
+            setTimeout(() => optimizeVideoElement(), 300);
+            setTimeout(() => optimizeVideoElement(), 1000);
           }
         }, 50);
       }
@@ -508,22 +535,35 @@ export function FloatingWrapper({
   const handleToggleMaximize = React.useCallback(() => {
     // 如果当前是最大化状态，则恢复正常状态
     if (displayState === VideoDisplayState.MAXIMIZED) {
-      setDisplayState(VideoDisplayState.NORMAL);
-      // 如果是全屏状态，退出全屏
+      console.log('从最大化状态切换到正常状态');
+      
+      // 先退出全屏
       if (isFullscreen) {
+        console.log('检测到全屏状态，先退出全屏');
         exitFullscreen();
+        
+        // 为确保安卓设备上的平滑切换，添加延时
+        setTimeout(() => {
+          console.log('延迟设置displayState为正常');
+          setDisplayState(VideoDisplayState.NORMAL);
+        }, 150);
+      } else {
+        // 如果不是全屏状态，直接切换
+        setDisplayState(VideoDisplayState.NORMAL);
       }
       return;
     }
     
     // 如果当前是正常状态，则切换到最大化状态
+    console.log('从正常状态切换到最大化状态');
+    
     // 切换到最大化状态前，先更新屏幕共享区域的位置
     updateScreenShareRef();
     setDisplayState(VideoDisplayState.MAXIMIZED);
     
     // 进入全屏模式
     enterFullscreen();
-  }, [displayState, updateScreenShareRef, isFullscreen, enterFullscreen, exitFullscreen]);
+  }, [displayState, updateScreenShareRef, isFullscreen, exitFullscreen, enterFullscreen]);
   
   const currentDimensions = getCurrentDimensions();
 
@@ -539,7 +579,7 @@ export function FloatingWrapper({
     );
     
     // 如果是最大化/全屏状态，使用视口单位而不是像素
-    if (displayState === VideoDisplayState.MAXIMIZED || isFullscreen) {
+    if (displayState === VideoDisplayState.MAXIMIZED || (isFullscreen && isAnyElementFullscreen)) {
       return {
         position: 'fixed' as const,
         left: 0,
@@ -691,20 +731,26 @@ export function FloatingWrapper({
       );
       
       if (!isDocumentFullscreen && isFullscreen) {
+        console.log('检测到全屏状态变更: 用户退出了全屏');
         setIsFullscreen(false);
         // 如果是最大化状态，恢复到正常状态
         if (displayState === VideoDisplayState.MAXIMIZED) {
+          console.log('从最大化状态恢复到正常状态');
           setDisplayState(VideoDisplayState.NORMAL);
         }
         
         // 恢复屏幕方向
         try {
           if (screen.orientation && 'unlock' in screen.orientation) {
+            console.log('解除屏幕方向锁定');
             (screen.orientation as any).unlock();
           }
         } catch (orientationError) {
           console.error('屏幕方向API错误:', orientationError);
         }
+      } else if (isDocumentFullscreen && !isFullscreen) {
+        console.log('检测到全屏状态变更: 用户进入了全屏');
+        setIsFullscreen(true);
       }
     };
     
@@ -946,6 +992,23 @@ const styles = `
     white-space: nowrap !important;
     min-width: fit-content !important;
     line-height: 1.1 !important;
+  }
+  
+  /* 添加过渡效果，使全屏切换更平滑 */
+  .floating-wrapper {
+    transition: all 0.3s ease-in-out !important;
+  }
+  
+  /* 确保安卓设备上的全屏/非全屏切换平滑 */
+  @media screen and (min-width: 600px) {
+    .floating-wrapper.fullscreen-mode {
+      transition: all 0.3s ease-in-out !important;
+    }
+  }
+  
+  /* 对视频元素应用过渡效果 */
+  .floating-wrapper video {
+    transition: width 0.3s ease-in-out, height 0.3s ease-in-out !important;
   }
   
   /* 确保按钮容器在iOS横屏模式下正确显示 */
