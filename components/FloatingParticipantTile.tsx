@@ -251,6 +251,12 @@ export function FloatingWrapper({
             if (wrapperRef.current) {
               wrapperRef.current.classList.remove('fullscreen-mode');
             }
+            
+            // 恢复横屏提示覆盖层的显示
+            const landscapeOverlay = document.getElementById('landscape-overlay');
+            if (landscapeOverlay && window.innerWidth > window.innerHeight) {
+              landscapeOverlay.style.display = 'block';
+            }
           }, 50);
         };
         
@@ -335,6 +341,14 @@ export function FloatingWrapper({
         }
         
         setIsFullscreen(false);
+        
+        // 恢复横屏提示覆盖层的显示
+        setTimeout(() => {
+          const landscapeOverlay = document.getElementById('landscape-overlay');
+          if (landscapeOverlay && window.innerWidth > window.innerHeight) {
+            landscapeOverlay.style.display = 'block';
+          }
+        }, 100);
       }
     } catch (error) {
       console.error('退出全屏模式出错:', error);
@@ -372,8 +386,14 @@ export function FloatingWrapper({
       
       // 检测当前设备方向
       const isLandscape = window.innerWidth > window.innerHeight ||
-                        (window.orientation !== undefined && 
-                        (Math.abs(window.orientation as number) === 90));
+                         (window.orientation !== undefined && 
+                         (Math.abs(window.orientation as number) === 90));
+      
+      // 对于全屏模式，临时隐藏横屏提示覆盖层
+      const landscapeOverlay = document.getElementById('landscape-overlay');
+      if (landscapeOverlay) {
+        landscapeOverlay.style.display = 'none';
+      }
       
       // 定义成功进入全屏后的回调 - 用于Android设备
       const onFullscreenSuccess = () => {
