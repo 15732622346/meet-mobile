@@ -73,13 +73,57 @@ export function FloatingWrapper({
     setIsDragging(false);
   }, []);
 
-  // 新增: 查找并存储屏幕共享区域的位置和尺寸
+  // 改进: 查找并存储屏幕共享区域的位置和尺寸，增加安卓设备的兼容性检查
   const updateScreenShareRef = React.useCallback(() => {
+    console.log('更新屏幕引用...');
+    
+    // 首先检查是否有任何元素处于全屏状态
+    const isAnyFullscreen = !!(
+      document.fullscreenElement ||
+      (document as any).webkitFullscreenElement ||
+      (document as any).msFullscreenElement
+    );
+    
+    // 如果有元素处于全屏状态，可能会影响位置计算，强制使用整个屏幕
+    if (isAnyFullscreen) {
+      console.log('检测到已有元素处于全屏状态，使用整个视口尺寸');
+      screenShareRef.current = {
+        left: 0,
+        top: 0,
+        right: window.innerWidth,
+        bottom: window.innerHeight,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        x: 0,
+        y: 0,
+        toJSON: () => {}
+      };
+      return;
+    }
+    
     // 查找屏幕共享区域
     const screenShareElement = document.querySelector('.screen-share-wrapper') as HTMLElement;
     if (screenShareElement) {
-      screenShareRef.current = screenShareElement.getBoundingClientRect();
-      console.log('找到屏幕共享区域:', screenShareRef.current);
+      // 检查屏幕共享元素是否有fullscreen-mode类，这可能影响其位置计算
+      const isScreenShareFullscreen = screenShareElement.classList.contains('fullscreen-mode');
+      
+      if (isScreenShareFullscreen) {
+        console.log('发现屏幕共享处于全屏模式，使用整个视口尺寸');
+        screenShareRef.current = {
+          left: 0,
+          top: 0,
+          right: window.innerWidth,
+          bottom: window.innerHeight,
+          width: window.innerWidth,
+          height: window.innerHeight,
+          x: 0,
+          y: 0,
+          toJSON: () => {}
+        };
+      } else {
+        screenShareRef.current = screenShareElement.getBoundingClientRect();
+        console.log('找到屏幕共享区域:', screenShareRef.current);
+      }
     } else {
       console.log('未找到屏幕共享区域');
       // 如果找不到，尝试其他可能的选择器
@@ -87,6 +131,20 @@ export function FloatingWrapper({
       if (mainVideoContainer) {
         screenShareRef.current = mainVideoContainer.getBoundingClientRect();
         console.log('使用主视频容器作为替代:', screenShareRef.current);
+      } else {
+        // 如果什么都找不到，使用整个视口
+        console.log('无法找到任何视频容器，使用整个视口尺寸');
+        screenShareRef.current = {
+          left: 0,
+          top: 0,
+          right: window.innerWidth,
+          bottom: window.innerHeight,
+          width: window.innerWidth,
+          height: window.innerHeight,
+          x: 0,
+          y: 0,
+          toJSON: () => {}
+        };
       }
     }
   }, []);
@@ -383,6 +441,7 @@ export function FloatingWrapper({
       
       // 检测设备类型
       const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const isAndroid = /android/i.test(navigator.userAgent);
       
       // 检测当前设备方向
       const isLandscape = window.innerWidth > window.innerHeight ||
@@ -423,12 +482,40 @@ export function FloatingWrapper({
       
       // 安卓设备
       if (!isIOS) {
+        console.log('Android设备请求全屏模式');
+        
+        // 检测是否是在屏幕共享全屏后使用的特殊处理
+        const isAfterScreenShare = document.querySelector('.screen-share-wrapper.fullscreen-mode') || 
+                                document.querySelector('.screen-share-wrapper[style*="fullscreen"]');
+        
+        // 特别强化安卓设备全屏处理
+        if (isAndroid) {
+          // 清除可能影响全屏的任何CSS类
+          document.querySelectorAll('.fullscreen-mode:not(.floating-wrapper)').forEach(el => {
+            console.log('清理其他全屏元素:', el);
+            el.classList.remove('fullscreen-mode');
+          });
+          
+          // 在安卓设备上，先强制应用样式确保全屏效果
+          if (wrapperRef.current) {
+            wrapperRef.current.classList.add('fullscreen-mode');
+            wrapperRef.current.style.position = 'fixed';
+            wrapperRef.current.style.top = '0';
+            wrapperRef.current.style.left = '0';
+            wrapperRef.current.style.width = '100%';
+            wrapperRef.current.style.height = '100%';
+            wrapperRef.current.style.zIndex = '999999';
+          }
+        }
+        
         // 请求全屏并处理成功情况
         if (wrapperRef.current.requestFullscreen) {
           wrapperRef.current.requestFullscreen()
             .then(onFullscreenSuccess)
             .catch((err: any) => {
               console.error('无法进入全屏模式:', err);
+              // 如果全屏API失败，至少确保CSS样式能提供全屏体验
+              onFullscreenSuccess();
             });
         } else if ((wrapperRef.current as any).webkitRequestFullscreen) {
           (wrapperRef.current as any).webkitRequestFullscreen();
@@ -437,6 +524,10 @@ export function FloatingWrapper({
         } else if ((wrapperRef.current as any).msRequestFullscreen) {
           (wrapperRef.current as any).msRequestFullscreen();
           setTimeout(onFullscreenSuccess, 100);
+        } else {
+          // 如果没有全屏API，至少确保CSS样式能提供全屏体验
+          console.log('设备不支持全屏API，使用CSS模拟全屏');
+          onFullscreenSuccess();
         }
       } 
       // iOS设备 - 使用CSS模拟横屏
@@ -551,7 +642,7 @@ export function FloatingWrapper({
     }
   }, [optimizeVideoElement]);
   
-  // 修改: 处理最大化/还原切换
+  // 修改: 强化安卓设备上的最大化/还原切换处理
   const handleToggleMaximize = React.useCallback(() => {
     // 如果当前是最大化状态，则恢复正常状态
     if (displayState === VideoDisplayState.MAXIMIZED) {
@@ -577,6 +668,40 @@ export function FloatingWrapper({
     // 如果当前是正常状态，则切换到最大化状态
     console.log('从正常状态切换到最大化状态');
     
+    // 检测设备类型
+    const isAndroid = /android/i.test(navigator.userAgent);
+    
+    // 特别处理：检查屏幕共享是否处于全屏模式并清理残留状态
+    const screenShareElement = document.querySelector('.screen-share-wrapper') as HTMLElement;
+    if (screenShareElement && screenShareElement.classList.contains('fullscreen-mode')) {
+      console.log('检测到屏幕共享处于全屏模式，清理残留状态');
+      
+      // 移除屏幕共享上的全屏相关类
+      screenShareElement.classList.remove('fullscreen-mode');
+      
+      // 特别针对Android设备进行额外清理
+      if (isAndroid) {
+        console.log('为Android设备执行额外清理');
+        
+        // 强制触发重排以重置可能的渲染问题
+        screenShareElement.style.display = 'none';
+        screenShareElement.offsetHeight; // 强制重排
+        screenShareElement.style.display = '';
+        
+        // 延迟一点以确保清理完成
+        setTimeout(() => {
+          // 强制更新视图尺寸参考
+          updateScreenShareRef();
+          
+          // 切换状态和进入全屏
+          setDisplayState(VideoDisplayState.MAXIMIZED);
+          enterFullscreen();
+        }, 50);
+        return;
+      }
+    }
+    
+    // 常规流程
     // 切换到最大化状态前，先更新屏幕共享区域的位置
     updateScreenShareRef();
     setDisplayState(VideoDisplayState.MAXIMIZED);
@@ -740,6 +865,47 @@ export function FloatingWrapper({
     
     return () => clearTimeout(timer);
   }, [updateScreenShareRef]);
+  
+  // 组件卸载时全局清理，确保不留下全屏状态残留
+  React.useEffect(() => {
+    // 返回清理函数
+    return () => {
+      console.log('FloatingWrapper组件卸载，执行全局清理');
+      
+      // 如果当前处于全屏状态，尝试退出
+      if (isFullscreen) {
+        try {
+          // 尝试使用标准API退出全屏
+          if (document.exitFullscreen) {
+            document.exitFullscreen().catch(e => console.log('退出全屏失败:', e));
+          } else if ((document as any).webkitExitFullscreen) {
+            (document as any).webkitExitFullscreen();
+          } else if ((document as any).msExitFullscreen) {
+            (document as any).msExitFullscreen();
+          }
+        } catch (e) {
+          console.error('退出全屏时出错:', e);
+        }
+      }
+      
+      // 移除body上可能添加的CSS类
+      document.body.classList.remove('ios-landscape-active');
+      
+      // 清除其他可能影响全局状态的CSS类
+      document.querySelectorAll('.fullscreen-mode').forEach(el => {
+        el.classList.remove('fullscreen-mode');
+      });
+      
+      // 尝试解锁屏幕方向
+      try {
+        if (screen.orientation && 'unlock' in screen.orientation) {
+          (screen.orientation as any).unlock();
+        }
+      } catch (e) {
+        console.log('解锁屏幕方向失败:', e);
+      }
+    };
+  }, [isFullscreen]);
 
   // 监听全屏状态变化
   React.useEffect(() => {
