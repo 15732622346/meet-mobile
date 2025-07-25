@@ -210,7 +210,7 @@ export function FloatingVideoPanel({
                   style={{
                     width: '100%',
                     height: '100%',
-                    objectFit: isFullscreen ? 'cover' : 'contain'
+                    objectFit: 'contain'
                   }}
                 />
                 
@@ -220,7 +220,7 @@ export function FloatingVideoPanel({
                     .floating-video-panel.fullscreen-mode video {
                       width: 100vw !important;
                       height: 100vh !important;
-                      object-fit: cover !important;
+                      object-fit: contain !important;
                       position: absolute !important;
                       top: 0 !important;
                       left: 0 !important;
