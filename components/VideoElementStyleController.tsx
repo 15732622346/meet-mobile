@@ -22,6 +22,15 @@ import {
 export function VideoElementStyleController() {
   const participants = useParticipants();
   const [forceUpdate, setForceUpdate] = React.useState(0);
+  // 添加视频尺寸信息状态
+  const [videoInfo, setVideoInfo] = React.useState<{
+    containerType: string;
+    videoWidth: number;
+    videoHeight: number;
+    elementWidth: number;
+    elementHeight: number;
+  } | null>(null);
+  const [showInfo, setShowInfo] = React.useState(false);
 
   // 🔄 监听所有参与者的 attributesChanged 事件
   React.useEffect(() => {
@@ -97,6 +106,95 @@ export function VideoElementStyleController() {
     });
   }, [participants]);
 
+  // 🆕 添加视频尺寸信息功能（非阻塞方式）
+  React.useEffect(() => {
+    // 创建检查视频尺寸的函数
+    const checkVideoSizes = () => {
+      try {
+        // 查找所有video元素，不仅限于screen-share-wrapper内的
+        let videoElements = document.querySelectorAll('video');
+        
+        // 如果找不到任何video元素，显示提示
+        if (videoElements.length === 0) {
+          setVideoInfo({
+            containerType: '无视频',
+            videoWidth: 0,
+            videoHeight: 0,
+            elementWidth: 0,
+            elementHeight: 0
+          });
+          setShowInfo(true);
+          return;
+        }
+        
+        // 优先查找屏幕共享中的视频
+        const screenShareContainers = document.querySelectorAll('.screen-share-wrapper');
+        let selectedVideo: HTMLVideoElement | null = null;
+        
+        if (screenShareContainers.length > 0) {
+          // 获取第一个屏幕共享容器
+          const container = screenShareContainers[0];
+          // 找到容器内的视频元素
+          const containerVideos = container.querySelectorAll('video');
+          
+          if (containerVideos.length > 0) {
+            selectedVideo = containerVideos[0] as HTMLVideoElement;
+          }
+        }
+        
+        // 如果没有在屏幕共享中找到视频，使用页面上的第一个视频
+        if (!selectedVideo && videoElements.length > 0) {
+          selectedVideo = videoElements[0] as HTMLVideoElement;
+        }
+        
+        if (!selectedVideo) {
+          setVideoInfo({
+            containerType: '无法获取视频元素',
+            videoWidth: 0,
+            videoHeight: 0,
+            elementWidth: 0,
+            elementHeight: 0
+          });
+          setShowInfo(true);
+          return;
+        }
+        
+        // 收集视频尺寸信息
+        setVideoInfo({
+          // 视频流原始尺寸
+          videoWidth: selectedVideo.videoWidth || 0,
+          videoHeight: selectedVideo.videoHeight || 0,
+          // 视频元素显示尺寸
+          elementWidth: selectedVideo.clientWidth || 0,
+          elementHeight: selectedVideo.clientHeight || 0,
+          // 视频元素所在容器
+          containerType: selectedVideo.closest('.screen-share-wrapper') ? '屏幕共享' : '普通视频'
+        });
+        
+        setShowInfo(true);
+        
+        // 4秒后自动隐藏信息
+        setTimeout(() => {
+          setShowInfo(false);
+        }, 4000);
+        
+      } catch (error) {
+        console.error('检查视频尺寸时出错:', error);
+      }
+    };
+    
+    // 设置定时器，每5秒检查一次
+    const intervalId = setInterval(checkVideoSizes, 5000);
+    
+    // 初次运行
+    checkVideoSizes();
+    
+    // 清理函数
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, []);
+
   // 🔍 根据视频元素找到对应的参与者
   const findParticipantForVideoElement = (videoElement: HTMLVideoElement): Participant | null => {
     // 方法1: 检查 data-lk-local-participant 属性
@@ -142,8 +240,25 @@ export function VideoElementStyleController() {
     return () => clearInterval(interval);
   }, [updateVideoElementStyles]);
 
-  // 这个组件不渲染任何UI，只负责样式控制
-  return null;
+  // 渲染视频尺寸信息悬浮框
+  return showInfo && videoInfo ? (
+    <div style={{
+      position: 'fixed',
+      bottom: '70px',
+      right: '10px',
+      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      color: 'white',
+      padding: '8px 12px',
+      borderRadius: '8px',
+      fontSize: '12px',
+      zIndex: 10000,
+      boxShadow: '0 2px 5px rgba(0,0,0,0.3)'
+    }}>
+      <div><strong>{videoInfo.containerType}</strong></div>
+      <div>视频流：{videoInfo.videoWidth} × {videoInfo.videoHeight}</div>
+      <div>显示框：{videoInfo.elementWidth} × {videoInfo.elementHeight}</div>
+    </div>
+  ) : null;
 }
 
 // 🎨 CSS 样式注入组件

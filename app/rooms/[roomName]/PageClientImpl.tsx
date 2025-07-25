@@ -62,6 +62,8 @@ import { UserAuthForm } from './UserAuthForm';
 import { ErrorToast } from '../../../components/ErrorToast';
 import { API_CONFIG } from '@/lib/config';
 import toast, { Toaster } from 'react-hot-toast';
+// 添加VideoElementStyleController导入
+import { VideoElementStyleController } from '../../../components/VideoElementStyleController';
 
 // 创建统一的toast通知函数
 const showToast = (message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => {
@@ -760,6 +762,7 @@ function VideoConferenceComponent(props: {
     return (
       <div className="lk-room-container">
         <RoomContext.Provider value={room}>
+          <VideoElementStyleController />
           <SimpleMobileVideoConference
             userRole={userRole}
             userName={userName}

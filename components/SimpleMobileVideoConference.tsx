@@ -24,6 +24,8 @@ import { isHostOrAdmin, isCameraEnabled, shouldShowInMicList } from '../lib/toke
 import { getImagePath } from '../lib/image-path';
 import { setupViewportFix, enableBottomAlignment } from '../lib/viewport-debug';
 import { API_CONFIG } from '../lib/config';
+// 导入VideoElementStyleController组件
+import { VideoElementStyleController } from './VideoElementStyleController';
 // 移除DebugPanel导入
 
 // 默认最大麦位数量
@@ -1222,6 +1224,9 @@ React全屏状态: ${afterExitInfo.isFullscreen}
   // 在返回的JSX中，修改视频显示逻辑，使用浮动窗口
   return (
     <div className="mobile-video-conference">
+      {/* 添加VideoElementStyleController组件 */}
+      <VideoElementStyleController />
+      
       {/* 申请上麦按钮已移除 */}
       {/* 移除固定视频区域，改为使用浮动窗口 */}
       <div className="mobile-video-container">
