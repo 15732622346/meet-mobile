@@ -71,6 +71,9 @@ export function MobileVideoConference({
   // 添加视频显示状态
   const [displayState, setDisplayState] = React.useState<VideoDisplayState>(VideoDisplayState.NORMAL);
   
+  // 添加保存视频尺寸的状态
+  const [savedDimensions, setSavedDimensions] = React.useState<{width: string, height: string} | null>(null);
+  
   // 🎯 新增：房间详情信息管理
   const [roomDetails, setRoomDetails] = React.useState<{
     maxMicSlots: number;
@@ -258,14 +261,64 @@ export function MobileVideoConference({
   // 处理最小化视频区域
   const handleMinimizeVideo = React.useCallback(() => {
     console.log('最小化视频区域');
+    
+    // 保存当前视频尺寸
+    const videoContainer = hasScreenShare 
+      ? document.querySelector('.screen-share-wrapper')
+      : document.querySelector('.video-wrapper');
+    
+    if (videoContainer) {
+      // 优先保存容器尺寸
+      const containerWidth = videoContainer.clientWidth;
+      const containerHeight = videoContainer.clientHeight;
+      
+      // 也可以获取视频元素尺寸
+      const videoElement = videoContainer.querySelector('video');
+      const videoWidth = videoElement ? videoElement.offsetWidth : containerWidth;
+      const videoHeight = videoElement ? videoElement.offsetHeight : containerHeight;
+      
+      // 保存尺寸到状态
+      setSavedDimensions({
+        width: `${videoWidth}px`,
+        height: `${videoHeight}px`
+      });
+      
+      console.log(`已保存视频尺寸: ${videoWidth}×${videoHeight}px`);
+    }
+    
     setDisplayState(VideoDisplayState.MINIMIZED);
-  }, []);
+  }, [hasScreenShare]);
 
   // 处理恢复视频区域
   const handleRestoreVideo = React.useCallback(() => {
-    console.log('恢复视频区域');
+    console.log('恢复视频区域，应用保存的尺寸');
     setDisplayState(VideoDisplayState.NORMAL);
-  }, []);
+    
+    // 延迟执行，确保DOM已更新
+    setTimeout(() => {
+      const videoContainer = hasScreenShare 
+        ? document.querySelector('.screen-share-wrapper')
+        : document.querySelector('.video-wrapper');
+      
+      // 只有在已保存尺寸时应用
+      if (videoContainer && savedDimensions) {
+        // 应用到容器 - 添加类型转换
+        (videoContainer as HTMLElement).style.width = savedDimensions.width;
+        (videoContainer as HTMLElement).style.height = savedDimensions.height;
+        
+        // 应用到视频元素
+        const videoElement = videoContainer.querySelector('video');
+        if (videoElement) {
+          videoElement.style.width = savedDimensions.width;
+          videoElement.style.height = savedDimensions.height;
+          videoElement.style.objectFit = 'contain';
+          console.log(`已应用保存的尺寸: ${savedDimensions.width} × ${savedDimensions.height}`);
+        }
+      } else {
+        console.log('没有保存的尺寸或找不到视频容器');
+      }
+    }, 100);
+  }, [hasScreenShare, savedDimensions]);
   
   // 获取主视频轨道
   const mainVideoTrack = React.useMemo(() => {
@@ -1074,6 +1127,32 @@ export function MobileVideoConference({
     };
   }, []);
 
+  // 初始化时获取视频尺寸
+  React.useEffect(() => {
+    // 等待视频元素渲染完成
+    const timer = setTimeout(() => {
+      if (displayState === VideoDisplayState.NORMAL && !savedDimensions) {
+        const videoContainer = hasScreenShare 
+          ? document.querySelector('.screen-share-wrapper')
+          : document.querySelector('.video-wrapper');
+        
+        if (videoContainer) {
+          const videoElement = videoContainer.querySelector('video');
+          if (videoElement && videoElement.offsetWidth > 0) {
+            // 保存初始视频尺寸
+            setSavedDimensions({
+              width: `${videoElement.offsetWidth}px`,
+              height: `${videoElement.offsetHeight}px`
+            });
+            console.log(`初始化: 已保存视频初始尺寸: ${videoElement.offsetWidth}×${videoElement.offsetHeight}px`);
+          }
+        }
+      }
+    }, 2000); // 给足够时间让视频加载
+    
+    return () => clearTimeout(timer);
+  }, [displayState, savedDimensions, hasScreenShare]);
+  
   // 这里是重构后的渲染逻辑
   if (displayState === VideoDisplayState.MINIMIZED) {
     // 最小化状态 - 只显示一个恢复按钮
