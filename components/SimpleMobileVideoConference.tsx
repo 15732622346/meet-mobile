@@ -359,6 +359,19 @@ export function SimpleMobileVideoConference({
   // 添加标志变量，控制方向变化处理
   const [isExitingFullscreen, setIsExitingFullscreen] = React.useState<boolean>(false);
   
+  // 添加状态变量保存原始尺寸
+  const [originalContainerSize, setOriginalContainerSize] = React.useState<{
+    width: string;
+    height: string;
+    position: string;
+    display: string;
+  }>({
+    width: '',
+    height: '',
+    position: '',
+    display: ''
+  });
+  
   // 添加强制刷新视频样式的函数
   const forceRefreshVideoStyle = React.useCallback(() => {
     try {
@@ -690,6 +703,22 @@ export function SimpleMobileVideoConference({
         if (!isCurrentlyFullscreen) {
           console.log('请求进入全屏模式');
           
+          // 保存原始尺寸
+          const computedStyle = window.getComputedStyle(container);
+          setOriginalContainerSize({
+            width: computedStyle.width,
+            height: computedStyle.height,
+            position: computedStyle.position,
+            display: computedStyle.display
+          });
+          console.log(`保存原始尺寸详情:`, {
+            width: computedStyle.width,
+            height: computedStyle.height,
+            position: computedStyle.position,
+            display: computedStyle.display,
+            time: new Date().toLocaleTimeString()
+          });
+          
           // 1. 安卓设备：使用API锁定屏幕方向
           if (!isIOS && screen.orientation && 'lock' in screen.orientation) {
             // 安卓设备 - 先请求全屏，然后锁定横屏
@@ -961,9 +990,35 @@ body类名: ${beforeExitInfo.bodyClasses}
               // 处理屏幕共享包装器
               const screenShareWrapper = document.querySelector('.screen-share-wrapper');
               if (screenShareWrapper) {
-                (screenShareWrapper as HTMLElement).style.position = 'relative';
-                (screenShareWrapper as HTMLElement).style.width = '100%';
-                (screenShareWrapper as HTMLElement).style.height = '30vh'; // 恢复竖屏高度
+                                  // 优先应用之前保存的原始尺寸
+                  if (originalContainerSize.width && originalContainerSize.height) {
+                   console.log(`应用保存的原始尺寸详情:`, {
+                     width: originalContainerSize.width,
+                     height: originalContainerSize.height,
+                     position: originalContainerSize.position || 'relative',
+                     display: originalContainerSize.display || 'flex',
+                     time: new Date().toLocaleTimeString(),
+                     location: '第一阶段清除样式'
+                   });
+                   
+                   // 使用!important强制应用样式
+                   (screenShareWrapper as HTMLElement).style.cssText += `
+                     width: ${originalContainerSize.width} !important;
+                     height: ${originalContainerSize.height} !important;
+                     max-width: none !important;
+                     min-width: ${originalContainerSize.width} !important;
+                     max-height: none !important;
+                     min-height: ${originalContainerSize.height} !important;
+                     position: ${originalContainerSize.position || 'relative'} !important;
+                   `;
+                } else {
+                  // 使用默认尺寸作为回退方案
+                  (screenShareWrapper as HTMLElement).style.position = 'relative';
+                  (screenShareWrapper as HTMLElement).style.width = '100%';
+                  (screenShareWrapper as HTMLElement).style.height = '30vh'; // 恢复竖屏高度
+                }
+                
+                // 清除全屏相关样式
                 (screenShareWrapper as HTMLElement).style.transform = '';
                 (screenShareWrapper as HTMLElement).style.transformOrigin = '';
                 (screenShareWrapper as HTMLElement).style.top = '';
@@ -1012,52 +1067,75 @@ body类名: ${beforeExitInfo.bodyClasses}
             setTimeout(() => {
               console.log('清除CSS样式 - 阶段2');
               clearStyles();
-              window.scrollTo(0, 0);
               
-              // 第三阶段：延时500ms后再次清除，确保完全退出
-              setTimeout(() => {
-                console.log('清除CSS样式 - 阶段3');
-                clearStyles();
+              // 再次应用保存的原始尺寸
+              const screenShareWrapper = document.querySelector('.screen-share-wrapper');
+              if (screenShareWrapper && originalContainerSize.width && originalContainerSize.height) {
+                console.log(`再次应用保存的原始尺寸详情:`, {
+                  width: originalContainerSize.width,
+                  height: originalContainerSize.height,
+                  position: originalContainerSize.position || 'relative',
+                  display: originalContainerSize.display || 'flex',
+                  time: new Date().toLocaleTimeString(),
+                  location: '第二阶段延时处理'
+                });
                 
-                // 第四阶段：恢复事件监听
-                setTimeout(() => {
-                  console.log('恢复方向监听');
-                  window.addEventListener('orientationchange', handleOrientationChange);
-                  window.addEventListener('resize', handleOrientationChange);
-                  setIsExitingFullscreen(false);
-                  
-                  // 收集最终状态信息
-                  const screenShareWrapper = document.querySelector('.screen-share-wrapper');
-                  const videoElement = container.querySelector('video');
-                  const gridLayout = document.querySelector('.lk-grid-layout');
-                  
-                  const afterExitInfo = {
-                    viewport: `${window.innerWidth} × ${window.innerHeight}`,
-                    orientation: window.orientation !== undefined ? window.orientation : 'unknown',
-                    isFullscreen: isFullscreen,
-                    containerClasses: container ? container.className : 'unknown',
-                    deviceOrientation,
-                    bodyClasses: document.body.className,
-                    videoElement: videoElement ? {
-                      style: {
-                        width: videoElement.style.width,
-                        height: videoElement.style.height,
-                        transform: videoElement.style.transform,
-                        objectFit: videoElement.style.objectFit
-                      },
-                      orientation: videoElement.getAttribute('data-lk-orientation')
-                    } : 'none',
-                    screenShareWrapper: screenShareWrapper ? {
-                      style: {
-                        position: (screenShareWrapper as HTMLElement).style.position,
-                        width: (screenShareWrapper as HTMLElement).style.width,
-                        height: (screenShareWrapper as HTMLElement).style.height
-                      }
-                    } : 'none'
-                  };
-                  
-                  // 显示退出后的信息
-                  const alertMsg = `
+                // 使用!important强制应用样式
+                (screenShareWrapper as HTMLElement).style.cssText += `
+                  width: ${originalContainerSize.width} !important;
+                  height: ${originalContainerSize.height} !important;
+                  max-width: none !important;
+                  min-width: ${originalContainerSize.width} !important;
+                  max-height: none !important;
+                  min-height: ${originalContainerSize.height} !important;
+                  position: ${originalContainerSize.position || 'relative'} !important;
+                `;
+                
+                // 强制重绘
+                (screenShareWrapper as HTMLElement).style.display = 'none';
+                void (screenShareWrapper as HTMLElement).offsetHeight; // 触发重排
+                (screenShareWrapper as HTMLElement).style.display = originalContainerSize.display || 'flex';
+              }
+              
+              // 第四阶段：恢复事件监听
+              setTimeout(() => {
+                console.log('恢复方向监听');
+                window.addEventListener('orientationchange', handleOrientationChange);
+                window.addEventListener('resize', handleOrientationChange);
+                setIsExitingFullscreen(false);
+                
+                // 收集最终状态信息
+                const screenShareWrapper = document.querySelector('.screen-share-wrapper');
+                const videoElement = container.querySelector('video');
+                const gridLayout = document.querySelector('.lk-grid-layout');
+                
+                const afterExitInfo = {
+                  viewport: `${window.innerWidth} × ${window.innerHeight}`,
+                  orientation: window.orientation !== undefined ? window.orientation : 'unknown',
+                  isFullscreen: isFullscreen,
+                  containerClasses: container ? container.className : 'unknown',
+                  deviceOrientation,
+                  bodyClasses: document.body.className,
+                  videoElement: videoElement ? {
+                    style: {
+                      width: videoElement.style.width,
+                      height: videoElement.style.height,
+                      transform: videoElement.style.transform,
+                      objectFit: videoElement.style.objectFit
+                    },
+                    orientation: videoElement.getAttribute('data-lk-orientation')
+                  } : 'none',
+                  screenShareWrapper: screenShareWrapper ? {
+                    style: {
+                      position: (screenShareWrapper as HTMLElement).style.position,
+                      width: (screenShareWrapper as HTMLElement).style.width,
+                      height: (screenShareWrapper as HTMLElement).style.height
+                    }
+                  } : 'none'
+                };
+                
+                // 显示退出后的信息
+                const alertMsg = `
 【退出全屏后信息】
 视口尺寸: ${afterExitInfo.viewport}
 设备方向: ${afterExitInfo.orientation}度
@@ -1066,15 +1144,14 @@ React全屏状态: ${afterExitInfo.isFullscreen}
 方向状态: ${afterExitInfo.deviceOrientation}
 视频orientation: ${typeof afterExitInfo.videoElement === 'object' ? afterExitInfo.videoElement.orientation : 'none'}
 屏幕共享容器高度: ${typeof afterExitInfo.screenShareWrapper === 'object' ? afterExitInfo.screenShareWrapper.style.height : 'none'}
-                  `;
-                  
-                  // 移除alert调用
-                  console.log('【退出全屏后信息】', afterExitInfo);
-                  
-                }, 1000);
+                `;
                 
-              }, 500);
-            }, 200);
+                // 移除alert调用
+                console.log('【退出全屏后信息】', afterExitInfo);
+                
+              }, 1000);
+              
+            }, 500);
             
             // 尝试强制刷新视图结构
             if (typeof window !== 'undefined' && window.requestAnimationFrame) {
@@ -1082,6 +1159,33 @@ React全屏状态: ${afterExitInfo.isFullscreen}
                 window.dispatchEvent(new Event('resize'));
               });
             }
+            
+            // 最终强制应用原始尺寸，确保不被其他代码覆盖
+            setTimeout(() => {
+              const screenShareWrapper = document.querySelector('.screen-share-wrapper');
+              if (screenShareWrapper && originalContainerSize.width) {
+                // 使用!important强制应用样式
+                (screenShareWrapper as HTMLElement).style.cssText += `
+                  width: ${originalContainerSize.width} !important;
+                  height: ${originalContainerSize.height} !important;
+                  max-width: none !important;
+                  min-width: ${originalContainerSize.width} !important;
+                  max-height: none !important;
+                  min-height: ${originalContainerSize.height} !important;
+                  position: ${originalContainerSize.position || 'relative'} !important;
+                `;
+                
+                // 强制重排
+                void (screenShareWrapper as HTMLElement).offsetHeight;
+                
+                console.log('最终强制应用原始尺寸:', {
+                  width: originalContainerSize.width,
+                  height: originalContainerSize.height,
+                  time: new Date().toLocaleTimeString(),
+                  cssText: (screenShareWrapper as HTMLElement).style.cssText
+                });
+              }
+            }, 600); // 延迟600ms确保在其他所有处理后执行
           }
           
           // 调试信息收集已移除
@@ -1191,6 +1295,38 @@ React全屏状态: ${afterExitInfo.isFullscreen}
       
       if (!isDocumentFullscreen && isFullscreen) {
         setIsFullscreen(false);
+        
+        // 如果是屏幕共享并且有保存的尺寸，应用原始尺寸
+        setTimeout(() => {
+          if (screenTracks.length > 0 && originalContainerSize.width && originalContainerSize.height) {
+            const screenShareWrapper = document.querySelector('.screen-share-wrapper');
+            if (screenShareWrapper) {
+              console.log(`全屏事件处理中恢复尺寸详情:`, {
+                width: originalContainerSize.width,
+                height: originalContainerSize.height,
+                position: originalContainerSize.position || 'relative',
+                display: originalContainerSize.display || 'flex',
+                time: new Date().toLocaleTimeString(),
+                location: '全屏事件处理'
+              });
+              
+              // 使用!important强制应用样式
+              (screenShareWrapper as HTMLElement).style.cssText += `
+                width: ${originalContainerSize.width} !important;
+                height: ${originalContainerSize.height} !important;
+                max-width: none !important;
+                min-width: ${originalContainerSize.width} !important;
+                max-height: none !important;
+                min-height: ${originalContainerSize.height} !important;
+                position: ${originalContainerSize.position || 'relative'} !important;
+              `;
+              
+              // 强制重排
+              void (screenShareWrapper as HTMLElement).offsetHeight;
+            }
+          }
+        }, 300);
+        
         // 恢复屏幕方向
         try {
           if (screen.orientation && 'unlock' in screen.orientation) {
@@ -1220,7 +1356,7 @@ React全屏状态: ${afterExitInfo.isFullscreen}
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
       document.removeEventListener('msfullscreenchange', handleFullscreenChange);
     };
-  }, [isFullscreen]);
+  }, [isFullscreen, screenTracks, originalContainerSize]);
 
 
 
@@ -1228,7 +1364,7 @@ React全屏状态: ${afterExitInfo.isFullscreen}
   return (
     <div className="mobile-video-conference">
       {/* 添加VideoElementStyleController组件 */}
-      <VideoElementStyleController />
+      <VideoElementStyleController originalSize={originalContainerSize} />
       
       {/* 申请上麦按钮已移除 */}
       {/* 移除固定视频区域，改为使用浮动窗口 */}
