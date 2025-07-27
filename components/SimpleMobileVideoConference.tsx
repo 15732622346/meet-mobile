@@ -553,85 +553,88 @@ export function SimpleMobileVideoConference({
         // 检查是iOS横屏模式
         const isIOSLandscape = container.classList.contains('ios-landscape-mode');
         
-        // 处理iOS横屏模式特殊情况
-        if (isIOSLandscape) {
-          // 对于iOS横屏模式，我们需要考虑旋转后的尺寸
-          // 在iOS模式下，屏幕宽高需要对调
-          const actualScreenW = screenH; // 旋转后实际可用宽度是屏幕高度
-          const actualScreenH = screenW; // 旋转后实际可用高度是屏幕宽度
-          
-          console.log(`iOS横屏模式 - 旋转后可用空间: ${actualScreenW}×${actualScreenH}`);
-          
-          // 基于视频比例计算最佳尺寸
-          let optimalWidth, optimalHeight;
-          
-          if (videoRatio > actualScreenW / actualScreenH) {
-            // 视频更宽，以可用宽度为基准
-            optimalWidth = actualScreenW;
-            optimalHeight = actualScreenW / videoRatio;
-          } else {
-            // 视频更高，以可用高度为基准
-            optimalHeight = actualScreenH;
-            optimalWidth = actualScreenH * videoRatio;
-          }
-          
-          console.log(`计算的最佳尺寸: ${optimalWidth.toFixed(0)}×${optimalHeight.toFixed(0)}`);
-          
-          // 直接设置内联样式，优先级最高
-          videoElement.style.width = optimalWidth + 'px';
-          videoElement.style.height = optimalHeight + 'px';
-          videoElement.style.maxWidth = 'none';
-          videoElement.style.maxHeight = 'none';
-          videoElement.style.objectFit = 'contain'; // 使用contain保持比例，避免变形
-          videoElement.style.margin = '0';
-          videoElement.style.padding = '0';
-          
-          // 设置data属性以便CSS选择器识别和调试
-          videoElement.setAttribute('data-fullscreen-optimized', 'true');
-          videoElement.setAttribute('data-optimization-timestamp', new Date().toISOString());
-          videoElement.setAttribute('data-style-setter', 'applyVideoStyles-iOS-Simple');
-          videoElement.setAttribute('data-video-ratio', videoRatio.toFixed(2));
-          
-          // 调整网格布局容器
-          const gridLayout = container.querySelector('.lk-grid-layout');
-          if (gridLayout) {
-            // 将网格容器设置为足够大，容纳视频元素
-            (gridLayout as HTMLElement).style.width = optimalWidth + 'px';
-            (gridLayout as HTMLElement).style.height = optimalHeight + 'px';
-            (gridLayout as HTMLElement).style.maxWidth = 'none';
-            (gridLayout as HTMLElement).style.maxHeight = 'none';
-            (gridLayout as HTMLElement).style.minWidth = optimalWidth + 'px';
-            (gridLayout as HTMLElement).style.minHeight = optimalHeight + 'px';
-            (gridLayout as HTMLElement).style.display = 'flex';
-            (gridLayout as HTMLElement).style.alignItems = 'center';
-            (gridLayout as HTMLElement).style.justifyContent = 'center';
-            (gridLayout as HTMLElement).style.margin = '0';
-            (gridLayout as HTMLElement).style.padding = '0';
-          }
+        // iOS横屏模式和常规模式使用相同的计算逻辑
+        // window.innerWidth 和 window.innerHeight 已经反映了当前实际的视口尺寸
+        const screenRatio = screenW / screenH;
+        console.log(`屏幕比例: ${screenRatio.toFixed(2)}, 视频比例: ${videoRatio.toFixed(2)}`);
+        
+        let optimalWidth, optimalHeight;
+        
+        if (videoRatio > screenRatio) {
+          // 视频比例大于屏幕比例（视频较宽），以宽度为基准
+          optimalWidth = screenW;
+          optimalHeight = screenW / videoRatio;
+          console.log(`视频较宽，以宽度顶满: ${optimalWidth.toFixed(0)}×${optimalHeight.toFixed(0)}`);
         } else {
-          // 非iOS横屏模式，正常计算
-          if (videoRatio > screenW / screenH) {
-            // 视频更宽，以宽度为基准
-            videoElement.style.width = screenW + 'px';
-            videoElement.style.height = (screenW / videoRatio) + 'px';
-          } else {
-            // 视频更高，以高度为基准
-            videoElement.style.height = screenH + 'px';
-            videoElement.style.width = (screenH * videoRatio) + 'px';
-          }
-          videoElement.style.maxWidth = 'none';
-          videoElement.style.maxHeight = 'none';
-          
-          // 添加调试标记
-          videoElement.setAttribute('data-fullscreen-optimized', 'true');
-          videoElement.setAttribute('data-optimization-timestamp', new Date().toISOString());
-          videoElement.setAttribute('data-style-setter', 'applyVideoStyles-Standard-Simple');
-          videoElement.setAttribute('data-video-ratio', videoRatio.toFixed(2));
+          // 视频比例小于屏幕比例（视频较窄），以高度为基准
+          optimalHeight = screenH;
+          optimalWidth = screenH * videoRatio;
+          console.log(`视频较窄，以高度顶满: ${optimalWidth.toFixed(0)}×${optimalHeight.toFixed(0)}`);
         }
         
-        // 移除调试面板触发代码
-        if (videoElement instanceof HTMLVideoElement) {
-          videoElement.setAttribute('data-video-ratio', videoRatio.toFixed(2));
+        // 设置视频元素样式
+        videoElement.style.width = optimalWidth + 'px';
+        videoElement.style.height = optimalHeight + 'px';
+        videoElement.style.maxWidth = 'none';
+        videoElement.style.maxHeight = 'none';
+        videoElement.style.objectFit = 'contain'; // 使用contain保持比例
+        videoElement.style.margin = '0';
+        videoElement.style.padding = '0';
+        
+        // 设置调试属性
+        videoElement.setAttribute('data-fullscreen-optimized', 'true');
+        videoElement.setAttribute('data-optimization-timestamp', new Date().toISOString());
+        videoElement.setAttribute('data-style-setter', isIOSLandscape ? 'applyVideoStyles-iOS-Simple-Fixed' : 'applyVideoStyles-Standard-Simple');
+        videoElement.setAttribute('data-video-ratio', videoRatio.toFixed(2));
+        
+        // 调整网格布局容器
+        const gridLayout = container.querySelector('.lk-grid-layout');
+        if (gridLayout) {
+          (gridLayout as HTMLElement).style.width = optimalWidth + 'px';
+          (gridLayout as HTMLElement).style.height = optimalHeight + 'px';
+          (gridLayout as HTMLElement).style.maxWidth = 'none';
+          (gridLayout as HTMLElement).style.maxHeight = 'none';
+          (gridLayout as HTMLElement).style.display = 'flex';
+          (gridLayout as HTMLElement).style.alignItems = 'center';
+          (gridLayout as HTMLElement).style.justifyContent = 'center';
+          (gridLayout as HTMLElement).style.margin = '0';
+          (gridLayout as HTMLElement).style.padding = '0';
+        }
+        
+        
+      } else {
+        // 退出全屏模式时，清除所有内联样式，让CSS接管
+        console.log('清除全屏视频样式，恢复正常显示');
+        
+        // 清除视频元素的内联样式
+        videoElement.style.width = '';
+        videoElement.style.height = '';
+        videoElement.style.maxWidth = '';
+        videoElement.style.maxHeight = '';
+        videoElement.style.objectFit = '';
+        videoElement.style.margin = '';
+        videoElement.style.padding = '';
+        
+        // 清除调试属性
+        videoElement.removeAttribute('data-fullscreen-optimized');
+        videoElement.removeAttribute('data-optimization-timestamp');
+        videoElement.removeAttribute('data-style-setter');
+        videoElement.removeAttribute('data-video-ratio');
+        
+        // 清除网格布局容器的内联样式
+        const gridLayout = container.querySelector('.lk-grid-layout');
+        if (gridLayout) {
+          (gridLayout as HTMLElement).style.width = '';
+          (gridLayout as HTMLElement).style.height = '';
+          (gridLayout as HTMLElement).style.maxWidth = '';
+          (gridLayout as HTMLElement).style.maxHeight = '';
+          (gridLayout as HTMLElement).style.minWidth = '';
+          (gridLayout as HTMLElement).style.minHeight = '';
+          (gridLayout as HTMLElement).style.display = '';
+          (gridLayout as HTMLElement).style.alignItems = '';
+          (gridLayout as HTMLElement).style.justifyContent = '';
+          (gridLayout as HTMLElement).style.margin = '';
+          (gridLayout as HTMLElement).style.padding = '';
         }
       }
     } catch (error) {
