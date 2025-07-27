@@ -28,14 +28,14 @@ body.keyboard-open [data-fixed-bottom] {
 /* 确保视频区域在键盘弹出时不被过分挤压 */
 body.keyboard-open .video-grid-container,
 body.keyboard-open .screen-share-wrapper {
-  max-height: 40vh;
+  max-height: calc(var(--vh, 1vh) * 40);
   overflow: hidden;
   transition: max-height 0.3s ease;
 }
 
 /* 确保聊天区域在键盘弹出时可滚动 */
 body.keyboard-open .mobile-chat-messages {
-  max-height: calc(60vh - 60px); /* 减去输入框的高度 */
+  max-height: calc(calc(var(--vh, 1vh) * 60) - 60px); /* 减去输入框的高度 */
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -67,11 +67,11 @@ body.keyboard-open .mobile-chat-messages {
 @media screen and (max-height: 480px) {
   body.keyboard-open .video-grid-container,
   body.keyboard-open .screen-share-wrapper {
-    max-height: 30vh;
+    max-height: calc(var(--vh, 1vh) * 30);
   }
   
   body.keyboard-open .mobile-chat-messages {
-    max-height: calc(70vh - 60px);
+    max-height: calc(calc(var(--vh, 1vh) * 70) - 60px);
   }
 }
 
