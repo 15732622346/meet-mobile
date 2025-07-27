@@ -794,8 +794,11 @@ export function SimpleMobileVideoConference({
               (container as HTMLElement).style.position = 'fixed';
               (container as HTMLElement).style.top = '0';
               (container as HTMLElement).style.left = '0';
-              (container as HTMLElement).style.width = '100vh';
-              (container as HTMLElement).style.height = '100vw';
+              // 使用安全的视口尺寸 - 回退到直接获取CSS变量
+              const actualVh = getComputedStyle(document.documentElement).getPropertyValue('--actual-vh') || `${window.innerHeight}px`;
+              const actualVw = getComputedStyle(document.documentElement).getPropertyValue('--actual-vw') || `${window.innerWidth}px`;
+              (container as HTMLElement).style.width = actualVh;
+              (container as HTMLElement).style.height = actualVw;
               (container as HTMLElement).style.transformOrigin = 'left top';
               (container as HTMLElement).style.transform = 'rotate(-90deg) translateX(-100%)';
               (container as HTMLElement).style.zIndex = '99999'; // 最高层级

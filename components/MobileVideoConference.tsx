@@ -675,7 +675,17 @@ export function MobileVideoConference({
             }
           }
         } else {
-          // iOS设备 - 添加body类以便应用CSS
+          // iOS设备 - 设置正确的视口尺寸并添加body类
+          const visualViewport = (window as any).visualViewport;
+          const actualVH = visualViewport ? visualViewport.height : window.innerHeight;
+          const actualVW = visualViewport ? visualViewport.width : window.innerWidth;
+          
+          // 设置CSS变量，确保使用实际视口尺寸而不是包含浏览器UI的100vh/100vw
+          document.documentElement.style.setProperty('--actual-vh', `${actualVH}px`);
+          document.documentElement.style.setProperty('--actual-vw', `${actualVW}px`);
+          
+          console.log(`🔧 iOS全屏尺寸设置: 宽度=${actualVH}px, 高度=${actualVW}px`);
+          
           document.body.classList.add('ios-landscape-active');
         }
         
@@ -704,8 +714,10 @@ export function MobileVideoConference({
           }
         }
         
-        // iOS设备 - 移除body类
+        // iOS设备 - 移除body类并清理CSS变量
         document.body.classList.remove('ios-landscape-active');
+        document.documentElement.style.removeProperty('--actual-vh');
+        document.documentElement.style.removeProperty('--actual-vw');
       }
       
       // 触发重新渲染
@@ -1089,8 +1101,8 @@ export function MobileVideoConference({
             background-color: transparent;
             pointer-events: none;
             z-index: 1000;
-            height: 100vh;
-            width: 100vw;
+            height: var(--actual-vh, calc(var(--vh, 1vh) * 100));
+            width: var(--actual-vw, 100vw);
           }
           
           .restore-video-button {
@@ -1774,13 +1786,13 @@ export function MobileVideoConference({
       <style jsx>{`
         // ... existing styles ...
         
-        /* iOS横屏模式的额外样式 */
+        /* iOS横屏模式的额外样式 - 使用CSS变量动态设置尺寸 */
         :global(.ios-landscape-mode) {
           position: fixed !important;
           top: 0 !important;
           left: 0 !important;
-          width: 100vh !important; /* 使用视口高度作为宽度 */
-          height: 100vw !important; /* 使用视口宽度作为高度 */
+          width: var(--actual-vh, calc(var(--vh, 1vh) * 100)) !important; /* 使用实际视口高度作为宽度 */
+          height: var(--actual-vw, 100vw) !important; /* 使用实际视口宽度作为高度 */
           transform-origin: left top !important;
           transform: rotate(-90deg) translateX(-100%) !important;
           z-index: 99999 !important; /* 提高z-index确保最顶层显示 */

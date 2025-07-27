@@ -257,6 +257,63 @@ export function VideoElementStyleController() {
       <div><strong>{videoInfo.containerType}</strong></div>
       <div>视频流：{videoInfo.videoWidth} × {videoInfo.videoHeight}</div>
       <div>显示框：{videoInfo.elementWidth} × {videoInfo.elementHeight}</div>
+      
+      {/* 新增：100vh和100vw的实际像素值 */}
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.3)', marginTop: '5px', paddingTop: '5px' }}>
+        <div><strong>CSS单位实际值</strong></div>
+        <div>100vh: {(() => {
+          try {
+            // 创建临时元素测量100vh
+            const tempDiv = document.createElement('div');
+            tempDiv.style.position = 'absolute';
+            tempDiv.style.visibility = 'hidden';
+            tempDiv.style.height = '100vh';
+            tempDiv.style.width = '1px';
+            tempDiv.style.top = '-9999px';
+            document.body.appendChild(tempDiv);
+            const vhValue = tempDiv.offsetHeight;
+            document.body.removeChild(tempDiv);
+            return `${vhValue}px`;
+          } catch (e) {
+            return 'error';
+          }
+        })()}</div>
+        <div>100vw: {(() => {
+          try {
+            // 创建临时元素测量100vw
+            const tempDiv = document.createElement('div');
+            tempDiv.style.position = 'absolute';
+            tempDiv.style.visibility = 'hidden';
+            tempDiv.style.width = '100vw';
+            tempDiv.style.height = '1px';
+            tempDiv.style.top = '-9999px';
+            document.body.appendChild(tempDiv);
+            const vwValue = tempDiv.offsetWidth;
+            document.body.removeChild(tempDiv);
+            return `${vwValue}px`;
+          } catch (e) {
+            return 'error';
+          }
+        })()}</div>
+        <div>--actual-vh: {(() => {
+          const actualVH = getComputedStyle(document.documentElement).getPropertyValue('--actual-vh');
+          return actualVH || 'not set';
+        })()}</div>
+        <div>--actual-vw: {(() => {
+          const actualVW = getComputedStyle(document.documentElement).getPropertyValue('--actual-vw');
+          return actualVW || 'not set';
+        })()}</div>
+      </div>
+      
+      {/* 当前视口信息 */}
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.3)', marginTop: '5px', paddingTop: '5px' }}>
+        <div><strong>当前视口</strong></div>
+        <div>window.inner: {window.innerWidth} × {window.innerHeight}</div>
+        <div>visualViewport: {(() => {
+          const visualViewport = (window as any).visualViewport;
+          return visualViewport ? `${visualViewport.width} × ${visualViewport.height}` : '不支持';
+        })()}</div>
+      </div>
     </div>
   ) : null;
 }
