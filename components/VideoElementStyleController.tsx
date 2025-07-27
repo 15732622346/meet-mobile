@@ -10,6 +10,14 @@ import {
   isMuted 
 } from '../lib/token-utils';
 
+// 定义originalSize接口
+interface OriginalSizeProps {
+  width: string;
+  height: string;
+  position: string;
+  display: string;
+}
+
 /**
  * VideoElementStyleController - 专门控制 lk-participant-media-video 元素样式的组件
  * 
@@ -19,7 +27,9 @@ import {
  * 3. 🔄 实时更新视频框边框和效果
  * 4. 📱 不影响其他功能，只控制视频元素样式
  */
-export function VideoElementStyleController() {
+export function VideoElementStyleController(
+  { originalSize }: { originalSize?: OriginalSizeProps }
+) {
   const participants = useParticipants();
   const [forceUpdate, setForceUpdate] = React.useState(0);
   // 添加视频尺寸信息状态
@@ -123,7 +133,8 @@ export function VideoElementStyleController() {
             elementWidth: 0,
             elementHeight: 0
           });
-          setShowInfo(true);
+          // 如果有原始尺寸信息，依然显示调试框
+          setShowInfo(!!originalSize?.width || true);
           return;
         }
         
@@ -155,7 +166,8 @@ export function VideoElementStyleController() {
             elementWidth: 0,
             elementHeight: 0
           });
-          setShowInfo(true);
+          // 如果有原始尺寸信息，依然显示调试框
+          setShowInfo(!!originalSize?.width || true);
           return;
         }
         
@@ -171,13 +183,15 @@ export function VideoElementStyleController() {
           containerType: selectedVideo.closest('.screen-share-wrapper') ? '屏幕共享' : '普通视频'
         });
         
-        setShowInfo(true);
+        // 如果有原始尺寸信息，一直显示调试框
+        setShowInfo(!!originalSize?.width || true);
         
-        // 4秒后自动隐藏信息
-        setTimeout(() => {
-          setShowInfo(false);
-        }, 4000);
-        
+        // 如果有原始尺寸信息，不自动隐藏；否则4秒后自动隐藏
+        if (!originalSize?.width) {
+          setTimeout(() => {
+            setShowInfo(false);
+          }, 4000);
+        }
       } catch (error) {
         console.error('检查视频尺寸时出错:', error);
       }
@@ -193,7 +207,7 @@ export function VideoElementStyleController() {
     return () => {
       clearInterval(intervalId);
     };
-  }, []);
+  }, [originalSize]);
 
   // 🔍 根据视频元素找到对应的参与者
   const findParticipantForVideoElement = (videoElement: HTMLVideoElement): Participant | null => {
@@ -314,6 +328,15 @@ export function VideoElementStyleController() {
           return visualViewport ? `${visualViewport.width} × ${visualViewport.height}` : '不支持';
         })()}</div>
       </div>
+      
+      {/* 保存的原始尺寸信息 */}
+      {originalSize && originalSize.width && (
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.3)', marginTop: '5px', paddingTop: '5px' }}>
+          <div><strong>保存的原始尺寸</strong></div>
+          <div>宽度：{originalSize.width}</div>
+          <div>高度：{originalSize.height}</div>
+        </div>
+      )}
     </div>
   ) : null;
 }
