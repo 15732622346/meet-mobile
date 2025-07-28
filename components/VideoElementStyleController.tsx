@@ -254,91 +254,92 @@ export function VideoElementStyleController(
     return () => clearInterval(interval);
   }, [updateVideoElementStyles]);
 
-  // 渲染视频尺寸信息悬浮框
-  return showInfo && videoInfo ? (
-    <div style={{
-      position: 'fixed',
-      bottom: '70px',
-      right: '10px',
-      backgroundColor: 'rgba(0, 0, 0, 0.7)',
-      color: 'white',
-      padding: '8px 12px',
-      borderRadius: '8px',
-      fontSize: '12px',
-      zIndex: 10000,
-      boxShadow: '0 2px 5px rgba(0,0,0,0.3)'
-    }}>
-      <div><strong>{videoInfo.containerType}</strong></div>
-      <div>视频流：{videoInfo.videoWidth} × {videoInfo.videoHeight}</div>
-      <div>显示框：{videoInfo.elementWidth} × {videoInfo.elementHeight}</div>
-      
-      {/* 新增：100vh和100vw的实际像素值 */}
-      <div style={{ borderTop: '1px solid rgba(255,255,255,0.3)', marginTop: '5px', paddingTop: '5px' }}>
-        <div><strong>CSS单位实际值</strong></div>
-        <div>100vh: {(() => {
-          try {
-            // 创建临时元素测量100vh
-            const tempDiv = document.createElement('div');
-            tempDiv.style.position = 'absolute';
-            tempDiv.style.visibility = 'hidden';
-            tempDiv.style.height = '100vh';
-            tempDiv.style.width = '1px';
-            tempDiv.style.top = '-9999px';
-            document.body.appendChild(tempDiv);
-            const vhValue = tempDiv.offsetHeight;
-            document.body.removeChild(tempDiv);
-            return `${vhValue}px`;
-          } catch (e) {
-            return 'error';
-          }
-        })()}</div>
-        <div>100vw: {(() => {
-          try {
-            // 创建临时元素测量100vw
-            const tempDiv = document.createElement('div');
-            tempDiv.style.position = 'absolute';
-            tempDiv.style.visibility = 'hidden';
-            tempDiv.style.width = '100vw';
-            tempDiv.style.height = '1px';
-            tempDiv.style.top = '-9999px';
-            document.body.appendChild(tempDiv);
-            const vwValue = tempDiv.offsetWidth;
-            document.body.removeChild(tempDiv);
-            return `${vwValue}px`;
-          } catch (e) {
-            return 'error';
-          }
-        })()}</div>
-        <div>--actual-vh: {(() => {
-          const actualVH = getComputedStyle(document.documentElement).getPropertyValue('--actual-vh');
-          return actualVH || 'not set';
-        })()}</div>
-        <div>--actual-vw: {(() => {
-          const actualVW = getComputedStyle(document.documentElement).getPropertyValue('--actual-vw');
-          return actualVW || 'not set';
-        })()}</div>
-      </div>
-      
-      {/* 当前视口信息 */}
-      <div style={{ borderTop: '1px solid rgba(255,255,255,0.3)', marginTop: '5px', paddingTop: '5px' }}>
-        <div><strong>当前视口</strong></div>
-        <div>window.inner: {window.innerWidth} × {window.innerHeight}</div>
-        <div>visualViewport: {(() => {
-          const visualViewport = (window as any).visualViewport;
-          return visualViewport ? `${visualViewport.width} × ${visualViewport.height}` : '不支持';
-        })()}</div>
-      </div>
-      
-      {/* 保存的原始尺寸信息 */}
-      {originalSize && originalSize.width && (
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.3)', marginTop: '5px', paddingTop: '5px' }}>
-          <div><strong>保存的原始尺寸</strong></div>
-          <div>宽度：{originalSize.width}</div>
-          <div>高度：{originalSize.height}</div>
-        </div>
-      )}
-    </div>
-  ) : null;
+  // 渲染视频尺寸信息悬浮框 - 已注释，需要时可取消注释
+  return null;
+  // return showInfo && videoInfo ? (
+  //   <div style={{
+  //     position: 'fixed',
+  //     bottom: '70px',
+  //     right: '10px',
+  //     backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  //     color: 'white',
+  //     padding: '8px 12px',
+  //     borderRadius: '8px',
+  //     fontSize: '12px',
+  //     zIndex: 10000,
+  //     boxShadow: '0 2px 5px rgba(0,0,0,0.3)'
+  //   }}>
+  //     <div><strong>{videoInfo.containerType}</strong></div>
+  //     <div>视频流：{videoInfo.videoWidth} × {videoInfo.videoHeight}</div>
+  //     <div>显示框：{videoInfo.elementWidth} × {videoInfo.elementHeight}</div>
+  //     
+  //     {/* 新增：100vh和100vw的实际像素值 */}
+  //     <div style={{ borderTop: '1px solid rgba(255,255,255,0.3)', marginTop: '5px', paddingTop: '5px' }}>
+  //       <div><strong>CSS单位实际值</strong></div>
+  //       <div>100vh: {(() => {
+  //         try {
+  //           // 创建临时元素测量100vh
+  //           const tempDiv = document.createElement('div');
+  //           tempDiv.style.position = 'absolute';
+  //           tempDiv.style.visibility = 'hidden';
+  //           tempDiv.style.height = '100vh';
+  //           tempDiv.style.width = '1px';
+  //           tempDiv.style.top = '-9999px';
+  //           document.body.appendChild(tempDiv);
+  //           const vhValue = tempDiv.offsetHeight;
+  //           document.body.removeChild(tempDiv);
+  //           return `${vhValue}px`;
+  //         } catch (e) {
+  //           return 'error';
+  //         }
+  //       })()}</div>
+  //       <div>100vw: {(() => {
+  //         try {
+  //           // 创建临时元素测量100vw
+  //           const tempDiv = document.createElement('div');
+  //           tempDiv.style.position = 'absolute';
+  //           tempDiv.style.visibility = 'hidden';
+  //           tempDiv.style.width = '100vw';
+  //           tempDiv.style.height = '1px';
+  //           tempDiv.style.top = '-9999px';
+  //           document.body.appendChild(tempDiv);
+  //           const vwValue = tempDiv.offsetWidth;
+  //           document.body.removeChild(tempDiv);
+  //           return `${vwValue}px`;
+  //         } catch (e) {
+  //           return 'error';
+  //         }
+  //       })()}</div>
+  //       <div>--actual-vh: {(() => {
+  //         const actualVH = getComputedStyle(document.documentElement).getPropertyValue('--actual-vh');
+  //         return actualVH || 'not set';
+  //       })()}</div>
+  //       <div>--actual-vw: {(() => {
+  //         const actualVW = getComputedStyle(document.documentElement).getPropertyValue('--actual-vw');
+  //         return actualVW || 'not set';
+  //       })()}</div>
+  //     </div>
+  //     
+  //     {/* 当前视口信息 */}
+  //     <div style={{ borderTop: '1px solid rgba(255,255,255,0.3)', marginTop: '5px', paddingTop: '5px' }}>
+  //       <div><strong>当前视口</strong></div>
+  //       <div>window.inner: {window.innerWidth} × {window.innerHeight}</div>
+  //       <div>visualViewport: {(() => {
+  //         const visualViewport = (window as any).visualViewport;
+  //         return visualViewport ? `${visualViewport.width} × ${visualViewport.height}` : '不支持';
+  //       })()}</div>
+  //     </div>
+  //     
+  //     {/* 保存的原始尺寸信息 */}
+  //     {originalSize && originalSize.width && (
+  //       <div style={{ borderTop: '1px solid rgba(255,255,255,0.3)', marginTop: '5px', paddingTop: '5px' }}>
+  //         <div><strong>保存的原始尺寸</strong></div>
+  //         <div>宽度：{originalSize.width}</div>
+  //         <div>高度：{originalSize.height}</div>
+  //       </div>
+  //     )}
+  //   </div>
+  // ) : null;
 }
 
 // 🎨 CSS 样式注入组件
@@ -491,31 +492,34 @@ export function VideoElementDebugInfo() {
     return () => clearInterval(interval);
   }, []);
   
+  // 调试信息组件 - 已注释，需要时可取消注释
+  return null;
+  
   // 在所有环境中都显示调试信息
   // if (process.env.NODE_ENV !== 'development') {
   //   return null;
   // }
-  
-  return (
-    <div style={{
-      position: 'fixed',
-      top: '10px',
-      right: '10px',
-      background: 'rgba(0, 0, 0, 0.8)',
-      color: 'white',
-      padding: '10px',
-      borderRadius: '5px',
-      fontSize: '12px',
-      fontFamily: 'monospace',
-      whiteSpace: 'pre-wrap',
-      maxWidth: '300px',
-      maxHeight: '400px',
-      overflow: 'auto',
-      zIndex: 9999
-    }}>
-      <strong>🎥 视频元素调试信息</strong>
-      <br />
-      {debugInfo}
-    </div>
-  );
+  // 
+  // return (
+  //   <div style={{
+  //     position: 'fixed',
+  //     top: '10px',
+  //     right: '10px',
+  //     background: 'rgba(0, 0, 0, 0.8)',
+  //     color: 'white',
+  //     padding: '10px',
+  //     borderRadius: '5px',
+  //     fontSize: '12px',
+  //     fontFamily: 'monospace',
+  //     whiteSpace: 'pre-wrap',
+  //     maxWidth: '300px',
+  //     maxHeight: '400px',
+  //     overflow: 'auto',
+  //     zIndex: 9999
+  //   }}>
+  //     <strong>🎥 视频元素调试信息</strong>
+  //     <br />
+  //     {debugInfo}
+  //   </div>
+  // );
 } 
