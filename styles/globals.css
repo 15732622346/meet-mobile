@@ -232,6 +232,20 @@ div[class*="title"] + span:contains('0'),
 }
 
 /* 移动端屏幕共享样式优化 */
+.screen-share-wrapper {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  background-color: #000 !important;
+  position: relative !important;
+  overflow: hidden !important;
+  /* 确保在键盘弹出时不被其他样式干扰 */
+  min-height: 100% !important;
+  box-sizing: border-box !important;
+}
+
 .screen-share-wrapper .lk-grid-layout {
   width: 100% !important;
   height: 100% !important;
@@ -253,6 +267,36 @@ div[class*="title"] + span:contains('0'),
   height: 100% !important;
   object-fit: contain !important;
   background-color: black;
+}
+
+/* 移动端普通视频区域样式 - 与屏幕共享保持相同优先级 */
+.video-wrapper {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  background-color: #000 !important;
+  position: relative !important;
+  overflow: hidden !important;
+  /* 确保在键盘弹出时不被其他样式干扰 */
+  min-height: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* 移动端空白视频区域样式 - 与屏幕共享保持相同优先级 */
+.empty-video-area {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  background-color: #222 !important;
+  position: relative !important;
+  overflow: hidden !important;
+  /* 确保在键盘弹出时不被其他样式干扰 */
+  min-height: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .screen-share-wrapper.fullscreen-mode .lk-grid-layout,

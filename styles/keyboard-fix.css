@@ -27,7 +27,9 @@ body.keyboard-open [data-fixed-bottom] {
 
 /* 确保视频区域在键盘弹出时不被过分挤压 */
 body.keyboard-open .video-grid-container,
-body.keyboard-open .screen-share-wrapper {
+body.keyboard-open .screen-share-wrapper,
+body.keyboard-open .video-wrapper,
+body.keyboard-open .empty-video-area {
   max-height: calc(var(--vh, 1vh) * 40);
   overflow: hidden;
   transition: max-height 0.3s ease;
@@ -66,7 +68,9 @@ body.keyboard-open .mobile-chat-messages {
 /* 适配不同设备屏幕尺寸 */
 @media screen and (max-height: 480px) {
   body.keyboard-open .video-grid-container,
-  body.keyboard-open .screen-share-wrapper {
+  body.keyboard-open .screen-share-wrapper,
+  body.keyboard-open .video-wrapper,
+  body.keyboard-open .empty-video-area {
     max-height: calc(var(--vh, 1vh) * 30);
   }
   
@@ -85,10 +89,21 @@ textarea:focus,
 }
 
 /* 添加过渡效果使布局变化更平滑 */
-.mobile-video-conference,
+.mobile-video-conference {
+  /* 只对高度和max-height做过渡，避免其他属性变化时的异常效果 */
+  transition: height 0.3s ease, max-height 0.3s ease;
+}
+
 .video-grid-container,
 .mobile-chat-messages,
 .chat-input-container,
 .mobile-footer {
   transition: all 0.3s ease;
+}
+
+/* 视频容器状态切换时避免过渡效果 */
+.screen-share-wrapper,
+.video-wrapper,
+.empty-video-area {
+  transition: none !important;
 } 

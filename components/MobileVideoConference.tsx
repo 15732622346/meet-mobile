@@ -429,6 +429,28 @@ export function MobileVideoConference({
     return true;
   }, [mainVideoTrack]);
 
+  // 添加状态切换的防抖，避免快速切换时的闪烁
+  const [stableVideoState, setStableVideoState] = React.useState({
+    shouldShow: shouldShowVideoFrame,
+    hasScreen: hasScreenShare,
+    trackId: mainVideoTrack?.participant?.identity
+  });
+
+  React.useEffect(() => {
+    const newState = {
+      shouldShow: shouldShowVideoFrame,
+      hasScreen: hasScreenShare,
+      trackId: mainVideoTrack?.participant?.identity
+    };
+    
+    // 使用短暂延迟来避免状态快速切换时的闪烁
+    const timer = setTimeout(() => {
+      setStableVideoState(newState);
+    }, 50);
+    
+    return () => clearTimeout(timer);
+  }, [shouldShowVideoFrame, hasScreenShare, mainVideoTrack?.participant?.identity]);
+
   // 调试面板状态已移除
   // const [debugPanelVisible, setDebugPanelVisible] = React.useState(false);
   // const [debugData, setDebugData] = React.useState<Record<string, any>>({});
@@ -1154,13 +1176,13 @@ export function MobileVideoConference({
     <div className="mobile-video-conference">
       {/* 申请上麦按钮已移除 */}
       <div className="mobile-main-video">
-        {!shouldShowVideoFrame ? (
+        {!stableVideoState.shouldShow ? (
           // 主持人已进入但没有视频可显示 - 与PC端保持一致，不显示任何内容
           <div className="empty-video-area"></div>
         ) : (
           // 主持人已进入且有视频可显示
           <div className="mobile-video-container">
-            {hasScreenShare && screenTracks.length > 0 ? (
+            {stableVideoState.hasScreen && screenTracks.length > 0 ? (
               <div className={`screen-share-wrapper ${isFullscreen ? 'fullscreen-mode' : ''} ${isIOS && isFullscreen ? 'ios-landscape-mode' : ''} ${deviceOrientation === 'landscape' && isFullscreen ? 'device-landscape' : ''}`}>
                 {/* 使用LiveKit标准组件并添加key强制重新渲染 */}
                 <GridLayout 
