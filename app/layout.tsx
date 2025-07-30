@@ -17,7 +17,8 @@ export default function RootLayout({
   useEffect(() => {
     // 解决输入法键盘弹出再收起后可能出现的各种问题
     if (typeof window !== 'undefined') {
-      setupKeyboardFix();
+      const cleanup = setupKeyboardFix();
+      return cleanup;
     }
   }, []);
 
