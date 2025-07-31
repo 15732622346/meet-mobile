@@ -1494,8 +1494,8 @@ export function MobileVideoConference({
         }
         
         .fullscreen-toggle-btn img {
-          width: 14px;
-          height: 14px;
+          width: 19px;
+          height: 19px;
         }
         
         /* 最小化按钮样式 */

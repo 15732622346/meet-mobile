@@ -1586,8 +1586,8 @@ React全屏状态: ${afterExitInfo.isFullscreen}
         }
         
         .fullscreen-toggle-btn img {
-          width: 14px;
-          height: 14px;
+          width: 19px;
+          height: 19px;
         }
         
         /* 添加占位内容样式 */
