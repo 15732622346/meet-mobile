@@ -1490,7 +1490,7 @@ export function MobileVideoConference({
         /* 全屏状态下的按钮位置 */
         .fullscreen-mode .fullscreen-toggle-btn {
           bottom: 15px;
-          right: 15px;
+          right:  15px;
         }
         
         .fullscreen-toggle-btn img {
