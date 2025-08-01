@@ -5,6 +5,7 @@ import '../styles/globals.css';
 import '@livekit/components-styles';
 import '@livekit/components-styles/prefabs';
 import '../styles/keyboard-fix.css'; // 导入键盘修复样式
+import '../styles/ios-keyboard-override.css'; // iOS键盘行为覆盖
 import '../styles/ios-landscape.css'; // 导入iOS横屏样式
 import { setupKeyboardFix } from '../lib/keyboard-fix'; // 导入键盘修复函数
 import { useEffect } from 'react';
@@ -74,9 +75,11 @@ export default function RootLayout({
   return (
     <html lang="zh">
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="format-detection" content="telephone=no" />
       </head>
       <body data-lk-theme="default">
         {children}
