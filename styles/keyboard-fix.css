@@ -1,0 +1,109 @@
+/**
+ * 虚拟键盘布局修复样式
+ * 解决移动端键盘弹出时页面布局问题
+ */
+
+:root {
+  --keyboard-height: 0px;
+}
+
+/* 键盘弹出时的基本样式 */
+body.keyboard-open {
+  /* 防止iOS Safari中的弹跳效果 */
+  position: relative;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 确保固定定位元素在键盘弹出时正确显示 */
+body.keyboard-open .chat-input-container,
+body.keyboard-open .mobile-footer,
+body.keyboard-open [data-fixed-bottom] {
+  bottom: var(--keyboard-height) !important;
+  position: fixed;
+  z-index: 100;
+  transition: bottom 0.3s ease;
+}
+
+/* 确保视频区域在键盘弹出时不被过分挤压 */
+body.keyboard-open .video-grid-container,
+body.keyboard-open .screen-share-wrapper,
+body.keyboard-open .video-wrapper,
+body.keyboard-open .empty-video-area {
+  max-height: calc(var(--vh, 1vh) * 40);
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+/* 确保聊天区域在键盘弹出时可滚动 */
+body.keyboard-open .mobile-chat-messages {
+  max-height: calc(calc(var(--vh, 1vh) * 60) - 60px); /* 减去输入框的高度 */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 支持VirtualKeyboard API的浏览器特殊处理 */
+@supports (bottom: env(keyboard-inset-height)) {
+  body.keyboard-open .chat-input-container,
+  body.keyboard-open .mobile-footer,
+  body.keyboard-open [data-fixed-bottom] {
+    bottom: env(keyboard-inset-height, var(--keyboard-height)) !important;
+  }
+}
+
+/* iOS Safari特殊处理 */
+@supports (-webkit-touch-callout: none) {
+  body.keyboard-open {
+    /* 防止iOS中内容被键盘推上去后不归位 */
+    height: -webkit-fill-available;
+  }
+  
+  body.keyboard-open .chat-input-container {
+    /* 确保在iOS上输入框始终可见 */
+    position: sticky !important;
+    bottom: 0 !important;
+  }
+}
+
+/* 适配不同设备屏幕尺寸 */
+@media screen and (max-height: 480px) {
+  body.keyboard-open .video-grid-container,
+  body.keyboard-open .screen-share-wrapper,
+  body.keyboard-open .video-wrapper,
+  body.keyboard-open .empty-video-area {
+    max-height: calc(var(--vh, 1vh) * 30);
+  }
+  
+  body.keyboard-open .mobile-chat-messages {
+    max-height: calc(calc(var(--vh, 1vh) * 70) - 60px);
+  }
+}
+
+/* 确保输入框聚焦时有明显视觉反馈 */
+input:focus,
+textarea:focus,
+[contenteditable]:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.5);
+  z-index: 1;
+}
+
+/* 添加过渡效果使布局变化更平滑 */
+.mobile-video-conference {
+  /* 只对高度和max-height做过渡，避免其他属性变化时的异常效果 */
+  transition: height 0.3s ease, max-height 0.3s ease;
+}
+
+.video-grid-container,
+.mobile-chat-messages,
+.chat-input-container,
+.mobile-footer {
+  transition: all 0.3s ease;
+}
+
+/* 视频容器状态切换时避免过渡效果 */
+.screen-share-wrapper,
+.video-wrapper,
+.empty-video-area {
+  transition: none !important;
+} 

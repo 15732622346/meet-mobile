@@ -1,0 +1,233 @@
+/* 聊天消息样式专用CSS文件 */
+
+.mobile-chat-message {
+  margin-bottom: 5px !important; /* 从10px减少到5px */
+  padding: 2px 0 !important; /* 从4px减少到2px */
+  max-width: 80% !important;
+  display: flex !important;
+  flex-direction: row !important;  /* 恢复为水平排列 */
+  flex-wrap: wrap !important; /* 允许内容换行 */
+  align-items: flex-start !important;
+  overflow: hidden !important;
+  position: relative !important;
+  align-self: flex-start !important;
+  margin-left: 0px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+.mobile-chat-message.self {
+  align-self: flex-end !important;
+  margin-left: auto !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.mobile-chat-name {
+  font-size: 12px !important;
+  font-weight: bold !important;
+  margin-right: 4px !important;
+  color: #4a9eff !important;
+  display: inline-block !important; /* 改为行内块级元素 */
+  white-space: nowrap !important; /* 确保不换行 */
+  flex-shrink: 0 !important; /* 防止昵称被压缩 */
+  background: transparent !important;
+}
+
+.mobile-chat-content {
+  font-size: 14px !important;
+  word-break: break-word !important;
+  color: #000 !important;
+  display: inline !important; /* 恢复为内联显示 */
+  flex: 1 !important; /* 允许内容部分灵活伸展 */
+  background: transparent !important;
+}
+
+.mobile-chat-messages {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  overflow-y: auto !important;
+  padding: 10px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 100% !important;
+  background: transparent !important;
+} 
+
+/* 添加固定宽度样式，确保键盘弹出时表单宽度稳定 */
+.form-wrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  transition: none !important; /* 禁用过渡效果，避免用户看到宽度变化过程 */
+  flex: 1 1 auto !important; /* 允许增长和收缩，优先增长 */
+}
+
+.input-grid {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  transition: none !important; /* 禁用过渡效果，避免用户看到宽度变化过程 */
+}
+
+/* 输入框样式 - 增加默认宽度，确保在未获得焦点时也有足够宽度 */
+.input-field {
+  width: calc(100% - 10px) !important; /* 几乎占满整个form-wrapper */
+  box-sizing: border-box !important;
+  transition: none !important; /* 禁用过渡效果，避免用户看到宽度变化过程 */
+  flex: 1 1 auto !important; /* 允许增长和收缩，优先增长 */
+  min-width: 150px !important; /* 设置最小宽度，确保输入框不会太窄 */
+  margin-right: 0 !important; /* 移除右边距，最大化利用空间 */
+}
+
+/* 移除键盘激活状态下的固定宽度规则，因为现在我们总是使用100%宽度 */
+.form-wrapper[style*="width: 230px"] {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.input-grid[style*="width: 230px"] {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.input-field[style*="width: 230px"] {
+  width: calc(100% - 10px) !important;
+  max-width: calc(100% - 10px) !important;
+} 
+
+/* 控制按钮包装器样式 - 减少宽度和边距，给输入框留更多空间 */
+.controls-wrapper {
+  margin-left: 5px !important;
+  flex: 0 0 auto !important; /* 不增长不收缩 */
+  max-width: 130px !important; /* 限制最大宽度 */
+}
+
+/* 控制按钮网格布局 - 减少间距 */
+.controls-grid {
+  gap: 5px !important;
+  flex-shrink: 0 !important; /* 防止控制按钮区域被压缩 */
+}
+
+/* 聊天输入容器 - 确保填满宽度 */
+.chat-input-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 10px 5px !important; /* 减少左右内边距，增加可用空间 */
+} 
+
+/* 添加新的样式规则，特别针对用户名和消息内容的行间距 */
+.mobile-chat-name, .mobile-chat-content {
+  line-height: 1.2 !important; /* 添加紧凑的行高 */
+}
+
+/* 移动端键盘弹出时防止页面缩放 */
+.mobile-chat {
+  /* 限制聊天区域最大宽度，防止因键盘弹出导致的布局溢出 */
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+}
+
+/* 虚拟键盘显示时的样式 */
+.mobile-chat.keyboard-active {
+  /* 防止横向滚动，但不影响FloatingWrapper */
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+
+/* 防止iOS设备上输入框自动放大 - 只针对聊天区域 */
+.mobile-chat input, 
+.mobile-chat textarea, 
+.mobile-chat select {
+  font-size: 16px !important; /* iOS上低于16px的字体会导致页面放大 */
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Jie. 20250801 iOS Safari 键盘优化 */
+@supports (-webkit-touch-callout: none) {
+  /* iOS Safari 特定样式 */
+  .mobile-chat.ios-keyboard-active {
+    position: relative !important;
+    height: auto !important;
+    overflow: hidden !important;
+  }
+  
+  .mobile-chat.ios-keyboard-active .mobile-chat-messages {
+    max-height: calc(100vh - 140px) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 80px !important;
+  }
+  
+  .chat-input-container.ios-fixed {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 1000 !important;
+    background-color: white !important;
+    border-top: 1px solid #ddd !important;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1) !important;
+    padding: 10px !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+  }
+  
+  /* iOS 键盘弹出时防止页面滚动 */
+  .mobile-chat.ios-keyboard-active {
+    overflow: hidden !important;
+    position: relative !important;
+  }
+  
+  /* iOS 输入框样式优化 */
+  .ios-fixed .input-field {
+    border-radius: 20px !important;
+    padding: 10px 15px !important;
+    font-size: 16px !important; /* iOS 防止缩放 */
+    transform: translateZ(0) !important; /* 硬件加速 */
+    -webkit-transform: translateZ(0) !important;
+    -webkit-appearance: none !important; /* 移除iOS默认样式 */
+    outline: none !important;
+    /* Jie. 20250801 iOS模式下的背景优化 */
+    background-color: #f8f9fa !important;
+    border: 1px solid #e0e0e0 !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+  }
+  
+  /* iOS输入框聚焦状态 */
+  .ios-fixed .input-field:focus {
+    background-color: #ffffff !important;
+    border-color: #4a9eff !important;
+    box-shadow: 0 0 0 2px rgba(74, 158, 255, 0.2) !important;
+  }
+  
+  /* iOS 发送按钮优化 */
+  .ios-fixed .send-button {
+    border-radius: 20px !important;
+    transform: translateZ(0) !important;
+    -webkit-transform: translateZ(0) !important;
+    -webkit-appearance: none !important;
+    touch-action: manipulation !important; /* 防止双击缩放 */
+  }
+  
+  /* iOS 键盘弹出时的视口优化 */
+  .mobile-chat.ios-keyboard-active {
+    position: relative !important;
+    min-height: 0 !important;
+    flex: 1 !important;
+  }
+  
+  /* iOS Safari 视口修复 */
+  @media screen and (max-device-width: 1024px) {
+    .ios-fixed {
+      /* 使用环境变量确保在刘海屏设备上正确显示 */
+      padding-bottom: env(safe-area-inset-bottom, 10px) !important;
+    }
+  }
+} 

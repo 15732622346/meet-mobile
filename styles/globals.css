@@ -1,0 +1,559 @@
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent; /* 移除移动端点击高亮 */
+}
+
+/* 添加CSS变量 */
+:root {
+  --vh: 1vh;
+}
+
+html {
+  color-scheme: dark;
+  background-color: #111;
+}
+
+html,
+body {
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  margin: 0px;
+  padding: 0px;
+  touch-action: manipulation; /* 优化移动端触摸体验 */
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  
+  /* iOS强制固定布局 - 防止键盘推送页面 */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* 防止iOS Safari缩放的额外规则 */
+input, textarea, select, button {
+  font-size: 16px; /* 防止iOS缩放，16px是iOS不会自动缩放的最小字体大小 */
+  max-height: 100%; /* 确保元素不超出视口 */
+}
+
+/* 调整移动端元素大小 */
+.lk-button {
+  min-height: 44px; /* 确保按钮有足够大的点击区域 */
+}
+
+/* 增加控制按钮的大小 */
+.lk-control-bar .lk-button {
+  width: 48px;
+  height: 48px;
+}
+
+.header {
+  max-width: 500px;
+  padding-inline: 2rem;
+}
+
+.header > img {
+  display: block;
+  margin: auto;
+  max-width: 100%;
+}
+
+.header > h2 {
+  font-family: 'TWK Everett', sans-serif;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 1.25rem;
+  line-height: 144%;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+footer {
+  width: 100%;
+  padding: 1.5rem 2rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  background-color: var(--lk-bg);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+footer a,
+h2 a {
+  color: #ff6352;
+  text-decoration-color: #a33529;
+  text-underline-offset: 0.125em;
+}
+
+footer a:hover,
+h2 a {
+  text-decoration-color: #ff6352;
+}
+
+h2 a {
+  text-decoration: none;
+}
+
+/* 修改LiveKit组件样式以适应移动屏幕 */
+.lk-video-conference {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: calc(var(--vh, 1vh) * 100) !important;
+  position: relative;
+}
+
+/* 彻底隐藏所有LiveKit默认的参与者名称标签 */
+.lk-participant-name,
+.lk-participant-metadata-item,
+.lk-participant-metadata,
+span[data-lk-participant-name],
+[data-lk-participant-name],
+.lk-participant-tile .lk-participant-metadata {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  pointer-events: none !important;
+}
+
+/* 隐藏桌面端不常用的控制项 */
+@media (max-width: 768px) {
+  .lk-control-bar .lk-button:not(.lk-mic-button):not(.lk-camera-button):not(.lk-leave-button) {
+    display: none !important;
+  }
+  
+  .lk-participant-tile {
+    max-width: 100% !important;
+    max-height: 30vh !important;
+  }
+}
+
+/* 彻底隐藏chat-header中的文本节点"0" - 多种方法结合 */
+.chat-header {
+  font-size: 0 !important;
+  line-height: 0 !important;
+  color: transparent !important;
+  position: relative;
+}
+
+/* 恢复按钮的字体大小和颜色 */
+.chat-header button {
+  font-size: 12px !important;
+  color: #4a9eff !important;
+  position: relative;
+  z-index: 1;
+}
+
+/* 恢复管理员菜单中的文本颜色和字体大小 */
+.chat-menu-container, .chat-menu-container * {
+  font-size: 12px;
+  color: initial;
+  position: relative;
+  z-index: 1;
+}
+
+/* 直接针对LiveKit聊天组件的样式覆盖 */
+.lk-chat-header,
+div.lk-chat-header,
+.lk-chat > .lk-chat-header,
+div.lk-chat > div.lk-chat-header {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  pointer-events: none !important;
+}
+
+/* 针对LiveKit聊天组件中的未读消息计数器 */
+.chat-header > *:not(button):not(.chat-menu-container),
+.lk-chat-header > *:not(button),
+div.lk-chat-header > *:not(button),
+.chat-header > span,
+.chat-header > div:not(.chat-menu-container),
+.chat-header::before,
+.chat-header::after {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  pointer-events: none !important;
+  font-size: 0 !important;
+}
+
+/* 针对麦位列表区域中的数字"0" */
+.participants-title + span,
+.participants-title ~ span:not(.participants-title),
+.participants-header > span:not(.participants-title),
+.right-header > div > span:not(.participants-title),
+.sidebar-container .right-header > div > *:not(.participants-title) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  font-size: 0 !important;
+}
+
+/* 更精确地定位和隐藏计数器 - 新增强力选择器 */
+.lk-chat-header span,
+.lk-participants-header span,
+.lk-participants-header > div > span,
+.lk-chat-header > div > span,
+div[class*="participants"] > div > span,
+div[class*="chat"] > div > span,
+div[class*="header"] > span:not([class]),
+div[class*="header"] > div > span:not([class]) {
+  font-size: 0 !important;
+  color: transparent !important;
+  display: inline-block !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+}
+
+/* 直接针对文本节点"0"的最强选择器 - 移动端特别优化 */
+span:empty + span:not([class]):contains('0'),
+div > span:only-child:contains('0'),
+div[class*="header"] span:contains('0'):not([class]),
+div[class*="title"] + span:contains('0'),
+.mobile-mic-section-title + span,
+.mobile-tabs-nav + span,
+.mobile-chat-messages + span {
+  display: none !important;
+}
+
+/* 移动端屏幕共享样式优化 */
+.screen-share-wrapper {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  background-color: #f8f8f8 !important; /* Jie. 20250801 修复黑色背景问题，改为浅灰色 */
+  position: relative !important;
+  overflow: hidden !important;
+  /* 确保在键盘弹出时不被其他样式干扰 */
+  min-height: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.screen-share-wrapper .lk-grid-layout {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+.screen-share-wrapper .lk-video-track {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
+
+/* 确保屏幕共享内容正确显示 */
+.screen-share-wrapper video,
+.screen-share-wrapper .lk-video-element {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  background-color: transparent; /* Jie. 20250801 修复黑色背景问题，改为透明 */
+}
+
+/* 移动端普通视频区域样式 - 与屏幕共享保持相同优先级 */
+.video-wrapper {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  background-color: #ffffff !important; /* Jie. 20250801 修复黑色背景问题，改为白色 */
+  position: relative !important;
+  overflow: hidden !important;
+  /* 确保在键盘弹出时不被其他样式干扰 */
+  min-height: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* 移动端空白视频区域样式 - 与屏幕共享保持相同优先级 */
+.empty-video-area {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  background-color: #222 !important;
+  position: relative !important;
+  overflow: hidden !important;
+  /* 确保在键盘弹出时不被其他样式干扰 */
+  min-height: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.screen-share-wrapper.fullscreen-mode .lk-grid-layout,
+.screen-share-wrapper.fullscreen-mode .lk-video-track,
+.screen-share-wrapper.fullscreen-mode video,
+.screen-share-wrapper.fullscreen .lk-grid-layout,
+.screen-share-wrapper.fullscreen .lk-video-track,
+.screen-share-wrapper.fullscreen video {
+  max-width: var(--actual-vw, 100vw) !important;
+  max-height: var(--actual-vh, calc(var(--vh, 1vh) * 100)) !important;
+  width: var(--actual-vw, 100vw) !important;
+  height: var(--actual-vh, calc(var(--vh, 1vh) * 100)) !important;
+  object-fit: contain !important;
+}
+
+/* 确保视频控件在移动端正确显示 */
+.lk-video-element {
+  object-fit: contain !important;
+  width: 100% !important;
+  height: 100% !important;
+  background-color: transparent; /* Jie. 20250801 修复黑色背景问题，改为透明 */
+}
+
+/* 确保视频格子布局充满整个区域 */
+.lk-grid-layout {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  max-height: calc(var(--vh, 1vh) * 100) !important;
+  padding: 0 !important; /* 移除默认的8px padding */
+  background-color: transparent !important; /* Jie. 20250801 确保背景透明 */
+}
+
+/* Jie. 20250801 强制修复所有可能的黑色背景 */
+.mobile-video-conference,
+.mobile-main-video,
+.mobile-video-container,
+div[class*="video"],
+div[class*="Video"] {
+  background-color: #f8f8f8 !important;
+}
+
+/* Jie. 20250801 确保LiveKit相关容器不使用黑色背景 */
+.lk-room-container,
+.lk-video-conference,
+div[data-lk-theme],
+body[data-lk-theme="default"] {
+  background-color: #f8f8f8 !important;
+}
+
+/* Jie. 20250801 覆盖LiveKit默认主题的黑色背景 */
+[data-lk-theme="default"] .mobile-video-conference,
+[data-lk-theme="default"] .mobile-main-video,
+[data-lk-theme="default"] .mobile-video-container,
+[data-lk-theme="default"] .video-wrapper:not(.fullscreen-mode),
+[data-lk-theme="default"] .screen-share-wrapper:not(.fullscreen-mode) {
+  background-color: #ffffff !important;
+}
+
+/* Jie. 20250801 仅在全屏模式下保持黑色背景 */
+[data-lk-theme="default"] .video-wrapper.fullscreen-mode,
+[data-lk-theme="default"] .screen-share-wrapper.fullscreen-mode {
+  background-color: #000 !important;
+}
+
+/* 移除视频元素的padding */
+.lk-participant-media-video {
+  padding: 0 !important;
+}
+
+/* 隐藏屏幕共享视频名称标签 */
+.mobile-video-name {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* 修复移动端可能的溢出问题 */
+body, html {
+  overflow: hidden;
+  overscroll-behavior: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* 处理iOS Safari底部导航栏问题 */
+@supports (-webkit-touch-callout: none) {
+  .mobile-video-conference {
+    height: -webkit-fill-available;
+  }
+}
+
+/* 浮动窗口相关样式 */
+.floating-wrapper {
+  z-index: 10500 !important; /* 提高z-index，确保在全屏模式下也能显示 */
+  -webkit-transform: translate3d(0,0,0);
+  transform: translate3d(0,0,0);
+  will-change: transform;
+  touch-action: none;
+  /* 确保在全屏模式下也能显示 */
+  position: fixed !important;
+}
+
+/* 全屏模式下的浮动窗口特殊样式 */
+:fullscreen .floating-wrapper,
+:-webkit-full-screen .floating-wrapper,
+:-moz-full-screen .floating-wrapper,
+:-ms-fullscreen .floating-wrapper {
+  z-index: 10500 !important;
+  position: absolute !important;
+  transform: translate3d(0,0,0) !important;
+  -webkit-transform: translate3d(0,0,0) !important;
+  display: block !important;
+  visibility: visible !important;
+}
+
+.floating-wrapper.minimized {
+  width: 140px !important;
+  height: 44px !important;
+  cursor: pointer !important;
+}
+
+/* 确保视频组件在移动端正确显示 */
+.floating-wrapper video,
+.floating-wrapper .lk-participant-tile,
+.floating-wrapper .lk-video-track {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+/* 重置移动端Safari特有的按钮样式 */
+.floating-wrapper button {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* 针对移动端的触摸优化 */
+@media (max-width: 768px) {
+  .floating-wrapper .minimize-btn {
+    width: 32px !important;
+    height: 32px !important;
+  }
+  
+  .floating-wrapper.minimized button {
+    font-size: 16px !important;
+    padding: 10px !important;
+    line-height: 1;
+  }
+}
+
+/* 移动端虚拟键盘优化 - 确保使用视口单位时考虑键盘 */
+@media screen and (max-width: 768px) {
+  .mobile-video-conference,
+  .mobile-layout-container,
+  body > div {
+    /* 使用CSS变量代替100vh */
+    min-height: 100vh;
+    min-height: calc(var(--vh, 1vh) * 100);
+    height: 100vh;
+    height: calc(var(--vh, 1vh) * 100);
+    /* 可能存在的键盘弹出时底部间距 */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  
+  /* 针对Firefox和Safari */
+  @supports (-moz-appearance:none) or (-webkit-appearance:none) {
+    body.keyboard-open {
+      /* 防止滚动条闪烁 */
+      overflow: hidden;
+      position: fixed;
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  /* iOS浏览器安全区适配 */
+  @supports (padding: max(0px)) {
+    body {
+      /* 底部安全区域填充 */
+      padding-bottom: max(0px, env(safe-area-inset-bottom));
+    }
+
+    .mobile-footer, 
+    .chat-input-container {
+      padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+    }
+  }
+}
+
+/* 确保浮动窗口中的视频在全屏模式下正确显示 */
+.floating-wrapper.fullscreen-mode {
+  width: var(--actual-vw, 100vw) !important;
+  height: var(--actual-vh, calc(var(--vh, 1vh) * 100)) !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  z-index: 9999 !important;
+  border: none !important;
+  background: #000 !important;
+}
+
+.floating-wrapper.fullscreen-mode .lk-participant-tile,
+.floating-wrapper.fullscreen-mode .lk-video-element,
+.floating-wrapper.fullscreen-mode video {
+  width: var(--actual-vw, 100vw) !important;
+  height: var(--actual-vh, calc(var(--vh, 1vh) * 100)) !important;
+  object-fit: cover !important;
+  max-width: var(--actual-vw, 100vw) !important;
+  max-height: var(--actual-vh, calc(var(--vh, 1vh) * 100)) !important;
+}
+
+/* 视频比例修复 - 全局规则 */
+.lk-participant-media-video {
+  object-fit: contain !important;
+}
+
+.screen-share-wrapper .lk-grid-layout,
+.video-wrapper .lk-grid-layout {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* 修复屏幕共享视频比例 */
+.screen-share-wrapper.fullscreen-mode {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* 移除限制，让视频居中且保持比例 */
+.screen-share-wrapper.fullscreen-mode .lk-grid-layout,
+.video-wrapper.fullscreen-mode .lk-grid-layout {
+  max-width: none !important;
+  max-height: none !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* 确保视频水平和垂直居中 */
+.fullscreen-mode {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}

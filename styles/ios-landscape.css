@@ -1,0 +1,291 @@
+/**
+ * iOS横屏模式CSS - 专门处理iOS设备的横屏全屏模式
+ * 由于iOS不支持screen.orientation.lock API，需要使用CSS变换模拟横屏效果
+ */
+
+/* iOS横屏模式主容器样式 - 设备竖屏时模拟横屏 */
+.ios-landscape-mode {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: var(--actual-vh, calc(var(--vh, 1vh) * 100)) !important; /* 使用实际视口高度作为宽度 */
+  height: var(--actual-vw, 100vw) !important; /* 使用实际视口宽度作为高度 */
+  transform-origin: left top !important;
+  transform: rotate(-90deg) translateX(-100%) !important;
+  z-index: 99999 !important; /* 提高z-index确保最顶层显示 */
+  background-color: black !important;
+  overflow: hidden !important;
+  max-width: none !important; /* 覆盖可能的最大宽度限制 */
+  max-height: none !important; /* 覆盖可能的最大高度限制 */
+  padding: 0 !important; /* 移除所有内边距 */
+  margin: 0 !important; /* 移除所有外边距 */
+  border: none !important; /* 确保没有边框 */
+  box-shadow: none !important; /* 移除阴影 */
+  border-radius: 0 !important; /* 移除圆角 */
+  display: flex !important; /* 使用flex布局 */
+  align-items: center !important; /* 垂直居中 */
+  justify-content: center !important; /* 水平居中 */
+  text-align: center !important; /* 文本居中 */
+}
+
+/* 设备已经物理横屏时的全屏样式 - 不需要旋转 */
+@media screen and (orientation: landscape) {
+  .ios-landscape-mode.device-landscape {
+    transform: none !important;
+    transform-origin: center center !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+}
+
+/* 清除LiveKit的视频容器限制 */
+.ios-landscape-mode .lk-grid-layout {
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: visible !important;
+}
+
+/* LiveKit视频元素最小样式 - 主要尺寸由JavaScript动态计算 */
+.ios-landscape-mode video,
+.ios-landscape-mode .lk-participant-media-video {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* 优化iOS横屏模式下的内部元素 */
+.ios-landscape-mode .mobile-video-name,
+.ios-landscape-mode .fullscreen-toggle-btn {
+  transform: rotate(90deg) !important;
+  transform-origin: center center !important;
+}
+
+/* 设备已经物理横屏时恢复内部元素的原始方向 */
+@media screen and (orientation: landscape) {
+  .ios-landscape-mode.device-landscape .mobile-video-name,
+  .ios-landscape-mode.device-landscape .fullscreen-toggle-btn {
+    transform: none !important;
+  }
+}
+
+/* 禁用在全屏模式下的滚动和拖动 */
+body.ios-landscape-active {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
+  -webkit-overflow-scrolling: none !important;
+  touch-action: none !important;
+}
+
+/* 针对iOS全屏容器内的所有子元素应用填充样式 */
+.ios-landscape-mode * {
+  box-sizing: border-box !important;
+}
+
+/* 处理屏幕共享容器 - 让JavaScript控制布局 */
+.ios-landscape-mode.screen-share-wrapper,
+.fullscreen-mode.screen-share-wrapper,
+.ios-landscape-mode.floating-wrapper,
+.fullscreen-mode.floating-wrapper {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  position: fixed !important; /* 确保固定定位 */
+  top: 0 !important; /* 确保顶部对齐 */
+  left: 0 !important; /* 确保左侧对齐 */
+  width: 100% !important; /* 在设备已横屏时确保全宽 */
+  height: 100% !important; /* 在设备已横屏时确保全高 */
+}
+
+/* iOS Safari 特殊修复 - 确保旋转模式下完全覆盖屏幕 */
+@supports (-webkit-touch-callout: none) {
+  .ios-landscape-mode.screen-share-wrapper,
+  .ios-landscape-mode.floating-wrapper {
+    width: var(--actual-vh, calc(var(--vh, 1vh) * 100)) !important;  /* 设备竖屏时的宽度=视口高度 */
+    height: 100vw !important; /* 设备竖屏时的高度=视口宽度 */
+  }
+  
+  /* 设备已横屏时正确显示 */
+  @media screen and (orientation: landscape) {
+    .ios-landscape-mode.screen-share-wrapper.device-landscape,
+    .ios-landscape-mode.floating-wrapper.device-landscape {
+      width: 100vw !important;
+      height: var(--actual-vh, calc(var(--vh, 1vh) * 100)) !important;
+    }
+  }
+}
+
+/* 强制修复比例问题的样式 - 新增高优先级规则 */
+.fullscreen-mode .lk-grid-layout,
+.ios-landscape-mode .lk-grid-layout {
+  max-width: none !important;
+  max-height: none !important;
+  width: 100% !important;
+  height: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* 强制视频元素保持原始比例 */
+.fullscreen-mode video,
+.ios-landscape-mode video,
+.fullscreen-mode .lk-participant-media-video,
+.ios-landscape-mode .lk-participant-media-video {
+  object-fit: contain !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+}
+
+/* 移除LiveKit可能应用的固定宽高限制 */
+.fullscreen-mode .lk-participant-media-video[style*="width"],
+.ios-landscape-mode .lk-participant-media-video[style*="width"],
+.fullscreen-mode video[style*="width"],
+.ios-landscape-mode video[style*="width"] {
+  width: auto !important;
+  height: auto !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+}
+
+/* 确保屏幕共享在Safari中正确显示 */
+.screen-share-wrapper.ios-landscape-mode,
+.floating-wrapper.ios-landscape-mode {
+  min-width: var(--actual-vh, calc(var(--vh, 1vh) * 100)) !important;
+  min-height: 100vw !important;
+  z-index: 999999 !important; /* 更高层级 */
+  background-color: #000 !important;
+}
+
+/* 修复iOS Safari中底部栏问题 */
+.ios-landscape-active .screen-share-wrapper.ios-landscape-mode,
+.ios-landscape-active .floating-wrapper.ios-landscape-mode {
+  padding-bottom: env(safe-area-inset-bottom) !important;
+  padding-top: env(safe-area-inset-top) !important;
+}
+
+/* 特定于浮动窗口的优化 */
+.floating-wrapper.ios-landscape-mode {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  /* 确保内容居中 */
+  text-align: center !important;
+  box-sizing: border-box !important;
+}
+
+.floating-wrapper.ios-landscape-mode .lk-participant-tile {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 auto !important; /* 水平居中 */
+  position: absolute !important; /* 绝对定位以确保居中 */
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important; /* 完美居中 */
+}
+
+.floating-wrapper.ios-landscape-mode video {
+  object-fit: contain !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  margin: 0 auto !important; /* 水平居中 */
+  position: relative !important;
+  left: 0 !important;
+  right: 0 !important;
+} 
+
+/* 确保按钮在iOS横屏模式下正确显示 */
+.ios-landscape-mode button,
+.ios-landscape-mode [role="button"],
+.ios-landscape-mode .floating-wrapper button {
+  transform: none !important; /* 防止继承旋转变换 */
+  transform-origin: center center !important;
+}
+
+/* 确保按钮容器在iOS横屏模式下正确显示 */
+.ios-landscape-mode div[style*="position: absolute"] {
+  transform: none !important; /* 防止继承旋转变换 */
+  z-index: 999999 !important; /* 确保按钮始终在最上层 */
+  pointer-events: auto !important; /* 确保可点击 */
+}
+
+/* 特别处理浮动窗口中的按钮 */
+.floating-wrapper.ios-landscape-mode div[style*="position: absolute"] {
+  position: absolute !important;
+  transform: none !important;
+  z-index: 999999 !important;
+}
+
+/* 确保按钮在旋转模式下保持正确位置 */
+.floating-wrapper.ios-landscape-mode div[style*="top: 5px"][style*="right: 5px"],
+.floating-wrapper.ios-landscape-mode div[style*="bottom: 5px"][style*="right: 5px"],
+.floating-wrapper.ios-landscape-mode div[style*="bottom: 15px"][style*="right: 15px"] {
+  transform: rotate(90deg) !important;
+  transform-origin: center center !important;
+}
+
+/* 在设备已经物理横屏时恢复按钮的原始方向 */
+@media screen and (orientation: landscape) {
+  .ios-landscape-mode.device-landscape div[style*="position: absolute"],
+  .ios-landscape-mode.device-landscape button,
+  .ios-landscape-mode.device-landscape [role="button"] {
+    transform: none !important;
+  }
+} 
+
+/* 横屏提示覆盖层 */
+#landscape-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.9);
+  z-index: 9999999;
+  color: white;
+  text-align: center;
+}
+
+#landscape-overlay .content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+}
+
+#landscape-overlay .icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M0 0h24v24H0V0z' fill='none'/%3E%3Cpath d='M16.48 2.52c3.27 1.55 5.61 4.72 5.97 8.48h1.5C23.44 4.84 18.29 0 12 0l-.66.03 3.81 3.81 1.33-1.32zm-6.25-.77c-.59-.59-1.54-.59-2.12 0L1.75 8.11c-.59.59-.59 1.54 0 2.12l12.02 12.02c.59.59 1.54.59 2.12 0l6.36-6.36c.59-.59.59-1.54 0-2.12L10.23 1.75zm4.6 19.44L2.81 9.17l6.36-6.36 12.02 12.02-6.36 6.36zm-7.31.29C4.25 19.94 1.91 16.76 1.55 13H.05C.56 19.16 5.71 24 12 24l.66-.03-3.81-3.81-1.33 1.32z'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  animation: rotate 2s infinite ease-in-out;
+}
+
+#landscape-overlay .text {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+#landscape-overlay .subtext {
+  font-size: 16px;
+  opacity: 0.8;
+}
+
+@keyframes rotate {
+  0% { transform: rotate(0deg); }
+  50% { transform: rotate(-90deg); }
+  100% { transform: rotate(0deg); }
+} 

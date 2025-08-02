@@ -1,0 +1,107 @@
+/* 视口高度修复样式
+ * 解决移动浏览器中100vh被地址栏遮挡的问题
+ */
+
+/* 使用CSS变量设置视口高度 */
+:root {
+  --vh: 1vh;
+}
+
+/* 适用于整个页面的修复 */
+.viewport-height-fix {
+  height: 100vh; /* 兼容性回退 */
+  height: calc(var(--vh, 1vh) * 100);
+}
+
+/* 常用布局容器 */
+.flex-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
+}
+
+/* 底部对齐布局 - 解决移动浏览器底部被地址栏遮挡问题 */
+body.bottom-aligned .mobile-layout-container,
+body.bottom-aligned .mobile-video-conference {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100vh; /* 兼容性回退 */
+  height: calc(var(--vh, 1vh) * 100);
+  /* iOS 安全区域支持 */
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* 防止滚动溢出 */
+}
+
+/* 全屏模式下的特殊处理 */
+:fullscreen .screen-share-wrapper,
+.screen-share-wrapper:fullscreen {
+  height: 100vh !important; /* 强制使用视口高度 */
+}
+
+/* 针对WebKit浏览器的全屏模式 */
+:-webkit-full-screen .screen-share-wrapper,
+.screen-share-wrapper:-webkit-full-screen {
+  height: 100vh !important;
+}
+
+/* 针对Firefox的全屏模式 */
+:-moz-full-screen .screen-share-wrapper,
+.screen-share-wrapper:-moz-full-screen {
+  height: 100vh !important;
+}
+
+/* 针对IE/Edge的全屏模式 */
+:-ms-fullscreen .screen-share-wrapper,
+.screen-share-wrapper:-ms-fullscreen {
+  height: 100vh !important;
+}
+
+/* iOS安全区域底部填充 - 确保内容不被底栏遮挡 */
+@supports (padding: max(0px)) {
+  body.bottom-aligned .mobile-video-conference,
+  body.bottom-aligned .mobile-layout-container {
+    padding-bottom: max(env(safe-area-inset-bottom, 0), 0px);
+  }
+  
+  /* 底部控制栏额外填充 */
+  .mobile-footer {
+    padding-bottom: max(env(safe-area-inset-bottom, 0), 8px);
+  }
+}
+
+/* 移动页面常用三段式布局 */
+.mobile-header {
+  flex: 0 0 auto;
+}
+
+.mobile-content {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* 增强iOS滚动体验 */
+}
+
+.mobile-footer {
+  flex: 0 0 auto;
+}
+
+/* 针对Chrome全屏模式的特殊处理 */
+@media screen and (display-mode: fullscreen) {
+  .screen-share-wrapper {
+    height: 100vh !important;
+  }
+}
+
+/* 针对横屏模式的优化 */
+@media screen and (orientation: landscape) {
+  .screen-share-wrapper {
+    height: 100vh !important;
+    width: 100vw !important;
+    max-height: 100vh !important;
+  }
+} 
